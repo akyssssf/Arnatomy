@@ -1,0 +1,137 @@
+/* ==========================================================================
+   ARnatomy — custom CSS di luar jangkauan utility Tailwind
+   (titik interaktif pada kanvas 3D, akordeon, dan aksesibilitas fokus)
+   ========================================================================== */
+
+[hidden] { display: none !important; }
+
+/* --- Skip link: terlihat hanya saat difokus keyboard ---------------------- */
+.tautan-lewati {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 100;
+  border-radius: 0.75rem;
+  background: #2563eb;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #ffffff;
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
+  transition: top 0.15s ease;
+}
+.tautan-lewati:focus { top: 1rem; }
+
+/* --- Fokus keyboard yang konsisten di seluruh aplikasi -------------------- */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+  border-radius: 0.75rem;
+}
+#konten-utama:focus { outline: none; }
+
+/* --- Cincin dekoratif di belakang organ ---------------------------------- */
+.cincin-organ {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  aspect-ratio: 1;
+  width: min(74%, 26rem);
+  transform: translate(-50%, -50%);
+  border-radius: 9999px;
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  background: radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.95), rgba(219, 234, 254, 0.45) 60%, rgba(219, 234, 254, 0) 72%);
+  pointer-events: none;
+}
+
+/* --- Layer anatomi pada ilustrasi cadangan ------------------------------- */
+.layer-anatomi { transition: opacity 0.2s linear; }
+.layer-mati { opacity: 0; pointer-events: none; }
+
+/* --- Titik interaktif di atas kanvas 3D ---------------------------------- *
+   Posisi diatur js/viewer3d.js lewat transform setiap frame, sehingga
+   elemen ditambatkan di sudut kiri atas lapisan penampung.                  */
+.titik-3d {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: opacity 0.2s ease;
+}
+.nomor-titik {
+  display: grid;
+  place-items: center;
+  height: 1.7rem;
+  width: 1.7rem;
+  border-radius: 9999px;
+  background: #ffffff;
+  color: #1d4ed8;
+  font-size: 0.72rem;
+  font-weight: 700;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.55), 0 6px 16px rgba(15, 23, 42, 0.18);
+  transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+.titik-3d:hover .nomor-titik,
+.titik-3d:focus-visible .nomor-titik { transform: scale(1.12); }
+.titik-3d[aria-pressed="true"] .nomor-titik {
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.22), 0 8px 20px rgba(37, 99, 235, 0.4);
+}
+.nama-titik {
+  white-space: nowrap;
+  border-radius: 9999px;
+  background: #ffffff;
+  padding: 0.25rem 0.7rem;
+  font-size: 11px;
+  font-weight: 600;
+  color: #334155;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+  opacity: 0;
+  transform: translateX(-0.35rem);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.titik-3d:hover .nama-titik,
+.titik-3d:focus-visible .nama-titik,
+.titik-3d[aria-pressed="true"] .nama-titik { opacity: 1; transform: translateX(0); }
+
+/* Titik yang berada di sisi belakang organ */
+.titik-tertutup { opacity: 0.28; }
+.titik-tertutup .nama-titik { opacity: 0; }
+
+/* Mode cadangan dua dimensi: posisi memakai persen, bukan transform */
+.titik-2d .titik-3d { transform: translate(-50%, -50%); }
+
+/* --- Baris pustaka bagian yang sedang dipilih ---------------------------- */
+.baris-pustaka { transition: background 0.15s ease, box-shadow 0.15s ease; }
+.baris-terpilih {
+  background: #eff6ff;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.12);
+}
+.baris-terpilih .nomor-pustaka {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+/* --- Akordeon label dimmed (expand in-place) ----------------------------- */
+.akordeon {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.25s ease;
+}
+.akordeon-terbuka { max-height: 32rem; }
+
+/* --- Hormati preferensi pengguna yang mengurangi animasi ------------------ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
