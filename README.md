@@ -58,7 +58,8 @@ arnatomy-frontend/
 ├── css/
 │   └── style.css           # Custom di luar Tailwind: titik interaktif, akordeon, fokus
 ├── assets/
-│   └── models/heart.glb    # Model 3D jantung (placeholder, lihat catatan di bawah)
+│   ├── models/heart.glb    # Model 3D jantung (placeholder, lihat catatan di bawah)
+│   └── img/jantung.webp    # Render statis dari model yang sama, untuk hero dan thumbnail
 ├── js/
 │   ├── ikon.js             # Kumpulan ikon garis (inline SVG) untuk seluruh halaman
 │   ├── variants.js         # Pola CVA manual (button, badge, card, bubble, tab, dst.)
@@ -97,6 +98,11 @@ direncanakan diganti model buatan sendiri.
 Menggantinya cukup satu langkah: timpa `assets/models/heart.glb`, atau ubah
 `file_model_3d` pada `js/data.js`. Titik interaktif menyesuaikan sendiri karena
 posisinya ditembakkan ke permukaan model, bukan dipatok pada koordinat mentah.
+
+`assets/img/jantung.webp` (1350 px, latar transparan) dirender dari model yang sama
+lewat `App.viewer3d.cuplikan()`, lalu dipakai sebagai gambar hero sebelum model 3D
+siap dan sebagai thumbnail kartu. Bila model diganti, render ulang gambar ini dengan
+cara yang sama agar tetap konsisten.
 
 ## Peta halaman ↔ SKPL
 
@@ -190,6 +196,22 @@ judul, label mikro berawalan garis miring ("/ ORGAN"), navigasi teks dipisah gar
 serta satu strip marquee biru. Ikon garis berasal dari `js/ikon.js` (inline SVG). Biru
 dipakai hemat: tombol utama, titik, strip, dan penanda aktif. Fon dimuat dari Google
 Fonts dengan cadangan `system-ui`.
+
+**Aset organ di halaman lain.** Halaman login dan beranda memakai penampil 3D yang sama
+dalam mode dekoratif (berputar pelan, tanpa titik), dengan gambar statis tampil lebih dulu
+lalu memudar begitu model siap. Kartu menu memakai render abu-abu yang berwarna saat
+disorot.
+
+**Glassmorphism.** Kelas `.kaca` (latar putih tembus pandang + `backdrop-filter`) hanya
+dipakai pada kartu yang melayang di atas organ, tombol alat, dan bilah layer. Header
+lengket sengaja tidak memakainya karena filter pada elemen yang ikut bergulir membebani
+komposit.
+
+**Motion.** Semua animasi hanya menyentuh `transform` dan `opacity`: judul naik kata
+demi kata, elemen `.muncul` memudar masuk saat terlihat (`IntersectionObserver`),
+transisi antar halaman, kartu terangkat saat disorot, organ dan kartu kaca melayang
+pelan, strip marquee bergerak, titik biru hero berdenyut lembut. Semuanya dimatikan
+otomatis pada `prefers-reduced-motion: reduce`.
 
 ## Aksesibilitas
 

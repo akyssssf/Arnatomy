@@ -50,7 +50,9 @@ window.App.pages = window.App.pages || {};
             'Tanya jawab'
           ) +
 
-          '<div class="' + v.kartu({ padding: 'md' }) + ' mb-3">' +
+          '<div class="muncul ' + v.kartu({ padding: 'md' }) + ' mb-3 flex items-center gap-4">' +
+            '<img src="assets/img/jantung.webp" alt="" aria-hidden="true" class="hidden h-20 w-20 shrink-0 object-contain sm:block" />' +
+            '<div class="min-w-0 flex-1">' +
             '<div class="flex flex-wrap items-end gap-3">' +
               '<div class="min-w-[12rem] flex-1">' +
                 '<label for="pilih-konteks" class="mikro mb-2 block">Konteks bagian tubuh</label>' +
@@ -66,9 +68,10 @@ window.App.pages = window.App.pages || {};
               '<input type="checkbox" id="simulasi-gagal" class="h-4 w-4 accent-[#1a6dff]" />' +
               'Simulasikan koneksi gagal untuk menguji penanganan error' +
             '</label>' +
+            '</div>' +
           '</div>' +
 
-          '<div class="' + v.kartu({ padding: 'md' }) + ' mt-4 flex h-[26rem] flex-col sm:h-[30rem]">' +
+          '<div class="muncul ' + v.kartu({ padding: 'md' }) + ' mt-4 flex h-[26rem] flex-col sm:h-[30rem]">' +
             '<ul id="riwayat-chat" class="flex-1 space-y-2 overflow-y-auto pr-1" ' +
               'aria-live="polite" aria-atomic="false" aria-label="Riwayat percakapan dengan asisten AI"></ul>' +
             '<div id="galat-chat" role="alert" aria-live="assertive" class="mt-3" hidden></div>' +
