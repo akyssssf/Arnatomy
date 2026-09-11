@@ -167,13 +167,21 @@ window.App = window.App || {};
     }
     pengamatMuncul = new IntersectionObserver(function (entri) {
       entri.forEach(function (e) {
+        const el = e.target;
         if (!e.isIntersecting) return;
-        e.target.classList.add('tampak');
-        pengamatMuncul.unobserve(e.target);
+        el.classList.add('tampak');
+        pengamatMuncul.unobserve(el);
+        /* Setelah pemunculan selesai, transisi dan jeda inline dilepas agar
+           efek hover elemen (angkat, warna) tidak ikut tertunda. */
+        const jeda = parseInt(el.style.transitionDelay, 10) || 0;
+        window.setTimeout(function () {
+          el.classList.remove('muncul', 'tampak');
+          el.style.transitionDelay = '';
+        }, jeda + 650);
       });
     }, { threshold: 0.1, rootMargin: '0px 0px -6% 0px' });
     daftar.forEach(function (el, i) {
-      if (!el.style.transitionDelay) el.style.transitionDelay = Math.min(i, 8) * 70 + 'ms';
+      if (!el.style.transitionDelay) el.style.transitionDelay = Math.min(i, 8) * 55 + 'ms';
       pengamatMuncul.observe(el);
     });
   }

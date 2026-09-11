@@ -226,8 +226,8 @@ h1, h2, h3, .tampilan {
 /* Elemen muncul saat masuk viewport (kelas .tampak ditambahkan JS) */
 .muncul {
   opacity: 0;
-  transform: translateY(18px);
-  transition: opacity 0.7s var(--lengkung), transform 0.7s var(--lengkung);
+  transform: translateY(16px);
+  transition: opacity 0.6s var(--lengkung), transform 0.6s var(--lengkung);
 }
 .muncul.tampak { opacity: 1; transform: none; }
 
@@ -273,7 +273,7 @@ h1, h2, h3, .tampilan {
 
 /* Kartu terangkat saat disorot */
 .kartu-angkat {
-  transition: transform 0.4s var(--lengkung), box-shadow 0.4s var(--lengkung);
+  transition: transform 0.25s var(--lengkung), box-shadow 0.25s var(--lengkung);
 }
 .kartu-angkat:hover {
   transform: translateY(-4px);
@@ -283,7 +283,7 @@ h1, h2, h3, .tampilan {
 /* Gambar organ abu-abu, berwarna dan sedikit membesar saat kartu disorot */
 .organ-abu {
   filter: grayscale(1) contrast(1.05);
-  transition: filter 0.5s ease, transform 0.7s var(--lengkung);
+  transition: filter 0.3s ease, transform 0.45s var(--lengkung);
 }
 .group:hover .organ-abu { filter: none; transform: scale(1.06) rotate(-4deg); }
 
