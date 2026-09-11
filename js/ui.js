@@ -154,8 +154,84 @@ window.App = window.App || {};
     );
   }
 
+  /* ---------------- Motion ---------------- */
+  let pengamatMuncul = null;
+
+  /** Menandai elemen .muncul sebagai tampak begitu masuk viewport, dengan jeda bertingkat. */
+  function hidupkanMuncul(akar) {
+    const daftar = Array.prototype.slice.call(akar.querySelectorAll('.muncul'));
+    if (pengamatMuncul) pengamatMuncul.disconnect();
+    if (!('IntersectionObserver' in window)) {
+      daftar.forEach(function (el) { el.classList.add('tampak'); });
+      return;
+    }
+    pengamatMuncul = new IntersectionObserver(function (entri) {
+      entri.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        e.target.classList.add('tampak');
+        pengamatMuncul.unobserve(e.target);
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -6% 0px' });
+    daftar.forEach(function (el, i) {
+      if (!el.style.transitionDelay) el.style.transitionDelay = Math.min(i, 8) * 70 + 'ms';
+      pengamatMuncul.observe(el);
+    });
+  }
+
+  /**
+   * Judul yang naik kata demi kata. Menerima daftar baris, tiap baris daftar kata.
+   * Contoh: judulKata([['Belajar', 'anatomi'], ['lewat', 'model', '3D']])
+   */
+  function judulKata(baris, jedaAwal) {
+    let urutan = 0;
+    return baris.map(function (kata) {
+      return kata.map(function (k) {
+        const jeda = (jedaAwal || 0) + urutan * 70;
+        urutan += 1;
+        return '<span class="kata"><span style="animation-delay:' + jeda + 'ms">' + esc(k) + '</span></span>';
+      }).join(' ');
+    }).join('<br />');
+  }
+
+  /** Menjalankan cb begitu modul penampil 3D (ES module) siap; cb(err) bila melewati batas. */
+  function saatViewer3dSiap(cb, batasMs) {
+    if (App.viewer3d) { cb(); return; }
+    const batas = window.setTimeout(function () { cb(new Error('modul 3D tidak termuat.')); }, batasMs || 10000);
+    document.addEventListener('viewer3d:siap', function () {
+      window.clearTimeout(batas);
+      cb();
+    }, { once: true });
+  }
+
+  /**
+   * Organ 3D berputar pelan sebagai hero dekoratif. Gambar statis di dalam
+   * wadah induk tetap tampil sampai model siap, lalu memudar.
+   */
+  function pasangHero3d(idWadah, opsi) {
+    const wadah = document.getElementById(idWadah);
+    if (!wadah) return;
+    saatViewer3dSiap(async function (gagal) {
+      if (gagal || !document.getElementById(idWadah)) return;
+      try {
+        await App.viewer3d.init(Object.assign({
+          wadah: wadah,
+          urlModel: App.state.organs[0].file_model_3d,
+          titik: [],
+          dekoratif: true
+        }, opsi || {}));
+        wadah.parentElement.classList.add('hero-3d-siap');
+      } catch (kesalahan) {
+        /* Gambar statis tetap tampil sebagai pengganti */
+      }
+    });
+  }
+
   App.ui = {
     esc: esc,
+    hidupkanMuncul: hidupkanMuncul,
+    pasangHero3d: pasangHero3d,
+    judulKata: judulKata,
+    saatViewer3dSiap: saatViewer3dSiap,
     formatWaktu: formatWaktu,
     formatDurasi: formatDurasi,
     toast: toast,

@@ -36,6 +36,9 @@ window.App.pages = window.App.pages || {};
     tanpaLayout: true,
 
     render: function () {
+      const total = App.state.body_parts.length;
+      const jumlahLabel = App.state.part_content.length;
+
       return (
         '<section aria-labelledby="judul-login" class="pb-6">' +
 
@@ -45,44 +48,57 @@ window.App.pages = window.App.pages || {};
             '<p class="mikro">SKPL v1.0</p>' +
           '</div>' +
 
-          /* Hero */
-          '<div class="mt-6 grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">' +
-            '<h1 id="judul-login" class="titik-biru text-[2.75rem] font-semibold leading-[0.92] sm:text-6xl lg:text-[5.5rem]">' +
-              'Belajar anatomi<br />lewat model 3D' +
-            '</h1>' +
-            '<a href="#form-login" class="' + v.tombol({ ukuran: 'lg' }) + ' w-fit lg:mb-3">' +
-              'Mulai belajar' + App.ikon('panah', 'h-4 w-4') +
-            '</a>' +
+          /* Hero: teks di kiri, organ 3D di kanan */
+          '<div class="mt-4 grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">' +
+            '<div>' +
+              '<h1 id="judul-login" class="titik-biru denyut text-[2.75rem] font-semibold leading-[0.92] sm:text-6xl lg:text-[5.25rem]">' +
+                ui.judulKata([['Belajar', 'anatomi'], ['lewat', 'model', '3D']]) +
+              '</h1>' +
+              '<div class="muncul mt-8 flex flex-wrap items-center gap-5" style="transition-delay:350ms">' +
+                '<a href="#form-login" class="' + v.tombol({ ukuran: 'lg' }) + '">' +
+                  'Mulai belajar' + App.ikon('panah', 'h-4 w-4') +
+                '</a>' +
+                '<p class="max-w-xs text-sm leading-relaxed text-neutral-500">' +
+                  'Putar model jantung, buka label tiap bagian, lalu tanyakan yang belum jelas ke asisten AI.' +
+                '</p>' +
+              '</div>' +
+              '<ul class="nav-miring muncul mt-8 flex items-center" aria-label="Isi cepat akun uji coba" style="transition-delay:480ms">' +
+                AKUN_DEMO.map(tautanAkun).join('') +
+              '</ul>' +
+            '</div>' +
+
+            '<div class="muncul relative aspect-square overflow-hidden rounded-3xl bg-[#f1f2f4]" style="transition-delay:200ms">' +
+              '<span class="piringan-organ" aria-hidden="true"></span>' +
+              '<div id="hero-3d" class="absolute inset-0"></div>' +
+              '<img src="assets/img/jantung.webp" alt="Model 3D jantung manusia" ' +
+                'class="hero-gambar melayang pointer-events-none absolute left-1/2 top-1/2 w-[78%] -translate-x-1/2 -translate-y-1/2" />' +
+              '<p class="mikro kaca absolute right-4 top-4 rounded-full px-3 py-1.5">Model 3D</p>' +
+              '<div class="kaca melayang-lambat absolute bottom-4 left-4 rounded-2xl px-4 py-3">' +
+                '<p class="mikro">Jantung</p>' +
+                '<p class="mt-1 text-2xl font-semibold leading-none">' + total + ' <span class="text-sm font-medium text-neutral-500">bagian</span></p>' +
+                '<p class="mt-1 text-xs text-neutral-500">' + jumlahLabel + ' label dasar dan dimmed</p>' +
+              '</div>' +
+            '</div>' +
           '</div>' +
 
-          '<div class="mt-8 grid gap-6 sm:grid-cols-[1fr_auto] sm:items-end">' +
-            '<p class="max-w-sm text-sm leading-relaxed text-neutral-500">' +
-              'Prototipe antarmuka untuk sistem peredaran darah. Putar model jantung, buka label tiap bagian, ' +
-              'lalu tanyakan yang belum jelas ke asisten AI.' +
-            '</p>' +
-            '<ul class="nav-miring flex items-center" aria-label="Isi cepat akun uji coba">' +
-              AKUN_DEMO.map(tautanAkun).join('') +
-            '</ul>' +
-          '</div>' +
-
-          '<div class="mt-8">' +
+          '<div class="muncul mt-10">' +
             ui.marquee(['Sistem Peredaran Darah', 'Model Organ 3D', 'Label Interaktif', 'Asisten AI', 'Riwayat Belajar'], 'Fitur') +
           '</div>' +
 
           /* Formulir */
           '<div class="mt-8 grid gap-4 lg:grid-cols-[1fr_1.15fr]">' +
-            '<div class="' + v.kartu({ nada: 'aksen', padding: 'lg' }) + ' flex flex-col justify-between">' +
+            '<div class="muncul ' + v.kartu({ nada: 'aksen', padding: 'lg' }) + ' flex flex-col justify-between">' +
               '<div>' +
                 '<p class="mikro">Masuk</p>' +
                 '<h2 class="titik-biru mt-3 text-3xl font-semibold">Gunakan akun terdaftar</h2>' +
               '</div>' +
               '<p class="mt-8 text-xs leading-relaxed text-neutral-500">' +
-                'Tekan Siswa, Guru, atau Admin di atas untuk mengisi form otomatis. ' +
+                'Tekan Siswa, Guru, atau Administrator di atas untuk mengisi form otomatis. ' +
                 'Data sesi hanya disimpan di memori dan hilang saat halaman dimuat ulang.' +
               '</p>' +
             '</div>' +
 
-            '<div class="' + v.kartu({ padding: 'lg' }) + '">' +
+            '<div class="muncul ' + v.kartu({ padding: 'lg' }) + '">' +
               '<div id="kotak-error" role="alert" aria-live="assertive" class="mb-4" hidden></div>' +
               '<form id="form-login" novalidate class="space-y-4">' +
                 '<div>' +
@@ -117,6 +133,8 @@ window.App.pages = window.App.pages || {};
     },
 
     mount: function () {
+      ui.pasangHero3d('hero-3d', { jarak: 1.55, kecepatanPutar: 0.8 });
+
       const form = document.getElementById('form-login');
       const inputEmail = document.getElementById('input-email');
       const inputPassword = document.getElementById('input-password');
@@ -191,6 +209,10 @@ window.App.pages = window.App.pages || {};
 
         window.location.hash = user.role === 'admin' ? '#/admin' : '#/beranda';
       });
+
+      App.pages.login.bersihkan = function () {
+        if (App.viewer3d) App.viewer3d.bersihkan();
+      };
     }
   };
 })(window.App);

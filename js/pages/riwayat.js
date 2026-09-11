@@ -67,18 +67,18 @@ window.App.pages = window.App.pages || {};
           ui.judulHalaman('Riwayat Belajar', 'Bagian tubuh yang telah dibuka pada sesi ini.', 'judul-riwayat', 'Rekam jejak') +
 
           '<dl class="mb-4 grid gap-4 sm:grid-cols-3">' +
-            '<div class="' + v.kartu({ nada: 'aksen', padding: 'md' }) + '">' +
+            '<div class="muncul ' + v.kartu({ nada: 'aksen', padding: 'md' }) + '">' +
               '<dt class="mikro">Bagian dipelajari</dt>' +
               '<dd class="mt-3 text-4xl font-semibold tracking-tight">' + rekap.length + ' / ' + total + '</dd></div>' +
-            '<div class="' + v.kartu({ nada: 'aksen', padding: 'md' }) + '">' +
+            '<div class="muncul ' + v.kartu({ nada: 'aksen', padding: 'md' }) + '">' +
               '<dt class="mikro">Total kunjungan label</dt>' +
               '<dd class="mt-3 text-4xl font-semibold tracking-tight">' + totalKunjungan + '</dd></div>' +
-            '<div class="' + v.kartu({ nada: 'aksen', padding: 'md' }) + '">' +
+            '<div class="muncul ' + v.kartu({ nada: 'aksen', padding: 'md' }) + '">' +
               '<dt class="mikro">Label dimmed dibuka</dt>' +
               '<dd class="mt-3 text-4xl font-semibold tracking-tight">' + totalDimmed + '</dd></div>' +
           '</dl>' +
 
-          '<div class="' + v.kartu({ padding: 'sm' }) + ' overflow-x-auto">' +
+          '<div class="muncul ' + v.kartu({ padding: 'sm' }) + ' overflow-x-auto">' +
             '<table class="w-full min-w-[34rem] border-collapse text-left">' +
               '<caption class="sr-only">Daftar bagian tubuh yang telah dipelajari beserta waktu akses terakhir</caption>' +
               '<thead>' +

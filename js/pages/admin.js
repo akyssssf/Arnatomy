@@ -62,7 +62,7 @@ window.App.pages = window.App.pages || {};
           '<p class="mt-3 text-4xl font-semibold tracking-tight text-emerald-700">' + (daftar.length - draft) + '</p></div>' +
       '</div>' +
 
-      '<div class="' + v.kartu({ padding: 'sm' }) + ' overflow-x-auto">' +
+      '<div class="muncul ' + v.kartu({ padding: 'sm' }) + ' overflow-x-auto">' +
         '<table class="w-full min-w-[38rem] border-collapse text-left">' +
           '<caption class="sr-only">Daftar konten label dasar dan dimmed beserta status validasinya</caption>' +
           '<thead><tr class="border-b border-black/5 text-[11px] uppercase tracking-wide text-neutral-400">' +
@@ -84,7 +84,7 @@ window.App.pages = window.App.pages || {};
     const bagian = konten ? App.aksi.bagianById(konten.id_bagian) : null;
     const selesai = laporan.status_tindak_lanjut === 'ditindaklanjuti';
     return (
-      '<li class="' + v.kartu({ padding: 'md' }) + '">' +
+      '<li class="muncul ' + v.kartu({ padding: 'md' }) + '">' +
         '<div class="flex flex-wrap items-start justify-between gap-2">' +
           '<div>' +
             '<h3 class="text-sm font-bold">' + ui.esc(konten ? konten.judul_tampil : 'Konten tidak ditemukan') + '</h3>' +

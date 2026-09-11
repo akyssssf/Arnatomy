@@ -86,6 +86,10 @@ window.App = window.App || {};
     bersihkan();
 
     const wadah = opsi.wadah;
+    /* Mode dekoratif dipakai hero halaman lain: tanpa titik, berputar pelan */
+    const dekoratif = Boolean(opsi.dekoratif);
+    const posisiAwal = POSISI_KAMERA_AWAL.clone();
+    if (opsi.jarak) posisiAwal.setLength(opsi.jarak);
     let lebar = wadah.clientWidth || 1;
     let tinggi = wadah.clientHeight || 1;
 
@@ -108,7 +112,7 @@ window.App = window.App || {};
     scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 
     const camera = new THREE.PerspectiveCamera(42, lebar / tinggi, 0.01, 100);
-    camera.position.copy(POSISI_KAMERA_AWAL);
+    camera.position.copy(posisiAwal);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
@@ -119,6 +123,13 @@ window.App = window.App || {};
     /* Roda mouse dibiarkan menggulir halaman; zoom lewat Ctrl/Cmd + gulir,
        cubit trackpad, atau tombol perbesar dan perkecil. */
     controls.enableZoom = false;
+    if (dekoratif) {
+      controls.autoRotate = true;
+      controls.autoRotateSpeed = opsi.kecepatanPutar || 0.9;
+      controls.enableRotate = opsi.bolehSeret !== false;
+      controls.minPolarAngle = Math.PI * 0.35;
+      controls.maxPolarAngle = Math.PI * 0.65;
+    }
     controls.minDistance = 1.1;
     controls.maxDistance = 4;
     controls.autoRotateSpeed = 1.4;
@@ -173,8 +184,8 @@ window.App = window.App || {};
        permukaan pertama yang terkena, sehingga penanda selalu terlihat dari
        sudut pandang awal dan tetap menempel pada organ. */
     function tempelkanKePermukaan(sasaran) {
-      const arah = sasaran.clone().sub(POSISI_KAMERA_AWAL).normalize();
-      raycaster.set(POSISI_KAMERA_AWAL, arah);
+      const arah = sasaran.clone().sub(posisiAwal).normalize();
+      raycaster.set(posisiAwal, arah);
       const kena = raycaster.intersectObject(pembungkus, true);
       if (!kena.length) return sasaran;
       return kena[0].point.clone().addScaledVector(arah, -0.035);
@@ -347,6 +358,13 @@ window.App = window.App || {};
     sesi.arahkanKamera(arah.normalize().multiplyScalar(jarak));
   }
 
+  /** Mengembalikan isi kanvas saat ini sebagai data URL gambar. */
+  function cuplikan(jenis, mutu) {
+    if (!sesi) return null;
+    sesi.renderer.render(sesi.scene, sesi.camera);
+    return sesi.renderer.domElement.toDataURL(jenis || 'image/webp', mutu || 0.92);
+  }
+
   function bersihkan() {
     if (!sesi) return;
     sesi.renderer.setAnimationLoop(null);
@@ -380,7 +398,8 @@ window.App = window.App || {};
     setAutoRotasi: setAutoRotasi,
     ubahJarak: ubahJarak,
     reset: reset,
-    hadapkanKe: hadapkanKe
+    hadapkanKe: hadapkanKe,
+    cuplikan: cuplikan
   };
 
   document.dispatchEvent(new CustomEvent('viewer3d:siap'));

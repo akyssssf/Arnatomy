@@ -100,6 +100,12 @@ window.App = window.App || {};
     utama.innerHTML = halaman.render(ctx);
     if (typeof halaman.mount === 'function') halaman.mount(ctx);
 
+    /* Transisi masuk halaman dan pemunculan bertahap elemen .muncul */
+    utama.classList.remove('halaman-masuk');
+    void utama.offsetWidth;
+    utama.classList.add('halaman-masuk');
+    App.ui.hidupkanMuncul(utama);
+
     window.scrollTo(0, 0);
     utama.focus();
     rutePrev = App.pages[namaRute] ? namaRute : null;

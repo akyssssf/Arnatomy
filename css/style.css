@@ -164,7 +164,9 @@ h1, h2, h3, .tampilan {
 .nama-titik {
   white-space: nowrap;
   border-radius: 9999px;
-  background: #111827;
+  background: rgba(17, 24, 39, 0.78);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   padding: 0.3rem 0.75rem;
   font-size: 11px;
   font-weight: 500;
@@ -200,6 +202,95 @@ h1, h2, h3, .tampilan {
 }
 .akordeon-terbuka { max-height: 32rem; }
 
+/* --- Kaca (glassmorphism) ------------------------------------------------- *
+   Hanya dipakai pada elemen yang tidak sticky, karena backdrop-filter pada
+   elemen yang ikut bergulir membebani komposit.                             */
+.kaca {
+  background: rgba(255, 255, 255, 0.52);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  box-shadow: 0 12px 40px rgba(17, 24, 39, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  backdrop-filter: blur(18px) saturate(1.5);
+}
+.kaca-gelap {
+  background: rgba(17, 24, 39, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  -webkit-backdrop-filter: blur(18px) saturate(1.3);
+  backdrop-filter: blur(18px) saturate(1.3);
+}
+
+/* --- Motion ---------------------------------------------------------------- */
+:root { --lengkung: cubic-bezier(0.2, 0.7, 0.2, 1); }
+
+/* Elemen muncul saat masuk viewport (kelas .tampak ditambahkan JS) */
+.muncul {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.7s var(--lengkung), transform 0.7s var(--lengkung);
+}
+.muncul.tampak { opacity: 1; transform: none; }
+
+/* Judul yang naik kata demi kata */
+.kata {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
+}
+.kata > span {
+  display: inline-block;
+  transform: translateY(110%);
+  animation: naik 0.9s var(--lengkung) forwards;
+}
+@keyframes naik { to { transform: none; } }
+
+/* Transisi antar halaman */
+.halaman-masuk { animation: halaman 0.55s var(--lengkung); }
+@keyframes halaman {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Objek melayang pelan */
+.melayang { animation: melayang 7s ease-in-out infinite; }
+.melayang-lambat { animation: melayang 10s ease-in-out infinite reverse; }
+@keyframes melayang {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-12px); }
+}
+
+/* Titik biru berdenyut lembut pada judul hero */
+.titik-biru.denyut::after {
+  animation: denyut 3s ease-in-out infinite;
+  transform-origin: center;
+}
+@keyframes denyut {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.3); }
+}
+
+/* Kartu terangkat saat disorot */
+.kartu-angkat {
+  transition: transform 0.4s var(--lengkung), box-shadow 0.4s var(--lengkung);
+}
+.kartu-angkat:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 44px rgba(17, 24, 39, 0.08);
+}
+
+/* Gambar organ abu-abu, berwarna dan sedikit membesar saat kartu disorot */
+.organ-abu {
+  filter: grayscale(1) contrast(1.05);
+  transition: filter 0.5s ease, transform 0.7s var(--lengkung);
+}
+.group:hover .organ-abu { filter: none; transform: scale(1.06) rotate(-4deg); }
+
+/* Kanvas hero: gambar statis tampil dulu, memudar begitu 3D siap */
+.hero-gambar { transition: opacity 0.8s ease; }
+.hero-3d-siap .hero-gambar { opacity: 0; }
+
 /* --- Hormati preferensi pengguna yang mengurangi animasi ------------------ */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -207,4 +298,7 @@ h1, h2, h3, .tampilan {
     transition-duration: 0.001ms !important;
   }
   .marquee-jalur { animation: none; }
+  .muncul { opacity: 1; transform: none; }
+  .kata > span { transform: none; }
+  .melayang, .melayang-lambat { animation: none; }
 }

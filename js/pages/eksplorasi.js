@@ -66,7 +66,7 @@ window.App.pages = window.App.pages || {};
     return (
       '<button type="button" data-alat="' + aksi + '" aria-label="' + ui.esc(label) + '" title="' + ui.esc(label) + '" ' +
         (tombolToggle ? 'aria-pressed="false" ' : '') +
-        'class="grid h-10 w-10 place-items-center rounded-full bg-white text-neutral-700 transition ' +
+        'class="kaca grid h-10 w-10 place-items-center rounded-full text-neutral-700 transition ' +
         'hover:text-[#1a6dff] aria-pressed:bg-neutral-900 aria-pressed:text-white">' +
         ikon(namaIkon, 'h-4 w-4') +
       '</button>'
@@ -190,7 +190,7 @@ window.App.pages = window.App.pages || {};
 
             /* ---------- Kolom tengah: penampil model ---------- */
             '<div class="lg:col-start-2 lg:row-start-1">' +
-              '<figure class="m-0">' +
+              '<figure class="muncul m-0">' +
                 '<div id="panggung" class="relative overflow-hidden rounded-3xl bg-[#f1f2f4]">' +
 
                   /* Kotak model: kanvas, titik, dan alat dibatasi di dalamnya
@@ -218,7 +218,7 @@ window.App.pages = window.App.pages || {};
                   /* Bilah kendali layer: menumpuk di bawah model pada layar
                      sempit, melayang di dasar kartu pada layar lebar. */
                   '<section aria-labelledby="judul-layer" ' +
-                    'class="relative z-10 mx-4 mb-4 mt-2 flex flex-wrap items-center gap-2 rounded-3xl bg-white/70 p-1.5 ' +
+                    'class="kaca relative z-10 mx-4 mb-4 mt-2 flex flex-wrap items-center gap-2 rounded-3xl p-1.5 ' +
                     'lg:absolute lg:bottom-4 lg:left-4 lg:mx-0 lg:mb-0 lg:mt-0 lg:w-fit">' +
                     '<h2 id="judul-layer" class="mikro pl-3 pr-1">Layer</h2>' +
                     layers.map(tombolLayer).join('') +
@@ -226,7 +226,7 @@ window.App.pages = window.App.pages || {};
                   '</section>' +
                 '</div>' +
 
-                '<figcaption class="mt-3 px-1 text-[11px] text-neutral-400">' +
+                '<figcaption class="muncul mt-3 px-1 text-[11px] text-neutral-400">' +
                   'Gambar 1. Model 3D ' + ui.esc(organ.nama_organ) + ' (' + ui.esc(organ.file_model_3d) + '). ' +
                   'Kamera AR perangkat tidak diaktifkan pada prototipe web.' +
                 '</figcaption>' +
@@ -235,14 +235,14 @@ window.App.pages = window.App.pages || {};
 
             /* ---------- Kolom kanan: penjelasan ---------- */
             '<aside aria-labelledby="judul-panel" class="lg:col-start-3 lg:row-start-1">' +
-              '<div id="panel-detail" class="' + v.kartu({ padding: 'lg' }) + ' lg:sticky lg:top-20">' +
+              '<div id="panel-detail" class="muncul ' + v.kartu({ padding: 'lg' }) + ' lg:sticky lg:top-20">' +
                 panelOrgan() +
               '</div>' +
             '</aside>' +
 
             /* ---------- Kolom kiri: pustaka bagian ---------- */
             '<aside aria-labelledby="judul-pustaka" class="lg:col-start-1 lg:row-start-1">' +
-              '<div class="' + v.kartu({ nada: 'aksen', padding: 'sm' }) + ' lg:sticky lg:top-20">' +
+              '<div class="muncul ' + v.kartu({ nada: 'aksen', padding: 'sm' }) + ' lg:sticky lg:top-20">' +
                 '<h2 id="judul-pustaka" class="mikro px-3 pb-2 pt-1">Pustaka bagian</h2>' +
                 '<ul class="space-y-1">' + App.state.body_parts.map(barisPustaka).join('') + '</ul>' +
               '</div>' +
