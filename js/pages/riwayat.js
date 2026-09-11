@@ -18,21 +18,21 @@ window.App.pages = window.App.pages || {};
     const dasar = App.aksi.kontenBagian(rekap.id_bagian, 'dasar');
     const organ = App.aksi.organById(bagian.id_organ);
     return (
-      '<tr class="border-b border-slate-100 last:border-0">' +
+      '<tr class="border-b border-black/5 last:border-0">' +
         '<th scope="row" class="px-3 py-3 text-left align-top">' +
           '<span class="block text-sm font-semibold">' + ui.esc(bagian.nama_bagian_internal) + '</span>' +
-          '<span class="block text-xs text-slate-500">' +
+          '<span class="block text-xs text-neutral-500">' +
             ui.esc(dasar ? dasar.deskripsi.slice(0, 48) + '...' : '-') + '</span>' +
         '</th>' +
-        '<td class="hidden px-3 py-3 align-top text-sm text-slate-500 sm:table-cell">' + ui.esc(organ.sistem_organ) + '</td>' +
+        '<td class="hidden px-3 py-3 align-top text-sm text-neutral-500 sm:table-cell">' + ui.esc(organ.sistem_organ) + '</td>' +
         '<td class="px-3 py-3 align-top">' +
           '<span class="' + v.badge({ status: rekap.dimmedDibuka ? 'dimmed' : 'dasar' }) + '">' +
             (rekap.dimmedDibuka ? 'dasar + dimmed' : 'dasar') +
           '</span>' +
         '</td>' +
-        '<td class="px-3 py-3 align-top text-sm text-slate-500">' + rekap.jumlah + '</td>' +
-        '<td class="hidden px-3 py-3 align-top text-sm text-slate-500 md:table-cell">' + ui.esc(ui.formatDurasi(rekap.totalDurasi)) + '</td>' +
-        '<td class="px-3 py-3 align-top text-sm text-slate-500">' + ui.esc(ui.formatWaktu(rekap.terakhir)) + '</td>' +
+        '<td class="px-3 py-3 align-top text-sm text-neutral-500">' + rekap.jumlah + '</td>' +
+        '<td class="hidden px-3 py-3 align-top text-sm text-neutral-500 md:table-cell">' + ui.esc(ui.formatDurasi(rekap.totalDurasi)) + '</td>' +
+        '<td class="px-3 py-3 align-top text-sm text-neutral-500">' + ui.esc(ui.formatWaktu(rekap.terakhir)) + '</td>' +
       '</tr>'
     );
   }
@@ -49,7 +49,7 @@ window.App.pages = window.App.pages || {};
       if (!rekap.length) {
         return (
           '<section aria-labelledby="judul-riwayat">' +
-            ui.judulHalaman('Riwayat Belajar', 'Bagian tubuh yang telah dibuka pada sesi ini.', 'judul-riwayat') +
+            ui.judulHalaman('Riwayat Belajar', 'Bagian tubuh yang telah dibuka pada sesi ini.', 'judul-riwayat', 'Rekam jejak') +
             ui.kondisiKosong(
               'Belum ada riwayat',
               'Riwayat terisi otomatis setiap kali label dibuka pada halaman Eksplorasi.',
@@ -64,25 +64,25 @@ window.App.pages = window.App.pages || {};
 
       return (
         '<section aria-labelledby="judul-riwayat">' +
-          ui.judulHalaman('Riwayat Belajar', 'Bagian tubuh yang telah dibuka pada sesi ini.', 'judul-riwayat') +
+          ui.judulHalaman('Riwayat Belajar', 'Bagian tubuh yang telah dibuka pada sesi ini.', 'judul-riwayat', 'Rekam jejak') +
 
-          '<dl class="mb-4 grid gap-3 sm:grid-cols-3">' +
-            '<div class="' + v.kartu({ padding: 'md' }) + '">' +
-              '<dt class="text-xs text-slate-400">Bagian dipelajari</dt>' +
-              '<dd class="mt-1 text-2xl font-bold tracking-tight">' + rekap.length + ' / ' + total + '</dd></div>' +
-            '<div class="' + v.kartu({ padding: 'md' }) + '">' +
-              '<dt class="text-xs text-slate-400">Total kunjungan label</dt>' +
-              '<dd class="mt-1 text-2xl font-bold tracking-tight">' + totalKunjungan + '</dd></div>' +
-            '<div class="' + v.kartu({ padding: 'md' }) + '">' +
-              '<dt class="text-xs text-slate-400">Label dimmed dibuka</dt>' +
-              '<dd class="mt-1 text-2xl font-bold tracking-tight">' + totalDimmed + '</dd></div>' +
+          '<dl class="mb-4 grid gap-4 sm:grid-cols-3">' +
+            '<div class="' + v.kartu({ nada: 'aksen', padding: 'md' }) + '">' +
+              '<dt class="mikro">Bagian dipelajari</dt>' +
+              '<dd class="mt-3 text-4xl font-semibold tracking-tight">' + rekap.length + ' / ' + total + '</dd></div>' +
+            '<div class="' + v.kartu({ nada: 'aksen', padding: 'md' }) + '">' +
+              '<dt class="mikro">Total kunjungan label</dt>' +
+              '<dd class="mt-3 text-4xl font-semibold tracking-tight">' + totalKunjungan + '</dd></div>' +
+            '<div class="' + v.kartu({ nada: 'aksen', padding: 'md' }) + '">' +
+              '<dt class="mikro">Label dimmed dibuka</dt>' +
+              '<dd class="mt-3 text-4xl font-semibold tracking-tight">' + totalDimmed + '</dd></div>' +
           '</dl>' +
 
           '<div class="' + v.kartu({ padding: 'sm' }) + ' overflow-x-auto">' +
             '<table class="w-full min-w-[34rem] border-collapse text-left">' +
               '<caption class="sr-only">Daftar bagian tubuh yang telah dipelajari beserta waktu akses terakhir</caption>' +
               '<thead>' +
-                '<tr class="border-b border-slate-100 text-[11px] uppercase tracking-wide text-slate-400">' +
+                '<tr class="border-b border-black/5 text-[11px] uppercase tracking-wide text-neutral-400">' +
                   '<th scope="col" class="px-3 py-2.5 font-semibold">Bagian tubuh</th>' +
                   '<th scope="col" class="hidden px-3 py-2.5 font-semibold sm:table-cell">Sistem organ</th>' +
                   '<th scope="col" class="px-3 py-2.5 font-semibold">Label dibuka</th>' +
@@ -95,7 +95,7 @@ window.App.pages = window.App.pages || {};
             '</table>' +
           '</div>' +
 
-          '<p class="mt-3 px-1 text-xs text-slate-400">' +
+          '<p class="mt-3 px-1 text-xs text-neutral-400">' +
             'Data riwayat hanya disimpan di memori selama sesi berjalan dan hilang bila halaman dimuat ulang.' +
           '</p>' +
         '</section>'

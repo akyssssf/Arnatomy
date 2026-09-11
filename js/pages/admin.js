@@ -24,15 +24,15 @@ window.App.pages = window.App.pages || {};
   function barisKonten(konten) {
     const bagian = App.aksi.bagianById(konten.id_bagian);
     return (
-      '<tr class="border-b border-slate-100 last:border-0">' +
+      '<tr class="border-b border-black/5 last:border-0">' +
         '<th scope="row" class="px-3 py-3 text-left align-top">' +
           '<span class="block text-sm font-semibold">' + ui.esc(konten.judul_tampil) + '</span>' +
-          '<span class="block text-xs text-slate-400">' + ui.esc(bagian.nama_bagian_internal) + '</span>' +
+          '<span class="block text-xs text-neutral-400">' + ui.esc(bagian.nama_bagian_internal) + '</span>' +
         '</th>' +
         '<td class="px-3 py-3 align-top">' +
           '<span class="' + v.badge({ status: konten.jenis_konten }) + '">' + ui.esc(konten.jenis_konten) + '</span>' +
         '</td>' +
-        '<td class="hidden max-w-md px-3 py-3 align-top text-xs leading-relaxed text-slate-500 lg:table-cell">' +
+        '<td class="hidden max-w-md px-3 py-3 align-top text-xs leading-relaxed text-neutral-500 lg:table-cell">' +
           ui.esc(konten.deskripsi.slice(0, 110)) + (konten.deskripsi.length > 110 ? '...' : '') +
         '</td>' +
         '<td class="px-3 py-3 align-top">' +
@@ -50,22 +50,22 @@ window.App.pages = window.App.pages || {};
     const draft = daftar.filter(function (k) { return k.status_validasi === 'draft'; }).length;
 
     return (
-      '<div class="mb-3 grid gap-3 sm:grid-cols-3">' +
-        '<div class="' + v.kartu({ padding: 'md' }) + '">' +
-          '<p class="text-xs text-slate-400">Total konten</p>' +
-          '<p class="mt-1 text-2xl font-bold tracking-tight">' + daftar.length + '</p></div>' +
-        '<div class="' + v.kartu({ padding: 'md' }) + '">' +
-          '<p class="text-xs text-slate-400">Masih draft</p>' +
-          '<p class="mt-1 text-2xl font-bold tracking-tight text-amber-600">' + draft + '</p></div>' +
-        '<div class="' + v.kartu({ padding: 'md' }) + '">' +
-          '<p class="text-xs text-slate-400">Tervalidasi</p>' +
-          '<p class="mt-1 text-2xl font-bold tracking-tight text-emerald-600">' + (daftar.length - draft) + '</p></div>' +
+      '<div class="mb-4 grid gap-4 sm:grid-cols-3">' +
+        '<div class="' + v.kartu({ nada: 'aksen', padding: 'md' }) + '">' +
+          '<p class="mikro">Total konten</p>' +
+          '<p class="mt-3 text-4xl font-semibold tracking-tight">' + daftar.length + '</p></div>' +
+        '<div class="' + v.kartu({ nada: 'aksen', padding: 'md' }) + '">' +
+          '<p class="mikro">Masih draft</p>' +
+          '<p class="mt-3 text-4xl font-semibold tracking-tight text-amber-700">' + draft + '</p></div>' +
+        '<div class="' + v.kartu({ nada: 'aksen', padding: 'md' }) + '">' +
+          '<p class="mikro">Tervalidasi</p>' +
+          '<p class="mt-3 text-4xl font-semibold tracking-tight text-emerald-700">' + (daftar.length - draft) + '</p></div>' +
       '</div>' +
 
       '<div class="' + v.kartu({ padding: 'sm' }) + ' overflow-x-auto">' +
         '<table class="w-full min-w-[38rem] border-collapse text-left">' +
           '<caption class="sr-only">Daftar konten label dasar dan dimmed beserta status validasinya</caption>' +
-          '<thead><tr class="border-b border-slate-100 text-[11px] uppercase tracking-wide text-slate-400">' +
+          '<thead><tr class="border-b border-black/5 text-[11px] uppercase tracking-wide text-neutral-400">' +
             '<th scope="col" class="px-3 py-2.5 font-semibold">Judul dan bagian</th>' +
             '<th scope="col" class="px-3 py-2.5 font-semibold">Jenis</th>' +
             '<th scope="col" class="hidden px-3 py-2.5 font-semibold lg:table-cell">Cuplikan deskripsi</th>' +
@@ -88,7 +88,7 @@ window.App.pages = window.App.pages || {};
         '<div class="flex flex-wrap items-start justify-between gap-2">' +
           '<div>' +
             '<h3 class="text-sm font-bold">' + ui.esc(konten ? konten.judul_tampil : 'Konten tidak ditemukan') + '</h3>' +
-            '<p class="text-xs text-slate-400">' +
+            '<p class="text-xs text-neutral-400">' +
               (bagian ? ui.esc(bagian.nama_bagian_internal) + ', ' : '') +
               'Dilaporkan ' + ui.esc(ui.formatWaktu(laporan.waktu)) +
             '</p>' +
@@ -97,7 +97,7 @@ window.App.pages = window.App.pages || {};
             ui.esc(laporan.status_tindak_lanjut) +
           '</span>' +
         '</div>' +
-        '<p class="mt-3 rounded-xl bg-slate-50 px-3.5 py-2.5 text-sm leading-relaxed text-slate-600">' +
+        '<p class="mt-3 rounded-xl bg-[#f1f2f4] px-3.5 py-2.5 text-sm leading-relaxed text-neutral-500">' +
           ui.esc(laporan.deskripsi_laporan) +
         '</p>' +
         '<div class="mt-3 flex flex-wrap gap-2">' +
@@ -156,11 +156,11 @@ window.App.pages = window.App.pages || {};
 
       return (
         '<section aria-labelledby="judul-admin">' +
-          ui.judulHalaman('Dashboard Administrator',
+          ui.judulHalaman('Dashboard Admin',
             'Kelola konten label anatomi dan tindak lanjuti laporan kesalahan dari User.',
-            'judul-admin') +
+            'judul-admin', 'Administrator') +
           '<div role="tablist" aria-label="Bagian dashboard" ' +
-            'class="mb-4 inline-flex gap-1 rounded-full bg-white p-1 shadow-[0_2px_14px_rgba(30,58,138,0.06)]">' +
+            'class="mb-5 inline-flex gap-1 rounded-full bg-white p-1">' +
             tombolTab +
           '</div>' +
           panel +
@@ -225,19 +225,18 @@ window.App.pages = window.App.pages || {};
       judul: 'Edit konten label',
       isi:
         '<form id="form-konten" novalidate class="space-y-3">' +
-          '<p class="text-xs text-slate-600">Bagian tubuh: ' + ui.esc(bagian.nama_bagian_internal) + ', ' +
-            'jenis ' + ui.esc(konten.jenis_konten) + '.</p>' +
+          '<p class="mikro">' + ui.esc(bagian.nama_bagian_internal) + ' &middot; ' + ui.esc(konten.jenis_konten) + '</p>' +
           '<div>' +
-            '<label for="edit-judul" class="mb-1 block text-sm">Judul tampil</label>' +
+            '<label for="edit-judul" class="mikro mb-2 block">Judul tampil</label>' +
             '<input id="edit-judul" type="text" value="' + ui.esc(konten.judul_tampil) + '" class="' + v.input({}) + '" />' +
           '</div>' +
           '<div>' +
-            '<label for="edit-deskripsi" class="mb-1 block text-sm">Deskripsi</label>' +
+            '<label for="edit-deskripsi" class="mikro mb-2 block">Deskripsi</label>' +
             '<textarea id="edit-deskripsi" rows="6" aria-describedby="galat-konten" class="' + v.input({}) + '">' + ui.esc(konten.deskripsi) + '</textarea>' +
             '<p id="galat-konten" class="mt-1 text-xs text-red-700" hidden></p>' +
           '</div>' +
           '<div>' +
-            '<label for="edit-status" class="mb-1 block text-sm">Status validasi</label>' +
+            '<label for="edit-status" class="mikro mb-2 block">Status validasi</label>' +
             '<select id="edit-status" class="' + v.input({}) + '">' +
               '<option value="draft"' + (konten.status_validasi === 'draft' ? ' selected' : '') + '>draft</option>' +
               '<option value="tervalidasi"' + (konten.status_validasi === 'tervalidasi' ? ' selected' : '') + '>tervalidasi</option>' +

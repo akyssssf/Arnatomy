@@ -1,9 +1,54 @@
 /* ==========================================================================
    ARnatomy — custom CSS di luar jangkauan utility Tailwind
-   (titik interaktif pada kanvas 3D, akordeon, dan aksesibilitas fokus)
+   (tipografi, motif titik biru, marquee, titik interaktif kanvas 3D, fokus)
    ========================================================================== */
 
+:root {
+  --biru: #1a6dff;
+  --biru-gelap: #0d5cec;
+}
+
 [hidden] { display: none !important; }
+
+/* --- Tipografi ------------------------------------------------------------ */
+body {
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-feature-settings: "cv11", "ss01";
+}
+h1, h2, h3, .tampilan {
+  font-family: "Inter Tight", Inter, system-ui, -apple-system, sans-serif;
+  letter-spacing: -0.035em;
+}
+
+/* Motif titik biru di akhir judul */
+.titik-biru::after {
+  content: "";
+  display: inline-block;
+  width: 0.28em;
+  height: 0.28em;
+  margin-left: 0.18em;
+  border-radius: 9999px;
+  background: var(--biru);
+  vertical-align: 0.04em;
+}
+
+/* Label mikro dengan garis miring di depan, seperti "/ EST 2023" */
+.mikro {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+.mikro::before { content: "/ "; color: var(--biru); }
+
+/* Pemisah navigasi berupa garis miring */
+.nav-miring > li + li::before {
+  content: "/";
+  margin: 0 0.9rem;
+  color: #b8bcc4;
+  font-weight: 400;
+}
 
 /* --- Skip link: terlihat hanya saat difokus keyboard ---------------------- */
 .tautan-lewati {
@@ -11,36 +56,67 @@
   left: 1rem;
   top: -4rem;
   z-index: 100;
-  border-radius: 0.75rem;
-  background: #2563eb;
-  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  background: var(--biru);
+  padding: 0.5rem 1.1rem;
   font-size: 0.875rem;
   font-weight: 600;
   color: #ffffff;
-  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
   transition: top 0.15s ease;
 }
 .tautan-lewati:focus { top: 1rem; }
 
 /* --- Fokus keyboard yang konsisten di seluruh aplikasi -------------------- */
 :where(a, button, input, select, textarea, [tabindex]):focus-visible {
-  outline: 2px solid #2563eb;
+  outline: 2px solid var(--biru);
   outline-offset: 2px;
   border-radius: 0.75rem;
 }
 #konten-utama:focus { outline: none; }
 
-/* --- Cincin dekoratif di belakang organ ---------------------------------- */
-.cincin-organ {
+/* --- Strip marquee biru --------------------------------------------------- */
+.marquee {
+  overflow: hidden;
+  border-radius: 9999px;
+  background: var(--biru);
+  color: #ffffff;
+  white-space: nowrap;
+}
+.marquee-jalur {
+  display: inline-flex;
+  gap: 0;
+  animation: marquee 28s linear infinite;
+}
+.marquee-jalur > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 0.7rem 0.625rem;
+  font-family: "Inter Tight", Inter, system-ui, sans-serif;
+  font-size: 1.05rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+.marquee-jalur > span::after {
+  content: "+";
+  font-weight: 400;
+  opacity: 0.75;
+}
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* --- Piringan putih di belakang organ ------------------------------------- */
+.piringan-organ {
   position: absolute;
   left: 50%;
-  top: 50%;
+  top: 52%;
   aspect-ratio: 1;
-  width: min(74%, 26rem);
+  width: min(72%, 25rem);
   transform: translate(-50%, -50%);
   border-radius: 9999px;
-  border: 1px solid rgba(37, 99, 235, 0.18);
-  background: radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.95), rgba(219, 234, 254, 0.45) 60%, rgba(219, 234, 254, 0) 72%);
+  background: radial-gradient(circle at 50% 40%, #ffffff 0%, #f5f6f8 55%, rgba(245, 246, 248, 0) 72%);
   pointer-events: none;
 }
 
@@ -68,32 +144,31 @@
 .nomor-titik {
   display: grid;
   place-items: center;
-  height: 1.7rem;
-  width: 1.7rem;
+  height: 1.5rem;
+  width: 1.5rem;
   border-radius: 9999px;
   background: #ffffff;
-  color: #1d4ed8;
-  font-size: 0.72rem;
-  font-weight: 700;
-  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.55), 0 6px 16px rgba(15, 23, 42, 0.18);
+  color: #111827;
+  font-size: 0.68rem;
+  font-weight: 600;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.45), 0 4px 14px rgba(17, 24, 39, 0.22);
   transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
 }
 .titik-3d:hover .nomor-titik,
 .titik-3d:focus-visible .nomor-titik { transform: scale(1.12); }
 .titik-3d[aria-pressed="true"] .nomor-titik {
-  background: #2563eb;
+  background: var(--biru);
   color: #ffffff;
-  box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.22), 0 8px 20px rgba(37, 99, 235, 0.4);
+  box-shadow: 0 0 0 4px rgba(26, 109, 255, 0.22), 0 6px 18px rgba(26, 109, 255, 0.4);
 }
 .nama-titik {
   white-space: nowrap;
   border-radius: 9999px;
-  background: #ffffff;
-  padding: 0.25rem 0.7rem;
+  background: #111827;
+  padding: 0.3rem 0.75rem;
   font-size: 11px;
-  font-weight: 600;
-  color: #334155;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+  font-weight: 500;
+  color: #ffffff;
   opacity: 0;
   transform: translateX(-0.35rem);
   transition: opacity 0.18s ease, transform 0.18s ease;
@@ -110,13 +185,10 @@
 .titik-2d .titik-3d { transform: translate(-50%, -50%); }
 
 /* --- Baris pustaka bagian yang sedang dipilih ---------------------------- */
-.baris-pustaka { transition: background 0.15s ease, box-shadow 0.15s ease; }
-.baris-terpilih {
-  background: #eff6ff;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.12);
-}
+.baris-pustaka { transition: background 0.15s ease; }
+.baris-terpilih { background: #ffffff; }
 .baris-terpilih .nomor-pustaka {
-  background: #2563eb;
+  background: var(--biru);
   color: #ffffff;
 }
 
@@ -134,4 +206,5 @@
     animation-duration: 0.001ms !important;
     transition-duration: 0.001ms !important;
   }
+  .marquee-jalur { animation: none; }
 }
