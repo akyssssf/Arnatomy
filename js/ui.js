@@ -37,7 +37,7 @@ window.App = window.App || {};
     const kotak = document.createElement('div');
     kotak.className =
       v.alert({ tipe: tipe || 'sukses' }) +
-      ' pointer-events-auto max-w-md bg-white shadow-[0_10px_30px_rgba(15,23,42,0.14)]';
+      ' pointer-events-auto max-w-md rounded-full bg-neutral-900 px-5 text-white shadow-[0_10px_30px_rgba(0,0,0,0.18)]';
     kotak.textContent = pesan;
     wadah.appendChild(kotak);
     window.setTimeout(function () { kotak.remove(); }, 3800);
@@ -59,18 +59,18 @@ window.App = window.App || {};
 
     const backdrop = document.createElement('div');
     backdrop.className =
-      'fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 p-4 backdrop-blur-sm sm:items-center';
+      'fixed inset-0 z-50 flex items-end justify-center bg-neutral-900/45 p-4 sm:items-center';
     backdrop.innerHTML =
       '<section role="dialog" aria-modal="true" aria-labelledby="' + idJudul + '" ' +
-        'class="w-full ' + (opsi.lebar || 'max-w-lg') + ' rounded-2xl bg-white p-1 shadow-[0_24px_60px_rgba(15,23,42,0.24)]">' +
+        'class="w-full ' + (opsi.lebar || 'max-w-lg') + ' rounded-3xl bg-[#f1f2f4] p-2">' +
         '<header class="flex items-start justify-between gap-4 px-4 pb-2 pt-4">' +
-          '<h2 id="' + idJudul + '" class="text-base font-bold tracking-tight">' + esc(opsi.judul) + '</h2>' +
+          '<h2 id="' + idJudul + '" class="titik-biru text-xl font-semibold">' + esc(opsi.judul) + '</h2>' +
           '<button type="button" data-tutup-modal aria-label="Tutup dialog" ' +
-            'class="grid h-8 w-8 place-items-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700">' +
+            'class="grid h-9 w-9 place-items-center rounded-full bg-white text-neutral-500 transition hover:text-neutral-900">' +
             App.ikon('silang', 'h-4 w-4') +
           '</button>' +
         '</header>' +
-        '<div class="px-4 pb-4" data-isi-modal>' + opsi.isi + '</div>' +
+        '<div class="rounded-2xl bg-white p-4" data-isi-modal>' + opsi.isi + '</div>' +
       '</section>';
 
     lapisan.appendChild(backdrop);
@@ -113,26 +113,41 @@ window.App = window.App || {};
     return '<span class="inline-block ' + s + ' animate-spin rounded-full border-2 border-current border-t-transparent opacity-70" aria-hidden="true"></span>';
   }
 
-  function judulHalaman(judul, deskripsi, id) {
+  /**
+   * Kepala halaman bergaya editorial: label mikro, judul besar bertitik biru,
+   * dan keterangan pendek.
+   */
+  function judulHalaman(judul, deskripsi, id, kicker) {
     return (
-      '<header class="mb-5 pt-5">' +
-        '<h1' + (id ? ' id="' + id + '"' : '') + ' class="text-2xl font-bold tracking-tight sm:text-[1.75rem]">' +
+      '<header class="mb-6 pt-6 sm:pt-8">' +
+        (kicker ? '<p class="mikro mb-3">' + esc(kicker) + '</p>' : '') +
+        '<h1' + (id ? ' id="' + id + '"' : '') + ' class="titik-biru text-4xl font-semibold leading-[0.95] sm:text-5xl lg:text-6xl">' +
           esc(judul) +
         '</h1>' +
-        (deskripsi ? '<p class="mt-1.5 max-w-2xl text-sm leading-relaxed text-slate-500">' + esc(deskripsi) + '</p>' : '') +
+        (deskripsi ? '<p class="mt-4 max-w-xl text-sm leading-relaxed text-neutral-500">' + esc(deskripsi) + '</p>' : '') +
       '</header>'
+    );
+  }
+
+  /** Strip marquee biru; daftar teks diulang dua kali agar animasinya mulus. */
+  function marquee(daftar, label) {
+    const isi = daftar.map(function (t) { return '<span>' + esc(t) + '</span>'; }).join('');
+    return (
+      '<div class="marquee" role="marquee" aria-label="' + esc(label || 'Sorotan') + '">' +
+        '<div class="marquee-jalur" aria-hidden="true">' + isi + isi + '</div>' +
+      '</div>'
     );
   }
 
   function kondisiKosong(judul, deskripsi, tombolHtml) {
     return (
-      '<div class="' + App.v.kartu({ padding: 'lg' }) + ' flex flex-col items-start gap-3 sm:flex-row sm:items-center">' +
-        '<span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-600">' +
+      '<div class="' + App.v.kartu({ padding: 'lg' }) + ' flex flex-col items-start gap-4 sm:flex-row sm:items-center">' +
+        '<span class="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#f1f2f4] text-neutral-700">' +
           App.ikon('info', 'h-5 w-5') +
         '</span>' +
         '<div class="flex-1">' +
-          '<h2 class="text-sm font-bold">' + esc(judul) + '</h2>' +
-          '<p class="mt-0.5 max-w-lg text-sm text-slate-500">' + esc(deskripsi) + '</p>' +
+          '<h2 class="text-base font-semibold">' + esc(judul) + '</h2>' +
+          '<p class="mt-0.5 max-w-lg text-sm text-neutral-500">' + esc(deskripsi) + '</p>' +
         '</div>' +
         (tombolHtml || '') +
       '</div>'
@@ -147,6 +162,7 @@ window.App = window.App || {};
     bukaModal: bukaModal,
     spinner: spinner,
     judulHalaman: judulHalaman,
+    marquee: marquee,
     kondisiKosong: kondisiKosong
   };
 })(window.App);

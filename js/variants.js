@@ -47,21 +47,21 @@ window.App = window.App || {};
 
   /* ---------------- Tombol ---------------- */
   const tombol = cva(
-    'inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition ' +
+    'inline-flex items-center justify-center gap-2 rounded-full font-medium transition ' +
       'disabled:cursor-not-allowed disabled:opacity-50',
     {
       variants: {
         variant: {
-          utama: 'bg-blue-600 text-white shadow-[0_6px_16px_rgba(37,99,235,0.28)] hover:bg-blue-700',
-          sekunder: 'bg-blue-50 text-blue-700 hover:bg-blue-100',
-          garis: 'bg-white text-slate-600 shadow-[0_1px_3px_rgba(15,23,42,0.08)] hover:text-blue-700',
-          halus: 'text-slate-500 hover:bg-slate-100 hover:text-slate-900',
-          bahaya: 'bg-amber-500 text-white shadow-[0_6px_16px_rgba(245,158,11,0.28)] hover:bg-amber-600'
+          utama: 'bg-[#1a6dff] text-white hover:bg-[#0d5cec]',
+          sekunder: 'bg-neutral-900 text-white hover:bg-neutral-700',
+          garis: 'bg-white text-neutral-900 hover:bg-neutral-100',
+          halus: 'text-neutral-600 hover:bg-black/5 hover:text-neutral-900',
+          bahaya: 'bg-amber-500 text-white hover:bg-amber-600'
         },
         ukuran: {
-          sm: 'px-3 py-1.5 text-xs',
-          md: 'px-4 py-2.5 text-sm',
-          lg: 'px-5 py-3 text-sm'
+          sm: 'px-3.5 py-1.5 text-xs',
+          md: 'px-5 py-2.5 text-sm',
+          lg: 'px-6 py-3 text-sm'
         },
         lebar: { auto: '', penuh: 'w-full' }
       },
@@ -70,31 +70,34 @@ window.App = window.App || {};
   );
 
   /* ---------------- Badge status ---------------- */
-  const badge = cva('inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold', {
-    variants: {
-      status: {
-        draft: 'bg-amber-50 text-amber-700',
-        tervalidasi: 'bg-emerald-50 text-emerald-700',
-        baru: 'bg-rose-50 text-rose-600',
-        ditindaklanjuti: 'bg-blue-50 text-blue-700',
-        dasar: 'bg-slate-100 text-slate-600',
-        dimmed: 'bg-indigo-50 text-indigo-600',
-        netral: 'bg-slate-100 text-slate-500'
-      }
-    },
-    defaultVariants: { status: 'netral' }
-  });
+  const badge = cva(
+    'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.08em]',
+    {
+      variants: {
+        status: {
+          draft: 'bg-amber-100 text-amber-800',
+          tervalidasi: 'bg-emerald-100 text-emerald-800',
+          baru: 'bg-[#1a6dff] text-white',
+          ditindaklanjuti: 'bg-neutral-900 text-white',
+          dasar: 'bg-black/5 text-neutral-600',
+          dimmed: 'bg-neutral-900 text-white',
+          netral: 'bg-black/5 text-neutral-500'
+        }
+      },
+      defaultVariants: { status: 'netral' }
+    }
+  );
 
   /* ---------------- Kartu ---------------- */
-  const kartu = cva('rounded-2xl bg-white shadow-[0_2px_14px_rgba(30,58,138,0.06)]', {
+  const kartu = cva('rounded-2xl', {
     variants: {
       nada: {
-        netral: '',
-        brand: 'bg-gradient-to-br from-blue-600 to-blue-500 text-white shadow-[0_10px_30px_rgba(37,99,235,0.3)]',
-        aksen: 'bg-blue-50 shadow-none'
+        netral: 'bg-white',
+        brand: 'bg-[#1a6dff] text-white',
+        aksen: 'bg-[#f1f2f4]'
       },
       interaktif: {
-        true: 'transition hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(30,58,138,0.12)]',
+        true: 'transition hover:bg-[#fafafa]',
         false: ''
       },
       padding: { sm: 'p-4', md: 'p-5', lg: 'p-6' }
@@ -106,20 +109,20 @@ window.App = window.App || {};
   const bubble = cva('max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed', {
     variants: {
       peran: {
-        user: 'ml-auto rounded-br-md bg-blue-600 text-white shadow-[0_4px_12px_rgba(37,99,235,0.25)]',
-        ai: 'mr-auto rounded-bl-md bg-slate-100 text-slate-700',
-        sistem: 'mx-auto bg-blue-50 text-xs text-blue-700'
+        user: 'ml-auto rounded-br-md bg-[#1a6dff] text-white',
+        ai: 'mr-auto rounded-bl-md bg-[#f1f2f4] text-neutral-800',
+        sistem: 'mx-auto bg-black/5 text-xs text-neutral-600'
       }
     },
     defaultVariants: { peran: 'ai' }
   });
 
   /* ---------------- Tombol toggle layer anatomi ---------------- */
-  const toggleLayer = cva('rounded-full px-3.5 py-1.5 text-xs font-semibold transition', {
+  const toggleLayer = cva('rounded-full px-3.5 py-1.5 text-xs font-medium transition', {
     variants: {
       aktif: {
-        true: 'bg-blue-600 text-white shadow-[0_4px_12px_rgba(37,99,235,0.28)]',
-        false: 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+        true: 'bg-neutral-900 text-white',
+        false: 'bg-white text-neutral-500 hover:text-neutral-900'
       }
     },
     defaultVariants: { aktif: 'false' }
@@ -131,7 +134,7 @@ window.App = window.App || {};
       tipe: {
         error: 'bg-rose-50 text-rose-700',
         sukses: 'bg-emerald-50 text-emerald-700',
-        info: 'bg-blue-50 text-blue-700'
+        info: 'bg-black/5 text-neutral-700'
       }
     },
     defaultVariants: { tipe: 'info' }
@@ -139,12 +142,12 @@ window.App = window.App || {};
 
   /* ---------------- Field input ---------------- */
   const input = cva(
-    'w-full rounded-xl px-3.5 py-2.5 text-sm text-slate-900 transition ' +
-      'placeholder:text-slate-400 focus:outline-none focus:ring-2',
+    'w-full rounded-xl px-3.5 py-2.5 text-sm text-neutral-900 transition ' +
+      'placeholder:text-neutral-400 focus:outline-none focus:ring-2',
     {
       variants: {
         keadaan: {
-          normal: 'bg-slate-100 focus:bg-white focus:ring-blue-500',
+          normal: 'bg-[#f1f2f4] focus:bg-white focus:ring-[#1a6dff]',
           salah: 'bg-rose-50 ring-1 ring-rose-400 focus:ring-rose-500'
         }
       },
@@ -153,11 +156,11 @@ window.App = window.App || {};
   );
 
   /* ---------------- Tab (dashboard admin) ---------------- */
-  const tab = cva('rounded-full px-4 py-2 text-sm font-semibold transition', {
+  const tab = cva('rounded-full px-4 py-2 text-sm font-medium transition', {
     variants: {
       terpilih: {
-        true: 'bg-blue-600 text-white shadow-[0_6px_16px_rgba(37,99,235,0.28)]',
-        false: 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
+        true: 'bg-neutral-900 text-white',
+        false: 'text-neutral-500 hover:text-neutral-900'
       }
     },
     defaultVariants: { terpilih: 'false' }

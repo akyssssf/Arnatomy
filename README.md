@@ -184,10 +184,12 @@ Varian yang tersedia: `tombol`, `badge`, `kartu`, `bubble`, `toggleLayer`, `aler
 
 ## Bahasa rupa
 
-Latar halaman biru muda, kartu putih bersudut membulat dengan bayangan lembut, aksen
-biru `#2563eb`, dan ikon garis dari `js/ikon.js` (tanpa emoji, tanpa berkas font ikon
-tambahan). Header mengambang berisi navigasi berbentuk pil, sementara penampil organ
-memakai kartu besar dengan cincin dekoratif di belakang model.
+Gaya editorial: latar abu netral `#e6e8eb`, kartu putih dan abu muda bersudut membulat
+tanpa bayangan, judul besar dan rapat dengan Inter Tight, titik biru `#1a6dff` di akhir
+judul, label mikro berawalan garis miring ("/ ORGAN"), navigasi teks dipisah garis miring,
+serta satu strip marquee biru. Ikon garis berasal dari `js/ikon.js` (inline SVG). Biru
+dipakai hemat: tombol utama, titik, strip, dan penanda aktif. Fon dimuat dari Google
+Fonts dengan cadangan `system-ui`.
 
 ## Aksesibilitas
 

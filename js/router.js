@@ -32,11 +32,11 @@ window.App = window.App || {};
       render: function () {
         return (
           '<section class="py-16 text-center">' +
-            '<span class="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-blue-50 text-blue-600">' +
+            '<span class="mx-auto grid h-12 w-12 place-items-center rounded-full bg-white text-neutral-700">' +
               App.ikon('info', 'h-6 w-6') +
             '</span>' +
-            '<h1 class="mt-4 text-2xl font-bold tracking-tight">Halaman tidak ditemukan</h1>' +
-            '<p class="mt-1 text-sm text-slate-500">Rute <code class="rounded-md bg-slate-100 px-1.5 py-0.5">#/' +
+            '<h1 class="titik-biru mt-4 text-3xl font-semibold">Halaman tidak ditemukan</h1>' +
+            '<p class="mt-1 text-sm text-neutral-500">Rute <code class="rounded-md bg-[#f1f2f4] px-1.5 py-0.5">#/' +
               App.ui.esc(rute) + '</code> tidak tersedia.</p>' +
             '<a href="#/' + RUTE_DEFAULT + '" class="' + App.v.tombol({ ukuran: 'md', class: 'mt-5' }) + '">Kembali ke Beranda</a>' +
           '</section>'
