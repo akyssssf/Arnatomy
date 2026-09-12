@@ -74,6 +74,9 @@ h1, h2, h3, .tampilan {
   border-radius: 0.75rem;
 }
 #konten-utama:focus { outline: none; }
+/* Judul panel menerima fokus programatik agar pembaca layar membacanya,
+   tetapi bukan elemen interaktif sehingga tidak perlu cincin fokus. */
+#judul-panel:focus { outline: none; }
 
 /* --- Strip marquee biru --------------------------------------------------- */
 .marquee {

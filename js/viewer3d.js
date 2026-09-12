@@ -156,6 +156,44 @@ window.App = window.App || {};
     const gltf = await muatModel(loader, opsi.urlModel, opsi.saatProgres);
     const organ = gltf.scene;
 
+    /* Sorotan area: model organ hanya satu mesh, jadi bagian yang dipilih
+       ditandai di shader dengan mewarnai fragmen di sekitar titik terpilih
+       (tint biru lembut + cincin tipis di tepi). Uniform dibagi ke semua
+       material agar cukup diperbarui sekali. */
+    const uniformSorot = {
+      uSorot: { value: new THREE.Vector3() },
+      uRadius: { value: 0.16 },
+      uKuat: { value: 0 },
+      uWarna: { value: new THREE.Color(0x1a6dff) }
+    };
+    organ.traverse(function (obj) {
+      if (!obj.isMesh || !obj.material) return;
+      const daftarBahan = Array.isArray(obj.material) ? obj.material : [obj.material];
+      daftarBahan.forEach(function (bahan) {
+        bahan.onBeforeCompile = function (shader) {
+          Object.assign(shader.uniforms, uniformSorot);
+          shader.vertexShader = shader.vertexShader
+            .replace('#include <common>', '#include <common>\nvarying vec3 vPosSorot;')
+            .replace('#include <project_vertex>',
+              '#include <project_vertex>\nvPosSorot = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+          shader.fragmentShader = shader.fragmentShader
+            .replace('#include <common>',
+              '#include <common>\nvarying vec3 vPosSorot;\nuniform vec3 uSorot;\nuniform float uRadius;\nuniform float uKuat;\nuniform vec3 uWarna;')
+            .replace('#include <dithering_fragment>',
+              '#include <dithering_fragment>\n' +
+              '{\n' +
+              '  float jarakSorot = distance(vPosSorot, uSorot);\n' +
+              '  float isi = 1.0 - smoothstep(uRadius * 0.35, uRadius, jarakSorot);\n' +
+              '  float cincin = smoothstep(uRadius * 0.88, uRadius * 0.96, jarakSorot) * (1.0 - smoothstep(uRadius * 0.98, uRadius * 1.05, jarakSorot));\n' +
+              '  gl_FragColor.rgb = mix(gl_FragColor.rgb, uWarna, isi * uKuat * 0.38);\n' +
+              '  gl_FragColor.rgb += uWarna * cincin * uKuat * 0.55;\n' +
+              '}');
+        };
+        bahan.needsUpdate = true;
+      });
+    });
+    let kuatTujuan = 0;   // 1 saat ada bagian terpilih, 0 saat tidak
+
     const kotak = new THREE.Box3().setFromObject(organ);
     const ukuran = kotak.getSize(new THREE.Vector3());
     const pusat = kotak.getCenter(new THREE.Vector3());
@@ -274,6 +312,13 @@ window.App = window.App || {};
         if (controls.target.distanceTo(targetOrbit) < 0.004) targetOrbit = null;
         perluGambar = true;
       }
+      if (Math.abs(uniformSorot.uKuat.value - kuatTujuan) > 0.005) {
+        uniformSorot.uKuat.value += (kuatTujuan - uniformSorot.uKuat.value) * 0.1;
+        perluGambar = true;
+      } else if (uniformSorot.uKuat.value !== kuatTujuan) {
+        uniformSorot.uKuat.value = kuatTujuan;
+        perluGambar = true;
+      }
       if (geserSekarang.x !== geserTujuan.x || geserSekarang.y !== geserTujuan.y) {
         geserSekarang.x += (geserTujuan.x - geserSekarang.x) * 0.12;
         geserSekarang.y += (geserTujuan.y - geserSekarang.y) * 0.12;
@@ -326,7 +371,15 @@ window.App = window.App || {};
       posisiAwal: posisiAwal,
       arahkanKamera: function (posisi) { targetKamera = posisi; perluGambar = true; },
       arahkanOrbit: function (titikPusat) { targetOrbit = titikPusat; perluGambar = true; },
-      setGeser: function (px, py) { geserTujuan.x = px || 0; geserTujuan.y = py || 0; perluGambar = true; }
+      setGeser: function (px, py) { geserTujuan.x = px || 0; geserTujuan.y = py || 0; perluGambar = true; },
+      setSorot: function (posisi, radius) {
+        if (posisi) {
+          uniformSorot.uSorot.value.copy(posisi);
+          uniformSorot.uRadius.value = radius || 0.16;
+        }
+        kuatTujuan = posisi ? 1 : 0;
+        perluGambar = true;
+      }
     };
   }
 
@@ -416,6 +469,13 @@ window.App = window.App || {};
     sesi.arahkanKamera(pusat.clone().addScaledVector(arah, jarak));
   }
 
+  /** Menyorot area permukaan organ di sekitar titik; null untuk mematikan sorotan. */
+  function sorotTitik(idTitik) {
+    if (!sesi) return;
+    const t = idTitik === null ? null : sesi.titik.find(function (x) { return x.id === idTitik; });
+    sesi.setSorot(t ? t.posisi : null, 0.16);
+  }
+
   /** Mengembalikan pusat orbit dan jarak ke keadaan semula, arah pandang dipertahankan. */
   function lepasFokus() {
     if (!sesi) return;
@@ -475,6 +535,7 @@ window.App = window.App || {};
     hadapkanKe: hadapkanKe,
     fokusKe: fokusKe,
     lepasFokus: lepasFokus,
+    sorotTitik: sorotTitik,
     geserTampilan: geserTampilan,
     cuplikan: cuplikan
   };
