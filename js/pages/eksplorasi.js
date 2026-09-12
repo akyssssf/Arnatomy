@@ -1,12 +1,12 @@
 /* ==========================================================================
-   pages/eksplorasi.js — Halaman Eksplorasi (model organ 3D)
+   pages/eksplorasi.js — Halaman Eksplorasi (model organ 3D layar penuh)
    Mencakup FR-03 (tampilan model), FR-04 (rotasi & zoom), FR-05 (toggle layer),
    FR-06 (label dasar), FR-07 (label dimmed expand in-place), FR-09 (lapor),
    dan FR-14 (pencatatan riwayat belajar otomatis).
 
-   Tata letak tiga kolom: pustaka bagian, penampil model, panel penjelasan.
-   Bila WebGL atau berkas model gagal dimuat, halaman turun ke ilustrasi SVG
-   dua dimensi dengan titik interaktif yang sama.
+   Model mengisi seluruh lebar halaman. Penjelasan bagian muncul di panel
+   samping yang meluncur masuk saat titik diketuk; daftar bagian tersedia
+   di panel yang sama sebagai jalan masuk untuk pengguna keyboard.
    ========================================================================== */
 window.App = window.App || {};
 window.App.pages = window.App.pages || {};
@@ -21,37 +21,12 @@ window.App.pages = window.App.pages || {};
   /* State lokal halaman */
   let riwayatBerjalan = null;   // entri learning_history yang sedang aktif
   let bagianAktif = null;       // id bagian yang penjelasannya sedang dibuka
-  let mode3d = false;           // false berarti sedang memakai ilustrasi cadangan
+  let mode3d = false;           // false berarti sedang memakai gambar cadangan
+  let pemicuTerakhir = null;    // elemen yang membuka panel, untuk mengembalikan fokus
 
   /* ---------------------------------------------------------------- *
    * Potongan markup
    * ---------------------------------------------------------------- */
-  function barisPustaka(bagian, indeks) {
-    const dimmed = App.aksi.kontenBagian(bagian.id_bagian, 'dimmed');
-    const induk = bagian.parent_bagian_id ? App.aksi.bagianById(bagian.parent_bagian_id) : null;
-    return (
-      '<li>' +
-        '<button type="button" tabindex="0" data-pilih-bagian="' + bagian.id_bagian + '" ' +
-          'class="baris-pustaka flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left hover:bg-white">' +
-          '<span class="nomor-pustaka grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white text-xs font-semibold text-neutral-700">' +
-            (indeks + 1) +
-          '</span>' +
-          '<span class="min-w-0 flex-1">' +
-            '<span class="block truncate text-sm font-semibold">' + ui.esc(bagian.nama_bagian_internal) + '</span>' +
-            '<span class="block truncate text-[11px] text-neutral-400">' +
-              (induk ? 'Sub-bagian ' + ui.esc(induk.nama_bagian_internal) : 'Label dasar') +
-            '</span>' +
-          '</span>' +
-          (dimmed
-            ? '<span class="h-2 w-2 shrink-0 rounded-full bg-[#1a6dff]" title="Punya label dimmed">' +
-                '<span class="sr-only">Punya label dimmed</span>' +
-              '</span>'
-            : '') +
-        '</button>' +
-      '</li>'
-    );
-  }
-
   function tombolLayer(layer) {
     const aktif = App.state.ui.layerAktif[layer.nama_layer];
     return (
@@ -66,24 +41,38 @@ window.App.pages = window.App.pages || {};
     return (
       '<button type="button" data-alat="' + aksi + '" aria-label="' + ui.esc(label) + '" title="' + ui.esc(label) + '" ' +
         (tombolToggle ? 'aria-pressed="false" ' : '') +
-        'class="kaca grid h-10 w-10 place-items-center rounded-full text-neutral-700 transition ' +
+        'class="kaca grid h-11 w-11 place-items-center rounded-full text-neutral-700 transition ' +
         'hover:text-[#1a6dff] aria-pressed:bg-neutral-900 aria-pressed:text-white">' +
-        ikon(namaIkon, 'h-4 w-4') +
+        ikon(namaIkon, 'h-[18px] w-[18px]') +
       '</button>'
     );
+  }
+
+  function pilihanOrgan(organAktif) {
+    return App.state.organs.map(function (o) {
+      const aktif = o.id_organ === organAktif.id_organ;
+      return (
+        '<a href="#/eksplorasi?organ=' + o.id_organ + '" ' + (aktif ? 'aria-current="true" ' : '') +
+          'class="flex items-center gap-2 rounded-full py-1.5 pl-1.5 pr-4 text-sm font-medium transition ' +
+          (aktif ? 'bg-neutral-900 text-white' : 'text-neutral-600 hover:bg-black/5') + '">' +
+          '<img src="' + ui.esc(o.gambar) + '" alt="" aria-hidden="true" class="h-7 w-7 rounded-full bg-white object-contain p-0.5" />' +
+          ui.esc(o.nama_organ) +
+        '</a>'
+      );
+    }).join('');
   }
 
   function daftarFakta(fakta) {
     if (!fakta || !fakta.length) return '';
     return (
-      '<section class="mt-6">' +
+      '<section class="mt-5">' +
         '<h3 class="mikro">Fakta kunci</h3>' +
-        '<dl class="mt-3 divide-y divide-black/5">' +
+        '<dl class="mt-2 space-y-1">' +
           fakta.map(function (f) {
             return (
-              '<div class="grid grid-cols-[6.5rem_1fr] items-baseline gap-3 py-2.5">' +
+              '<div class="grid grid-cols-[6.5rem_1fr] items-baseline gap-3 rounded-lg px-2 py-1.5 odd:bg-[#f1f2f4]">' +
                 '<dt class="text-[11px] text-neutral-400">' + ui.esc(f.label) + '</dt>' +
-                '<dd class="text-sm font-medium text-neutral-800">' + ui.esc(f.nilai) + '</dd>' +
+                '<dd class="text-xs font-semibold text-neutral-700">' + ui.esc(f.nilai) + '</dd>' +
               '</div>'
             );
           }).join('') +
@@ -92,24 +81,44 @@ window.App.pages = window.App.pages || {};
     );
   }
 
-  /* Panel kanan saat belum ada bagian yang dipilih: ringkasan organ */
-  function panelOrgan() {
-    const organ = App.state.organs[0];
+  /* Isi panel: daftar bagian organ (alternatif keyboard untuk titik) */
+  function panelDaftar(organ) {
+    const bagianList = App.aksi.bagianOrgan(organ.id_organ);
     return (
-      '<p class="mikro">Organ</p>' +
-      '<h2 id="judul-panel" tabindex="-1" class="titik-biru mt-3 text-3xl font-semibold leading-tight">' +
-        ui.esc(organ.nama_organ) +
-      '</h2>' +
-      '<p class="mt-1 text-sm italic text-neutral-400">' + ui.esc(organ.julukan) + '</p>' +
-      '<p class="mt-4 text-sm leading-relaxed text-neutral-500">' + ui.esc(organ.deskripsi) + '</p>' +
+      '<p class="mikro">' + ui.esc(organ.sistem_organ) + '</p>' +
+      '<h2 id="judul-panel" tabindex="-1" class="titik-biru mt-2 text-3xl font-semibold">' + ui.esc(organ.nama_organ) + '</h2>' +
+      '<p class="mt-0.5 text-sm italic text-neutral-400">' + ui.esc(organ.julukan) + '</p>' +
+      '<p class="mt-3 text-sm leading-relaxed text-neutral-500">' + ui.esc(organ.deskripsi) + '</p>' +
       daftarFakta(organ.fakta) +
-      '<p class="mt-5 rounded-xl bg-[#f1f2f4] px-3.5 py-3 text-xs leading-relaxed text-neutral-500">' +
-        'Pilih titik bernomor pada model atau salah satu bagian pada daftar untuk membuka penjelasannya.' +
-      '</p>'
+      '<h3 class="mikro mt-6">Bagian tubuh</h3>' +
+      '<ul class="mt-2 space-y-1">' +
+        bagianList.map(function (bagian, i) {
+          const induk = bagian.parent_bagian_id ? App.aksi.bagianById(bagian.parent_bagian_id) : null;
+          const dimmed = App.aksi.kontenBagian(bagian.id_bagian, 'dimmed');
+          const sudah = App.state.learning_history.some(function (r) { return r.id_bagian === bagian.id_bagian; });
+          return (
+            '<li>' +
+              '<button type="button" data-pilih-bagian="' + bagian.id_bagian + '" ' +
+                'class="flex w-full items-center gap-3 rounded-xl px-2.5 py-2.5 text-left transition hover:bg-[#f1f2f4]">' +
+                '<span class="grid h-8 w-8 shrink-0 place-items-center rounded-full ' +
+                  (sudah ? 'bg-[#1a6dff] text-white' : 'bg-[#f1f2f4] text-neutral-500') + ' text-xs font-bold">' + (i + 1) + '</span>' +
+                '<span class="min-w-0 flex-1">' +
+                  '<span class="block truncate text-sm font-semibold">' + ui.esc(bagian.nama_bagian_internal) + '</span>' +
+                  '<span class="block truncate text-[11px] text-neutral-400">' +
+                    (induk ? 'Sub-bagian ' + ui.esc(induk.nama_bagian_internal) : 'Label dasar') +
+                    (dimmed ? ' &middot; ada label dimmed' : '') +
+                  '</span>' +
+                '</span>' +
+                ikon('panah', 'h-4 w-4 shrink-0 text-neutral-300') +
+              '</button>' +
+            '</li>'
+          );
+        }).join('') +
+      '</ul>'
     );
   }
 
-  /* Panel kanan untuk satu bagian tubuh */
+  /* Isi panel: penjelasan satu bagian tubuh */
   function panelBagian(bagian) {
     const dasar = App.aksi.kontenBagian(bagian.id_bagian, 'dasar');
     const dimmed = App.aksi.kontenBagian(bagian.id_bagian, 'dimmed');
@@ -117,50 +126,40 @@ window.App.pages = window.App.pages || {};
     const idDetail = 'detail-dimmed-' + bagian.id_bagian;
 
     const blokDimmed = dimmed
-      ? '<section class="mt-6">' +
+      ? '<section class="mt-5">' +
           '<button type="button" tabindex="0" data-buka-dimmed aria-expanded="false" aria-controls="' + idDetail + '" ' +
-            'class="w-full rounded-2xl bg-[#f1f2f4] px-4 py-3.5 text-left opacity-55 transition hover:opacity-100 focus-visible:opacity-100">' +
+            'class="w-full rounded-xl border border-dashed border-neutral-300 bg-[#f1f2f4]/60 px-3.5 py-3 text-left ' +
+            'opacity-60 transition hover:opacity-100 focus-visible:opacity-100">' +
             '<span class="flex items-center justify-between gap-2">' +
-              '<span class="text-sm font-semibold">' + ui.esc(dimmed.judul_tampil) + '</span>' +
+              '<span class="text-xs font-bold">' + ui.esc(dimmed.judul_tampil) + '</span>' +
               '<span class="' + v.badge({ status: 'dimmed' }) + '">dimmed</span>' +
             '</span>' +
-            '<span class="mt-1 block text-[11px] text-neutral-500" data-teks-petunjuk>' +
-              'Ketuk untuk membuka penjelasan lanjutan' +
-            '</span>' +
+            '<span class="mt-1 block text-[11px] text-neutral-400" data-teks-petunjuk>Ketuk untuk membuka penjelasan lanjutan</span>' +
           '</button>' +
           '<div id="' + idDetail + '" class="akordeon" hidden>' +
-            '<p class="mt-2 rounded-2xl border border-black/5 p-4 text-sm leading-relaxed text-neutral-600">' +
-              ui.esc(dimmed.deskripsi) +
-            '</p>' +
+            '<p class="mt-2 rounded-xl bg-[#f1f2f4] p-3.5 text-xs leading-relaxed text-neutral-600">' + ui.esc(dimmed.deskripsi) + '</p>' +
           '</div>' +
         '</section>'
-      : '<p class="mt-6 rounded-xl bg-[#f1f2f4] px-3.5 py-3 text-xs text-neutral-500">' +
-          'Tidak ada penjelasan lanjutan untuk bagian ini.' +
-        '</p>';
+      : '<p class="mt-5 rounded-xl bg-[#f1f2f4] px-3.5 py-2.5 text-xs text-neutral-400">Tidak ada penjelasan lanjutan untuk bagian ini.</p>';
 
     return (
-      '<div class="flex items-start justify-between gap-3">' +
+      '<button type="button" data-ke-daftar class="mikro mb-4 flex items-center gap-1.5 transition hover:text-neutral-900">' +
+        ikon('panah', 'h-3.5 w-3.5 rotate-180') + 'Semua bagian' +
+      '</button>' +
+      '<div class="flex items-start justify-between gap-2">' +
         '<div>' +
           '<p class="mikro">Bagian tubuh</p>' +
-          '<h2 id="judul-panel" tabindex="-1" class="titik-biru mt-3 text-3xl font-semibold leading-tight">' +
-            ui.esc(bagian.nama_bagian_internal) +
-          '</h2>' +
-          (induk ? '<p class="mt-1 text-sm italic text-neutral-400">Sub-bagian ' + ui.esc(induk.nama_bagian_internal) + '</p>' : '') +
+          '<h2 id="judul-panel" tabindex="-1" class="titik-biru mt-2 text-3xl font-semibold">' + ui.esc(bagian.nama_bagian_internal) + '</h2>' +
+          (induk ? '<p class="mt-0.5 text-sm italic text-neutral-400">Sub-bagian ' + ui.esc(induk.nama_bagian_internal) + '</p>' : '') +
         '</div>' +
-        '<span class="' + v.badge({ status: dasar.status_validasi === 'tervalidasi' ? 'tervalidasi' : 'draft' }) + ' mt-1 shrink-0">' +
-          ui.esc(dasar.status_validasi) +
-        '</span>' +
+        '<span class="' + v.badge({ status: dasar.status_validasi === 'tervalidasi' ? 'tervalidasi' : 'draft' }) + '">' + ui.esc(dasar.status_validasi) + '</span>' +
       '</div>' +
-      '<p class="mt-4 text-sm leading-relaxed text-neutral-500">' + ui.esc(dasar.deskripsi) + '</p>' +
+      '<p class="mt-3 text-sm leading-relaxed text-neutral-500">' + ui.esc(dasar.deskripsi) + '</p>' +
       daftarFakta(bagian.fakta) +
       blokDimmed +
-      '<div class="mt-6 flex flex-wrap gap-2">' +
-        '<button type="button" data-tanya-ai class="' + v.tombol({ ukuran: 'md' }) + '">' +
-          'Tanya Asisten AI' + ikon('panah', 'h-4 w-4') +
-        '</button>' +
-        '<button type="button" data-lapor class="' + v.tombol({ variant: 'garis', ukuran: 'md' }) + ' bg-[#f1f2f4]">' +
-          'Laporkan' +
-        '</button>' +
+      '<div class="mt-6 grid gap-2">' +
+        '<button type="button" data-tanya-ai class="' + v.tombol({ lebar: 'penuh' }) + '">' + ikon('chat', 'h-4 w-4') + 'Tanya Asisten AI</button>' +
+        '<button type="button" data-lapor class="' + v.tombol({ variant: 'garis', lebar: 'penuh' }) + ' bg-[#f1f2f4]">' + ikon('peringatan', 'h-4 w-4') + 'Laporkan kesalahan</button>' +
       '</div>'
     );
   }
@@ -168,104 +167,101 @@ window.App.pages = window.App.pages || {};
   App.pages.eksplorasi = {
     judul: 'Eksplorasi',
 
-    render: function () {
-      const organ = App.state.organs[0];
-      const layers = App.state.layers.slice().sort(function (a, b) { return a.urutan_tampil - b.urutan_tampil; });
+    render: function (ctx) {
+      const organ = App.aksi.pilihOrgan(ctx.query.organ || App.state.ui.organAktifId);
+      const layers = App.aksi.layerOrgan(organ.id_organ);
 
       return (
         '<section aria-labelledby="judul-eksplorasi">' +
-          '<header class="grid gap-6 pt-6 sm:pt-8 lg:grid-cols-[1fr_auto] lg:items-end">' +
+          '<div class="flex flex-wrap items-end justify-between gap-4 pt-4">' +
             '<div>' +
-              '<p class="mikro mb-3">' + ui.esc(organ.sistem_organ) + '</p>' +
-              '<h1 id="judul-eksplorasi" class="titik-biru text-4xl font-semibold leading-[0.95] sm:text-5xl lg:text-6xl">' +
-                'Eksplorasi<br />' + ui.esc(organ.nama_organ) +
-              '</h1>' +
+              '<p class="mikro mb-2">' + ui.esc(organ.sistem_organ) + '</p>' +
+              '<h1 id="judul-eksplorasi" class="titik-biru text-4xl font-semibold leading-none sm:text-5xl">' + ui.esc(organ.nama_organ) + '</h1>' +
             '</div>' +
-            '<p class="max-w-xs text-sm leading-relaxed text-neutral-500 lg:mb-2 lg:text-right">' +
-              'Seret model untuk memutar. Perbesar lewat tombol atau tahan Ctrl sambil menggulir.' +
-            '</p>' +
-          '</header>' +
+            '<div class="flex flex-wrap items-center gap-2">' +
+              '<nav aria-label="Pilih organ" class="flex items-center gap-1 rounded-full bg-white p-1">' + pilihanOrgan(organ) + '</nav>' +
+              '<button type="button" id="tombol-daftar" class="' + v.tombol({ variant: 'garis', ukuran: 'md' }) + '" aria-controls="panel-samping" aria-expanded="false">' +
+                ikon('lapisan', 'h-4 w-4') + 'Daftar bagian' +
+              '</button>' +
+            '</div>' +
+          '</div>' +
 
-          '<div class="mt-8 grid gap-4 lg:grid-cols-[14.5rem_minmax(0,1fr)_21rem]">' +
+          /* ---------- Panggung model layar penuh ---------- */
+          '<figure class="m-0 mt-5">' +
+            '<div id="panggung" class="relative overflow-hidden rounded-3xl bg-[#f1f2f4]">' +
+              '<div class="relative h-[min(78vh,52rem)] min-h-[26rem] w-full">' +
+                '<span class="piringan-organ" aria-hidden="true" style="width:min(64%,34rem)"></span>' +
+                '<div id="wadah-3d" class="absolute inset-0"></div>' +
+                '<div id="lapisan-titik" class="pointer-events-none absolute inset-0"></div>' +
 
-            /* ---------- Kolom tengah: penampil model ---------- */
-            '<div class="lg:col-start-2 lg:row-start-1">' +
-              '<figure class="muncul m-0">' +
-                '<div id="panggung" class="relative overflow-hidden rounded-3xl bg-[#f1f2f4]">' +
-
-                  /* Kotak model: kanvas, titik, dan alat dibatasi di dalamnya
-                     supaya bilah layer di bawahnya tidak menutupi organ. */
-                  '<div class="relative aspect-[4/3] w-full lg:aspect-auto lg:h-[32rem]">' +
-                    '<span class="piringan-organ" aria-hidden="true"></span>' +
-                    '<div id="wadah-3d" class="absolute inset-0"></div>' +
-                    '<div id="lapisan-titik" class="pointer-events-none absolute inset-0"></div>' +
-
-                    '<div id="status-3d" role="status" aria-live="polite" ' +
-                      'class="absolute inset-0 grid place-items-center bg-[#f1f2f4]/80 text-sm font-medium text-neutral-500">' +
-                      'Menyiapkan penampil 3D' +
-                    '</div>' +
-
-                    '<div class="absolute left-4 top-4 flex flex-col gap-2">' +
-                      tombolAlat('reset', 'Atur ulang tampilan', 'ulang', false) +
-                      tombolAlat('zoom-in', 'Perbesar', 'perbesar', false) +
-                      tombolAlat('zoom-out', 'Perkecil', 'perkecil', false) +
-                      tombolAlat('putar', 'Putar otomatis', 'putar', true) +
-                    '</div>' +
-
-                    '<p class="mikro pointer-events-none absolute right-5 top-5 hidden sm:block">Model 3D</p>' +
-                  '</div>' +
-
-                  /* Bilah kendali layer: menumpuk di bawah model pada layar
-                     sempit, melayang di dasar kartu pada layar lebar. */
-                  '<section aria-labelledby="judul-layer" ' +
-                    'class="kaca relative z-10 mx-4 mb-4 mt-2 flex flex-wrap items-center gap-2 rounded-3xl p-1.5 ' +
-                    'lg:absolute lg:bottom-4 lg:left-4 lg:mx-0 lg:mb-0 lg:mt-0 lg:w-fit">' +
-                    '<h2 id="judul-layer" class="mikro pl-3 pr-1">Layer</h2>' +
-                    layers.map(tombolLayer).join('') +
-                    '<p id="status-layer" class="sr-only" role="status" aria-live="polite"></p>' +
-                  '</section>' +
+                '<div id="status-3d" role="status" aria-live="polite" ' +
+                  'class="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#f1f2f4]/85 text-sm font-medium text-neutral-500">' +
+                  ui.maskot('maskot-goyang h-20 w-20') +
+                  '<span data-teks-status>Menyiapkan penampil 3D</span>' +
                 '</div>' +
 
-                '<figcaption class="muncul mt-3 px-1 text-[11px] text-neutral-400">' +
-                  'Gambar 1. Model 3D ' + ui.esc(organ.nama_organ) + ' (' + ui.esc(organ.file_model_3d) + '). ' +
-                  'Kamera AR perangkat tidak diaktifkan pada prototipe web.' +
-                '</figcaption>' +
-              '</figure>' +
+                '<div class="absolute left-4 top-4 flex flex-col gap-2">' +
+                  tombolAlat('reset', 'Atur ulang tampilan', 'ulang', false) +
+                  tombolAlat('zoom-in', 'Perbesar', 'perbesar', false) +
+                  tombolAlat('zoom-out', 'Perkecil', 'perkecil', false) +
+                  tombolAlat('putar', 'Putar otomatis', 'putar', true) +
+                '</div>' +
+
+                '<p class="mikro kaca pointer-events-none absolute right-4 top-4 hidden rounded-full px-3 py-1.5 sm:block">' +
+                  'Seret untuk memutar &middot; Ctrl + gulir untuk zoom' +
+                '</p>' +
+
+                '<section aria-labelledby="judul-layer" ' +
+                  'class="kaca absolute bottom-4 left-1/2 z-10 flex max-w-[calc(100%-2rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-1.5 rounded-full p-1.5">' +
+                  '<h2 id="judul-layer" class="mikro ml-2 mr-1 flex items-center gap-1.5">' + ikon('lapisan', 'h-4 w-4') + 'Layer</h2>' +
+                  layers.map(tombolLayer).join('') +
+                  '<p id="status-layer" class="sr-only" role="status" aria-live="polite"></p>' +
+                '</section>' +
+              '</div>' +
             '</div>' +
+            '<figcaption class="mt-3 px-1 text-[11px] text-neutral-400">' +
+              'Gambar 1. Model 3D ' + ui.esc(organ.nama_organ) + ' (' + ui.esc(organ.file_model_3d) + '). ' +
+              'Ketuk titik bernomor untuk membuka label; kamera AR perangkat tidak diaktifkan pada prototipe web.' +
+            '</figcaption>' +
+          '</figure>' +
+        '</section>' +
 
-            /* ---------- Kolom kanan: penjelasan ---------- */
-            '<aside aria-labelledby="judul-panel" class="lg:col-start-3 lg:row-start-1">' +
-              '<div id="panel-detail" class="muncul ' + v.kartu({ padding: 'lg' }) + ' lg:sticky lg:top-20">' +
-                panelOrgan() +
-              '</div>' +
-            '</aside>' +
-
-            /* ---------- Kolom kiri: pustaka bagian ---------- */
-            '<aside aria-labelledby="judul-pustaka" class="lg:col-start-1 lg:row-start-1">' +
-              '<div class="muncul ' + v.kartu({ nada: 'aksen', padding: 'sm' }) + ' lg:sticky lg:top-20">' +
-                '<h2 id="judul-pustaka" class="mikro px-3 pb-2 pt-1">Pustaka bagian</h2>' +
-                '<ul class="space-y-1">' + App.state.body_parts.map(barisPustaka).join('') + '</ul>' +
-              '</div>' +
-            '</aside>' +
+        /* ---------- Panel samping & tirai ---------- */
+        '<div id="tirai" class="tirai" aria-hidden="true"></div>' +
+        '<aside id="panel-samping" class="panel-samping flex flex-col bg-white shadow-[0_24px_60px_rgba(17,24,39,0.18)] md:my-3 md:mr-3 md:rounded-3xl max-md:rounded-t-3xl" ' +
+          'role="dialog" aria-modal="false" aria-labelledby="judul-panel" aria-hidden="true">' +
+          '<div class="flex items-center justify-between px-5 pt-4">' +
+            '<span class="h-1.5 w-10 rounded-full bg-neutral-200 md:hidden" aria-hidden="true"></span>' +
+            '<span class="mikro hidden md:inline">Penjelasan</span>' +
+            '<button type="button" data-tutup-panel aria-label="Tutup panel" ' +
+              'class="grid h-9 w-9 place-items-center rounded-full bg-[#f1f2f4] text-neutral-500 transition hover:text-neutral-900">' +
+              ikon('silang', 'h-4 w-4') +
+            '</button>' +
           '</div>' +
-        '</section>'
+          '<div id="isi-panel" class="flex-1 overflow-y-auto px-5 pb-6 pt-3"></div>' +
+        '</aside>'
       );
     },
 
-    mount: function () {
+    mount: function (ctx) {
+      const organ = App.aksi.organAktif();
       const wadah3d = document.getElementById('wadah-3d');
       const lapisanTitik = document.getElementById('lapisan-titik');
       const status3d = document.getElementById('status-3d');
-      const panel = document.getElementById('panel-detail');
+      const teksStatus = status3d.querySelector('[data-teks-status]');
       const statusLayer = document.getElementById('status-layer');
+      const panel = document.getElementById('panel-samping');
+      const isiPanel = document.getElementById('isi-panel');
+      const tirai = document.getElementById('tirai');
+      const tombolDaftar = document.getElementById('tombol-daftar');
 
       riwayatBerjalan = null;
       bagianAktif = null;
       mode3d = false;
+      pemicuTerakhir = null;
 
-      /* ---------- Titik interaktif dibuat sebagai elemen agar bisa
-                    diposisikan oleh penampil 3D setiap frame ---------- */
-      const titik = App.state.body_parts.map(function (bagian, indeks) {
+      /* ---------- Titik interaktif sebagai elemen agar bisa diposisikan viewer ---------- */
+      const titik = App.aksi.bagianOrgan(organ.id_organ).map(function (bagian, indeks) {
         const el = document.createElement('button');
         el.type = 'button';
         el.tabIndex = 0;
@@ -276,22 +272,22 @@ window.App.pages = window.App.pages || {};
         el.innerHTML =
           '<span class="nomor-titik">' + (indeks + 1) + '</span>' +
           '<span class="nama-titik">' + ui.esc(bagian.nama_bagian_internal) + '</span>';
-        el.addEventListener('click', function () { pilihBagian(bagian.id_bagian); });
+        el.addEventListener('click', function () { pilihBagian(bagian.id_bagian, el); });
         lapisanTitik.appendChild(el);
         const k = App.aksi.koordinat3d(bagian);
         return { id: bagian.id_bagian, el: el, x: k.x, y: k.y, z: k.z };
       });
 
-      /* ---------- Penampil 3D, dengan ilustrasi SVG sebagai cadangan ---------- */
+      /* ---------- Penampil 3D, dengan gambar statis sebagai cadangan ---------- */
       function pakaiCadangan2d(alasan) {
         mode3d = false;
-        /* Kotak berbanding 5:6 agar koordinat persen tetap sejajar dengan gambar */
         wadah3d.innerHTML =
-          '<div class="flex h-full w-full items-center justify-center p-3">' +
-            '<div id="kotak-2d" class="relative h-full" style="aspect-ratio: 5 / 6;"></div>' +
+          '<div class="flex h-full w-full items-center justify-center p-6">' +
+            '<div id="kotak-2d" class="relative h-full" style="aspect-ratio: 1 / 1;">' +
+              '<img src="' + ui.esc(organ.gambar) + '" alt="' + ui.esc(organ.nama_organ) + '" class="h-full w-full object-contain" />' +
+            '</div>' +
           '</div>';
         const kotak = wadah3d.querySelector('#kotak-2d');
-        kotak.innerHTML = App.svg.ilustrasiJantung();
         kotak.appendChild(lapisanTitik);
         lapisanTitik.className = 'titik-2d pointer-events-none absolute inset-0';
         titik.forEach(function (t) {
@@ -300,19 +296,18 @@ window.App.pages = window.App.pages || {};
           t.el.style.top = posisi.y + '%';
           t.el.hidden = false;
         });
-        status3d.className = 'absolute inset-x-4 bottom-4 rounded-xl bg-amber-100 px-3.5 py-2.5 text-xs text-amber-800';
-        status3d.textContent = 'Model 3D tidak dapat ditampilkan (' + alasan + ') Ilustrasi dua dimensi dipakai sebagai gantinya.';
-        terapkanSemuaLayer();
+        status3d.className = 'kaca absolute inset-x-4 top-16 z-10 rounded-2xl px-4 py-3 text-xs text-neutral-700 sm:left-auto sm:right-4 sm:top-16 sm:max-w-xs';
+        status3d.innerHTML = 'Model 3D tidak dapat ditampilkan (' + ui.esc(alasan) + ') Gambar dua dimensi dipakai sebagai gantinya.';
       }
 
       async function siapkanPenampil() {
         try {
-          status3d.textContent = 'Memuat model 3D';
+          teksStatus.textContent = 'Memuat model 3D';
           await App.viewer3d.init({
             wadah: wadah3d,
-            urlModel: App.state.organs[0].file_model_3d,
+            urlModel: organ.file_model_3d,
             titik: titik,
-            saatProgres: function (persen) { status3d.textContent = 'Memuat model 3D ' + persen + '%'; }
+            saatProgres: function (persen) { teksStatus.textContent = 'Memuat model 3D ' + persen + '%'; }
           });
           mode3d = true;
           status3d.hidden = true;
@@ -321,41 +316,27 @@ window.App.pages = window.App.pages || {};
           pakaiCadangan2d(kesalahan.message);
         }
       }
-
-      if (App.viewer3d) {
+      ui.saatViewer3dSiap(function (gagal) {
+        if (gagal) { pakaiCadangan2d(gagal.message); return; }
         siapkanPenampil();
-      } else {
-        /* Modul penampil dimuat sebagai ES module sehingga bisa selesai
-           belakangan; tunggu pengumumannya, dengan batas waktu wajar. */
-        const batas = window.setTimeout(function () {
-          pakaiCadangan2d('modul 3D tidak termuat.');
-        }, 10000);
-        document.addEventListener('viewer3d:siap', function () {
-          window.clearTimeout(batas);
-          siapkanPenampil();
-        }, { once: true });
-      }
+      });
 
       /* ---------- FR-05: toggle layer anatomi ---------- */
       function terapkanLayer(nama) {
-        const aktif = App.state.ui.layerAktif[nama];
-        if (mode3d) { App.viewer3d.setLapisan(nama, aktif); return; }
-        const grup = wadah3d.querySelector('[data-layer="' + nama + '"]');
-        if (grup) grup.classList.toggle('layer-mati', !aktif);
+        if (mode3d) App.viewer3d.setLapisan(nama, App.state.ui.layerAktif[nama]);
       }
       function terapkanSemuaLayer() {
         Object.keys(App.state.ui.layerAktif).forEach(terapkanLayer);
       }
-
       Array.prototype.forEach.call(document.querySelectorAll('[data-layer-toggle]'), function (tombol) {
         tombol.addEventListener('click', function () {
           const nama = tombol.getAttribute('data-layer-toggle');
-          const layer = App.state.layers.find(function (l) { return l.nama_layer === nama; });
+          const layer = App.aksi.layerOrgan(organ.id_organ).find(function (l) { return l.nama_layer === nama; });
           const aktifBaru = !App.state.ui.layerAktif[nama];
-
           App.state.ui.layerAktif[nama] = aktifBaru;
           tombol.setAttribute('aria-pressed', String(aktifBaru));
           tombol.className = v.toggleLayer({ aktif: String(aktifBaru) });
+          if (!mode3d) ui.toast('Layer hanya tersedia pada mode 3D.', 'info');
           terapkanLayer(nama);
           statusLayer.textContent = 'Layer ' + layer.label + (aktifBaru ? ' ditampilkan.' : ' disembunyikan.');
         });
@@ -364,7 +345,7 @@ window.App.pages = window.App.pages || {};
       /* ---------- FR-04: alat rotasi dan perbesaran ---------- */
       Array.prototype.forEach.call(document.querySelectorAll('[data-alat]'), function (tombol) {
         tombol.addEventListener('click', function () {
-          if (!mode3d) { ui.toast('Kendali 3D tidak tersedia pada ilustrasi cadangan.', 'info'); return; }
+          if (!mode3d) { ui.toast('Kendali 3D tidak tersedia pada gambar cadangan.', 'info'); return; }
           const aksi = tombol.getAttribute('data-alat');
           if (aksi === 'reset') App.viewer3d.reset();
           if (aksi === 'zoom-in') App.viewer3d.ubahJarak(0.82);
@@ -377,19 +358,40 @@ window.App.pages = window.App.pages || {};
         });
       });
 
-      /* ---------- FR-06, FR-07 & FR-14: memilih bagian ---------- */
-      function tandaiPilihan(idBagian) {
-        titik.forEach(function (t) {
-          t.el.setAttribute('aria-pressed', String(t.id === idBagian));
-        });
-        Array.prototype.forEach.call(document.querySelectorAll('[data-pilih-bagian]'), function (b) {
-          const terpilih = Number(b.getAttribute('data-pilih-bagian')) === idBagian;
-          b.classList.toggle('baris-terpilih', terpilih);
-          b.setAttribute('aria-current', terpilih ? 'true' : 'false');
-        });
+      /* ---------- Panel samping ---------- */
+      function bukaPanel(html, pemicu) {
+        isiPanel.innerHTML = html;
+        panel.classList.add('terbuka');
+        tirai.classList.add('terbuka');
+        panel.setAttribute('aria-hidden', 'false');
+        tombolDaftar.setAttribute('aria-expanded', 'true');
+        if (pemicu) pemicuTerakhir = pemicu;
+        pasangAksiPanel();
+        const judul = isiPanel.querySelector('#judul-panel');
+        if (judul) judul.focus({ preventScroll: true });
       }
 
-      function pilihBagian(idBagian) {
+      function tutupPanel() {
+        if (!panel.classList.contains('terbuka')) return;
+        panel.classList.remove('terbuka');
+        tirai.classList.remove('terbuka');
+        panel.setAttribute('aria-hidden', 'true');
+        tombolDaftar.setAttribute('aria-expanded', 'false');
+        App.aksi.tutupRiwayat(riwayatBerjalan);
+        riwayatBerjalan = null;
+        bagianAktif = null;
+        App.state.ui.bagianAktifId = null;
+        tandaiPilihan(null);
+        if (pemicuTerakhir && document.contains(pemicuTerakhir)) pemicuTerakhir.focus({ preventScroll: true });
+        pemicuTerakhir = null;
+      }
+
+      function tandaiPilihan(idBagian) {
+        titik.forEach(function (t) { t.el.setAttribute('aria-pressed', String(t.id === idBagian)); });
+      }
+
+      /* ---------- FR-06, FR-07 & FR-14: memilih bagian ---------- */
+      function pilihBagian(idBagian, pemicu) {
         const bagian = App.aksi.bagianById(idBagian);
         const dasar = App.aksi.kontenBagian(idBagian, 'dasar');
         if (!bagian || !dasar) return;
@@ -400,32 +402,40 @@ window.App.pages = window.App.pages || {};
         bagianAktif = idBagian;
         App.state.ui.bagianAktifId = idBagian;
 
-        panel.innerHTML = panelBagian(bagian);
-        pasangAksiPanel(bagian);
         tandaiPilihan(idBagian);
         if (mode3d) App.viewer3d.hadapkanKe(idBagian);
-        panel.querySelector('#judul-panel').focus();
+        bukaPanel(panelBagian(bagian), pemicu);
       }
 
-      function pasangAksiPanel(bagian) {
-        const dasar = App.aksi.kontenBagian(bagian.id_bagian, 'dasar');
-        const dimmed = App.aksi.kontenBagian(bagian.id_bagian, 'dimmed');
+      function pasangAksiPanel() {
+        const bagian = bagianAktif ? App.aksi.bagianById(bagianAktif) : null;
+
+        Array.prototype.forEach.call(isiPanel.querySelectorAll('[data-pilih-bagian]'), function (b) {
+          b.addEventListener('click', function () { pilihBagian(Number(b.getAttribute('data-pilih-bagian')), b); });
+        });
+
+        const keDaftar = isiPanel.querySelector('[data-ke-daftar]');
+        if (keDaftar) keDaftar.addEventListener('click', function () {
+          App.aksi.tutupRiwayat(riwayatBerjalan);
+          riwayatBerjalan = null;
+          bagianAktif = null;
+          tandaiPilihan(null);
+          bukaPanel(panelDaftar(organ));
+        });
 
         /* FR-07: label dimmed dibuka in-place tanpa berpindah halaman */
-        const tombolDimmed = panel.querySelector('[data-buka-dimmed]');
-        if (tombolDimmed) {
+        const tombolDimmed = isiPanel.querySelector('[data-buka-dimmed]');
+        if (tombolDimmed && bagian) {
           tombolDimmed.addEventListener('click', function () {
             const isi = document.getElementById(tombolDimmed.getAttribute('aria-controls'));
             const terbuka = tombolDimmed.getAttribute('aria-expanded') === 'true';
-
             tombolDimmed.setAttribute('aria-expanded', String(!terbuka));
-            tombolDimmed.classList.toggle('opacity-55', terbuka);
+            tombolDimmed.classList.toggle('opacity-60', terbuka);
             tombolDimmed.querySelector('[data-teks-petunjuk]').textContent =
               terbuka ? 'Ketuk untuk membuka penjelasan lanjutan' : 'Ketuk lagi untuk menutup';
-
             if (terbuka) {
               isi.classList.remove('akordeon-terbuka');
-              window.setTimeout(function () { isi.hidden = true; }, 200);
+              window.setTimeout(function () { isi.hidden = true; }, 220);
             } else {
               isi.hidden = false;
               window.requestAnimationFrame(function () { isi.classList.add('akordeon-terbuka'); });
@@ -434,30 +444,31 @@ window.App.pages = window.App.pages || {};
           });
         }
 
-        panel.querySelector('[data-tanya-ai]').addEventListener('click', function () {
+        const tanya = isiPanel.querySelector('[data-tanya-ai]');
+        if (tanya && bagian) tanya.addEventListener('click', function () {
           window.location.hash = '#/asisten?bagian=' + bagian.id_bagian;
         });
-        panel.querySelector('[data-lapor]').addEventListener('click', function () {
-          bukaFormLaporan(bagian, dasar, dimmed);
+        const lapor = isiPanel.querySelector('[data-lapor]');
+        if (lapor && bagian) lapor.addEventListener('click', function () {
+          bukaFormLaporan(bagian, App.aksi.kontenBagian(bagian.id_bagian, 'dasar'), App.aksi.kontenBagian(bagian.id_bagian, 'dimmed'));
         });
       }
 
-      Array.prototype.forEach.call(document.querySelectorAll('[data-pilih-bagian]'), function (tombol) {
-        tombol.addEventListener('click', function () {
-          pilihBagian(Number(tombol.getAttribute('data-pilih-bagian')));
-        });
-      });
-
-      /* Escape mengembalikan panel ke ringkasan organ */
-      function saatEscape(e) {
-        if (e.key !== 'Escape' || bagianAktif === null) return;
+      tombolDaftar.addEventListener('click', function () {
+        if (panel.classList.contains('terbuka') && !bagianAktif) { tutupPanel(); return; }
         App.aksi.tutupRiwayat(riwayatBerjalan);
         riwayatBerjalan = null;
         bagianAktif = null;
-        App.state.ui.bagianAktifId = null;
-        panel.innerHTML = panelOrgan();
         tandaiPilihan(null);
-        panel.querySelector('#judul-panel').focus();
+        bukaPanel(panelDaftar(organ), tombolDaftar);
+      });
+      panel.querySelector('[data-tutup-panel]').addEventListener('click', tutupPanel);
+      tirai.addEventListener('click', tutupPanel);
+
+      function saatEscape(e) {
+        if (e.key !== 'Escape') return;
+        if (document.getElementById('lapisan-modal').children.length) return;
+        tutupPanel();
       }
       document.addEventListener('keydown', saatEscape);
 
@@ -471,7 +482,7 @@ window.App.pages = window.App.pages || {};
           judul: 'Laporkan kesalahan konten',
           isi:
             '<form id="form-laporan" novalidate class="space-y-3">' +
-              '<p class="mikro">Bagian tubuh: ' + ui.esc(bagian.nama_bagian_internal) + '</p>' +
+              '<p class="text-xs text-neutral-500">Bagian tubuh: ' + ui.esc(bagian.nama_bagian_internal) + '</p>' +
               '<div>' +
                 '<label for="pilih-konten" class="mikro mb-2 block">Label yang dilaporkan</label>' +
                 '<select id="pilih-konten" class="' + v.input({}) + '">' + opsi + '</select>' +
@@ -479,7 +490,7 @@ window.App.pages = window.App.pages || {};
               '<div>' +
                 '<label for="isi-laporan" class="mikro mb-2 block">Uraian kesalahan</label>' +
                 '<textarea id="isi-laporan" rows="4" aria-describedby="galat-laporan" class="' + v.input({}) + '"></textarea>' +
-                '<p id="galat-laporan" class="mt-1 text-xs text-red-700" hidden></p>' +
+                '<p id="galat-laporan" class="mt-1 text-xs text-rose-600" hidden></p>' +
               '</div>' +
               '<div id="alert-laporan" role="alert" aria-live="assertive" hidden></div>' +
               '<button type="submit" id="tombol-kirim-laporan" class="' + v.tombol({ lebar: 'penuh' }) + '">Kirim laporan</button>' +
@@ -494,7 +505,6 @@ window.App.pages = window.App.pages || {};
             form.addEventListener('submit', async function (e) {
               e.preventDefault();
               alert.hidden = true;
-
               const teks = isi.value.trim();
               if (teks.length < 10) {
                 galat.textContent = 'Uraian minimal 10 karakter.';
@@ -505,18 +515,13 @@ window.App.pages = window.App.pages || {};
               }
               galat.hidden = true;
               isi.setAttribute('aria-invalid', 'false');
-
               const idKonten = Number(root.querySelector('#pilih-konten').value);
 
               /* Loading state + error handling untuk pemanggilan async */
               tombol.disabled = true;
               tombol.innerHTML = ui.spinner() + ' Mengirim';
               try {
-                await App.api.kirimLaporan({
-                  id_konten: idKonten,
-                  id_user: App.aksi.idUserAktif(),
-                  deskripsi_laporan: teks
-                });
+                await App.api.kirimLaporan({ id_konten: idKonten, id_user: App.aksi.idUserAktif(), deskripsi_laporan: teks });
                 App.aksi.tambahLaporan(idKonten, teks);
                 tutup();
                 ui.toast('Laporan terkirim ke dashboard Administrator.', 'sukses');

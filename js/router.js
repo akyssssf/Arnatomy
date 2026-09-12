@@ -9,6 +9,7 @@ window.App = window.App || {};
   'use strict';
 
   const RUTE_DEFAULT = 'beranda';
+  const RUTE_PUBLIK = ['landing', 'login'];
   let rutePrev = null;
 
   /** Memecah hash menjadi { rute, query }. */
@@ -55,21 +56,18 @@ window.App = window.App || {};
     const user = App.state.sesi.user;
     let namaRute = ctx.rute;
 
-    /* --- Guard 1: rute kosong --- */
-    if (!namaRute) {
-      gantiRute(user ? RUTE_DEFAULT : 'login');
-      return;
-    }
+    /* --- Guard 1: rute kosong: landing bila belum login, beranda bila sudah --- */
+    if (!namaRute) namaRute = user ? RUTE_DEFAULT : 'landing';
 
-    /* --- Guard 2: wajib login --- */
-    if (!user && namaRute !== 'login') {
+    /* --- Guard 2: wajib login untuk halaman selain landing dan login --- */
+    if (!user && RUTE_PUBLIK.indexOf(namaRute) === -1) {
       App.ui.toast('Silakan masuk terlebih dahulu.', 'info');
       gantiRute('login');
       return;
     }
 
-    /* --- Guard 3: sudah login tidak perlu ke halaman login --- */
-    if (user && namaRute === 'login') {
+    /* --- Guard 3: sudah login tidak perlu ke landing atau login --- */
+    if (user && RUTE_PUBLIK.indexOf(namaRute) !== -1) {
       gantiRute(user.role === 'admin' ? 'admin' : RUTE_DEFAULT);
       return;
     }

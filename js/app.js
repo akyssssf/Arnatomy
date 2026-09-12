@@ -5,7 +5,7 @@
   'use strict';
 
   function mulai() {
-    if (!window.location.hash) window.location.hash = '#/login';
+    if (!window.location.hash) window.location.hash = '#/';
     App.router.mulai();
   }
 

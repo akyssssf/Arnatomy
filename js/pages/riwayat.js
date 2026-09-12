@@ -24,7 +24,7 @@ window.App.pages = window.App.pages || {};
           '<span class="block text-xs text-neutral-500">' +
             ui.esc(dasar ? dasar.deskripsi.slice(0, 48) + '...' : '-') + '</span>' +
         '</th>' +
-        '<td class="hidden px-3 py-3 align-top text-sm text-neutral-500 sm:table-cell">' + ui.esc(organ.sistem_organ) + '</td>' +
+        '<td class="hidden px-3 py-3 align-top text-sm text-neutral-500 sm:table-cell">' + ui.esc(organ.nama_organ) + '<span class="block text-[11px] text-neutral-400">' + ui.esc(organ.sistem_organ) + '</span></td>' +
         '<td class="px-3 py-3 align-top">' +
           '<span class="' + v.badge({ status: rekap.dimmedDibuka ? 'dimmed' : 'dasar' }) + '">' +
             (rekap.dimmedDibuka ? 'dasar + dimmed' : 'dasar') +
@@ -84,7 +84,7 @@ window.App.pages = window.App.pages || {};
               '<thead>' +
                 '<tr class="border-b border-black/5 text-[11px] uppercase tracking-wide text-neutral-400">' +
                   '<th scope="col" class="px-3 py-2.5 font-semibold">Bagian tubuh</th>' +
-                  '<th scope="col" class="hidden px-3 py-2.5 font-semibold sm:table-cell">Sistem organ</th>' +
+                  '<th scope="col" class="hidden px-3 py-2.5 font-semibold sm:table-cell">Organ</th>' +
                   '<th scope="col" class="px-3 py-2.5 font-semibold">Label dibuka</th>' +
                   '<th scope="col" class="px-3 py-2.5 font-semibold">Kunjungan</th>' +
                   '<th scope="col" class="hidden px-3 py-2.5 font-semibold md:table-cell">Durasi</th>' +

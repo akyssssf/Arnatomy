@@ -74,7 +74,7 @@ window.App.pages = window.App.pages || {};
                 'class="hero-gambar melayang pointer-events-none absolute left-1/2 top-1/2 w-[78%] -translate-x-1/2 -translate-y-1/2" />' +
               '<p class="mikro kaca absolute right-4 top-4 rounded-full px-3 py-1.5">Model 3D</p>' +
               '<div class="kaca melayang-lambat absolute bottom-4 left-4 rounded-2xl px-4 py-3">' +
-                '<p class="mikro">Jantung</p>' +
+                '<p class="mikro">' + App.state.organs.length + ' organ</p>' +
                 '<p class="mt-1 text-2xl font-semibold leading-none">' + total + ' <span class="text-sm font-medium text-neutral-500">bagian</span></p>' +
                 '<p class="mt-1 text-xs text-neutral-500">' + jumlahLabel + ' label dasar dan dimmed</p>' +
               '</div>' +

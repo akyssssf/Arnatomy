@@ -15,6 +15,7 @@ window.App = window.App || {};
     sesi: { user: null },
 
     /* Salinan data master */
+    sistem_organ: seed.sistem_organ.map(function (x) { return Object.assign({}, x); }),
     organs: seed.organs.map(function (o) { return Object.assign({}, o); }),
     layers: seed.layers.map(function (l) { return Object.assign({}, l); }),
     body_parts: seed.body_parts.map(function (b) { return Object.assign({}, b); }),
@@ -25,8 +26,9 @@ window.App = window.App || {};
     ai_conversations: [],   // { id_percakapan, id_user, id_bagian, pertanyaan, jawaban, waktu }
     laporan_kesalahan: [],  // { id_laporan, id_user, id_konten, deskripsi_laporan, status_tindak_lanjut, waktu }
 
-    /* State khusus tampilan halaman Eksplorasi AR */
+    /* State khusus tampilan halaman Eksplorasi */
     ui: {
+      organAktifId: 1,
       layerAktif: { kulit: false, otot: false, tulang: false, organ_dalam: true },
       bagianAktifId: null,
       zoom: 1,
@@ -68,6 +70,45 @@ window.App = window.App || {};
 
   function organById(id) {
     return state.organs.find(function (o) { return o.id_organ === Number(id); }) || null;
+  }
+
+  function organAktif() {
+    return organById(state.ui.organAktifId) || state.organs[0];
+  }
+
+  function pilihOrgan(id) {
+    if (organById(id)) {
+      state.ui.organAktifId = Number(id);
+      state.ui.bagianAktifId = null;
+    }
+    return organAktif();
+  }
+
+  function bagianOrgan(idOrgan) {
+    return state.body_parts.filter(function (b) { return b.id_organ === Number(idOrgan); });
+  }
+
+  function layerOrgan(idOrgan) {
+    return state.layers
+      .filter(function (l) { return l.id_organ === Number(idOrgan); })
+      .sort(function (a, b) { return a.urutan_tampil - b.urutan_tampil; });
+  }
+
+  /** Progres belajar per organ: jumlah bagian yang sudah dibuka dari totalnya. */
+  function progresOrgan(idOrgan) {
+    const semua = bagianOrgan(idOrgan);
+    const sudah = new Set(
+      state.learning_history
+        .filter(function (r) { return semua.some(function (b) { return b.id_bagian === r.id_bagian; }); })
+        .map(function (r) { return r.id_bagian; })
+    );
+    return { dipelajari: sudah.size, total: semua.length,
+      persen: semua.length ? Math.round((sudah.size / semua.length) * 100) : 0 };
+  }
+
+  /** Entri riwayat paling akhir, untuk kartu "lanjutkan belajar". */
+  function riwayatTerakhir() {
+    return state.learning_history.length ? state.learning_history[state.learning_history.length - 1] : null;
   }
 
   function kontenBagian(idBagian, jenis) {
@@ -188,6 +229,12 @@ window.App = window.App || {};
     idUserAktif: idUserAktif,
     bagianById: bagianById,
     organById: organById,
+    organAktif: organAktif,
+    pilihOrgan: pilihOrgan,
+    bagianOrgan: bagianOrgan,
+    layerOrgan: layerOrgan,
+    progresOrgan: progresOrgan,
+    riwayatTerakhir: riwayatTerakhir,
     kontenBagian: kontenBagian,
     kontenById: kontenById,
     koordinat: koordinat,
