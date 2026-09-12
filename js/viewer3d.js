@@ -212,8 +212,24 @@ window.App = window.App || {};
     });
     const layar = new THREE.Vector3();
     const arahPandang = new THREE.Vector3();
-    let targetKamera = null;   // tujuan animasi kamera saat sebuah titik dipilih
+    let targetKamera = null;   // tujuan animasi posisi kamera
+    let targetOrbit = null;    // tujuan animasi titik pusat orbit (controls.target)
+    const geserSekarang = { x: 0, y: 0 };   // geseran tampilan (px) untuk memberi ruang panel
+    const geserTujuan = { x: 0, y: 0 };
     let perluGambar = true;    // penanda render sesuai kebutuhan
+
+    /* Geseran lewat view offset kamera: model tampak bergeser ke kiri (panel
+       samping) atau ke atas (panel bawah) tanpa mengubah orbit, dan proyeksi
+       titik ikut bergeser otomatis karena ada di matriks proyeksi. */
+    function terapkanGeser() {
+      if (Math.abs(geserSekarang.x) < 0.5 && Math.abs(geserSekarang.y) < 0.5) {
+        geserSekarang.x = 0;
+        geserSekarang.y = 0;
+        camera.clearViewOffset();
+      } else {
+        camera.setViewOffset(lebar, tinggi, geserSekarang.x, geserSekarang.y, lebar, tinggi);
+      }
+    }
 
     function mintaGambar() { perluGambar = true; }
     controls.addEventListener('change', mintaGambar);
@@ -253,6 +269,19 @@ window.App = window.App || {};
         if (camera.position.distanceTo(targetKamera) < 0.005) targetKamera = null;
         perluGambar = true;
       }
+      if (targetOrbit) {
+        controls.target.lerp(targetOrbit, 0.09);
+        if (controls.target.distanceTo(targetOrbit) < 0.004) targetOrbit = null;
+        perluGambar = true;
+      }
+      if (geserSekarang.x !== geserTujuan.x || geserSekarang.y !== geserTujuan.y) {
+        geserSekarang.x += (geserTujuan.x - geserSekarang.x) * 0.12;
+        geserSekarang.y += (geserTujuan.y - geserSekarang.y) * 0.12;
+        if (Math.abs(geserTujuan.x - geserSekarang.x) < 0.5) geserSekarang.x = geserTujuan.x;
+        if (Math.abs(geserTujuan.y - geserSekarang.y) < 0.5) geserSekarang.y = geserTujuan.y;
+        terapkanGeser();
+        perluGambar = true;
+      }
       const kameraBergerak = controls.update();
       if (!perluGambar && !kameraBergerak && !controls.autoRotate) return;
       perluGambar = false;
@@ -267,6 +296,7 @@ window.App = window.App || {};
       camera.aspect = lebar / tinggi;
       camera.updateProjectionMatrix();
       renderer.setSize(lebar, tinggi);
+      terapkanGeser();
       mintaGambar();
     });
     pengamat.observe(wadah);
@@ -294,7 +324,9 @@ window.App = window.App || {};
       wadah: wadah, lapisan: lapisan, titik: titik, panggung: panggung,
       mintaGambar: mintaGambar,
       posisiAwal: posisiAwal,
-      arahkanKamera: function (posisi) { targetKamera = posisi; perluGambar = true; }
+      arahkanKamera: function (posisi) { targetKamera = posisi; perluGambar = true; },
+      arahkanOrbit: function (titikPusat) { targetOrbit = titikPusat; perluGambar = true; },
+      setGeser: function (px, py) { geserTujuan.x = px || 0; geserTujuan.y = py || 0; perluGambar = true; }
     };
   }
 
@@ -348,6 +380,7 @@ window.App = window.App || {};
   function reset() {
     if (!sesi) return;
     sesi.controls.autoRotate = false;
+    sesi.arahkanOrbit(new THREE.Vector3(0, 0, 0));
     sesi.arahkanKamera(sesi.posisiAwal.clone());
   }
 
@@ -362,6 +395,41 @@ window.App = window.App || {};
     arah.y = Math.max(arah.y, -0.2) + 0.18;
     sesi.controls.autoRotate = false;
     sesi.arahkanKamera(arah.normalize().multiplyScalar(jarak));
+  }
+
+  /**
+   * Menghadap sekaligus mendekat ke titik: pusat orbit digeser ke arah titik
+   * dan jarak kamera dipersempit, sehingga bagian yang dipilih tampak diperbesar.
+   */
+  function fokusKe(idTitik, faktorJarak) {
+    if (!sesi) return;
+    const t = sesi.titik.find(function (x) { return x.id === idTitik; });
+    if (!t) return;
+    const arah = t.posisi.clone().normalize();
+    if (arah.lengthSq() === 0) return;
+    const pusat = t.posisi.clone().multiplyScalar(0.45);
+    const jarak = Math.max(sesi.controls.minDistance, sesi.posisiAwal.length() * (faktorJarak || 0.66));
+    arah.y = Math.max(arah.y, -0.2) + 0.18;
+    arah.normalize();
+    sesi.controls.autoRotate = false;
+    sesi.arahkanOrbit(pusat);
+    sesi.arahkanKamera(pusat.clone().addScaledVector(arah, jarak));
+  }
+
+  /** Mengembalikan pusat orbit dan jarak ke keadaan semula, arah pandang dipertahankan. */
+  function lepasFokus() {
+    if (!sesi) return;
+    const arah = sesi.camera.position.clone().sub(sesi.controls.target).normalize();
+    sesi.arahkanOrbit(new THREE.Vector3(0, 0, 0));
+    sesi.arahkanKamera(arah.multiplyScalar(sesi.posisiAwal.length()));
+  }
+
+  /**
+   * Menggeser tampilan agar model tidak tertutup panel. px positif menggeser
+   * model ke kiri, py positif menggeser model ke atas; keduanya 0 = kembali.
+   */
+  function geserTampilan(px, py) {
+    if (sesi) sesi.setGeser(px || 0, py || 0);
   }
 
   /** Mengembalikan isi kanvas saat ini sebagai data URL gambar. */
@@ -405,6 +473,9 @@ window.App = window.App || {};
     ubahJarak: ubahJarak,
     reset: reset,
     hadapkanKe: hadapkanKe,
+    fokusKe: fokusKe,
+    lepasFokus: lepasFokus,
+    geserTampilan: geserTampilan,
     cuplikan: cuplikan
   };
 

@@ -217,6 +217,20 @@ window.App.pages = window.App.pages || {};
                   layers.map(tombolLayer).join('') +
                   '<p id="status-layer" class="sr-only" role="status" aria-live="polite"></p>' +
                 '</section>' +
+
+                /* ---------- Panel penjelasan, meluncur masuk di dalam penampil ---------- */
+                '<aside id="panel-samping" class="panel-samping kaca kaca-tebal flex flex-col rounded-3xl" ' +
+                  'role="dialog" aria-modal="false" aria-labelledby="judul-panel" aria-hidden="true">' +
+                  '<div class="flex items-center justify-between px-5 pt-4">' +
+                    '<span class="h-1.5 w-10 rounded-full bg-neutral-300 md:hidden" aria-hidden="true"></span>' +
+                    '<span class="mikro hidden md:inline">Penjelasan</span>' +
+                    '<button type="button" data-tutup-panel aria-label="Tutup panel" ' +
+                      'class="grid h-9 w-9 place-items-center rounded-full bg-white text-neutral-500 transition hover:text-neutral-900">' +
+                      ikon('silang', 'h-4 w-4') +
+                    '</button>' +
+                  '</div>' +
+                  '<div id="isi-panel" class="flex-1 overflow-y-auto px-5 pb-6 pt-3"></div>' +
+                '</aside>' +
               '</div>' +
             '</div>' +
             '<figcaption class="mt-3 px-1 text-[11px] text-neutral-400">' +
@@ -224,22 +238,7 @@ window.App.pages = window.App.pages || {};
               'Ketuk titik bernomor untuk membuka label; kamera AR perangkat tidak diaktifkan pada prototipe web.' +
             '</figcaption>' +
           '</figure>' +
-        '</section>' +
-
-        /* ---------- Panel samping & tirai ---------- */
-        '<div id="tirai" class="tirai" aria-hidden="true"></div>' +
-        '<aside id="panel-samping" class="panel-samping flex flex-col bg-white shadow-[0_24px_60px_rgba(17,24,39,0.18)] md:my-3 md:mr-3 md:rounded-3xl max-md:rounded-t-3xl" ' +
-          'role="dialog" aria-modal="false" aria-labelledby="judul-panel" aria-hidden="true">' +
-          '<div class="flex items-center justify-between px-5 pt-4">' +
-            '<span class="h-1.5 w-10 rounded-full bg-neutral-200 md:hidden" aria-hidden="true"></span>' +
-            '<span class="mikro hidden md:inline">Penjelasan</span>' +
-            '<button type="button" data-tutup-panel aria-label="Tutup panel" ' +
-              'class="grid h-9 w-9 place-items-center rounded-full bg-[#f1f2f4] text-neutral-500 transition hover:text-neutral-900">' +
-              ikon('silang', 'h-4 w-4') +
-            '</button>' +
-          '</div>' +
-          '<div id="isi-panel" class="flex-1 overflow-y-auto px-5 pb-6 pt-3"></div>' +
-        '</aside>'
+        '</section>'
       );
     },
 
@@ -252,7 +251,6 @@ window.App.pages = window.App.pages || {};
       const statusLayer = document.getElementById('status-layer');
       const panel = document.getElementById('panel-samping');
       const isiPanel = document.getElementById('isi-panel');
-      const tirai = document.getElementById('tirai');
       const tombolDaftar = document.getElementById('tombol-daftar');
 
       riwayatBerjalan = null;
@@ -358,12 +356,26 @@ window.App.pages = window.App.pages || {};
         });
       });
 
-      /* ---------- Panel samping ---------- */
+      /* ---------- Panel penjelasan ---------- */
+      /* Layar lebar: model digeser ke kiri sejauh setengah lebar panel.
+         Layar sempit: panel muncul dari bawah, jadi model digeser ke atas
+         sejauh setengah tinggi panel agar organ tetap terlihat. */
+      function geserUntukPanel(terbuka) {
+        if (!mode3d) return;
+        if (!terbuka) { App.viewer3d.geserTampilan(0, 0); return; }
+        const kotak = panel.getBoundingClientRect();
+        if (window.innerWidth >= 768) {
+          App.viewer3d.geserTampilan(Math.round(kotak.width / 2 + 8), 0);
+        } else {
+          App.viewer3d.geserTampilan(0, Math.round(kotak.height / 2 + 8));
+        }
+      }
+
       function bukaPanel(html, pemicu) {
         isiPanel.innerHTML = html;
         panel.classList.add('terbuka');
-        tirai.classList.add('terbuka');
         panel.setAttribute('aria-hidden', 'false');
+        geserUntukPanel(true);
         tombolDaftar.setAttribute('aria-expanded', 'true');
         if (pemicu) pemicuTerakhir = pemicu;
         pasangAksiPanel();
@@ -374,9 +386,10 @@ window.App.pages = window.App.pages || {};
       function tutupPanel() {
         if (!panel.classList.contains('terbuka')) return;
         panel.classList.remove('terbuka');
-        tirai.classList.remove('terbuka');
         panel.setAttribute('aria-hidden', 'true');
         tombolDaftar.setAttribute('aria-expanded', 'false');
+        geserUntukPanel(false);
+        if (mode3d) App.viewer3d.lepasFokus();
         App.aksi.tutupRiwayat(riwayatBerjalan);
         riwayatBerjalan = null;
         bagianAktif = null;
@@ -403,7 +416,7 @@ window.App.pages = window.App.pages || {};
         App.state.ui.bagianAktifId = idBagian;
 
         tandaiPilihan(idBagian);
-        if (mode3d) App.viewer3d.hadapkanKe(idBagian);
+        if (mode3d) App.viewer3d.fokusKe(idBagian, window.innerWidth >= 768 ? 0.66 : 0.88);
         bukaPanel(panelBagian(bagian), pemicu);
       }
 
@@ -420,6 +433,7 @@ window.App.pages = window.App.pages || {};
           riwayatBerjalan = null;
           bagianAktif = null;
           tandaiPilihan(null);
+          if (mode3d) App.viewer3d.lepasFokus();
           bukaPanel(panelDaftar(organ));
         });
 
@@ -463,7 +477,16 @@ window.App.pages = window.App.pages || {};
         bukaPanel(panelDaftar(organ), tombolDaftar);
       });
       panel.querySelector('[data-tutup-panel]').addEventListener('click', tutupPanel);
-      tirai.addEventListener('click', tutupPanel);
+
+      /* Klik singkat pada kanvas (bukan seretan memutar) menutup panel */
+      let titikTekan = null;
+      wadah3d.addEventListener('pointerdown', function (e) { titikTekan = { x: e.clientX, y: e.clientY }; });
+      wadah3d.addEventListener('pointerup', function (e) {
+        if (!titikTekan) return;
+        const geser = Math.hypot(e.clientX - titikTekan.x, e.clientY - titikTekan.y);
+        titikTekan = null;
+        if (geser < 6) tutupPanel();
+      });
 
       function saatEscape(e) {
         if (e.key !== 'Escape') return;
