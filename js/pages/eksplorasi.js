@@ -391,7 +391,10 @@ window.App.pages = window.App.pages || {};
         panel.setAttribute('aria-hidden', 'true');
         tombolDaftar.setAttribute('aria-expanded', 'false');
         geserUntukPanel(false);
-        if (mode3d) App.viewer3d.lepasFokus();
+        if (mode3d) {
+          App.viewer3d.lepasFokus();
+          App.viewer3d.sorotTitik(null);
+        }
         App.aksi.tutupRiwayat(riwayatBerjalan);
         riwayatBerjalan = null;
         bagianAktif = null;
@@ -418,7 +421,10 @@ window.App.pages = window.App.pages || {};
         App.state.ui.bagianAktifId = idBagian;
 
         tandaiPilihan(idBagian);
-        if (mode3d) App.viewer3d.fokusKe(idBagian, window.innerWidth >= 768 ? 0.66 : 0.88);
+        if (mode3d) {
+          App.viewer3d.fokusKe(idBagian, window.innerWidth >= 768 ? 0.66 : 0.88);
+          App.viewer3d.sorotTitik(idBagian);
+        }
         bukaPanel(panelBagian(bagian), pemicu);
       }
 
@@ -435,7 +441,10 @@ window.App.pages = window.App.pages || {};
           riwayatBerjalan = null;
           bagianAktif = null;
           tandaiPilihan(null);
-          if (mode3d) App.viewer3d.lepasFokus();
+          if (mode3d) {
+            App.viewer3d.lepasFokus();
+            App.viewer3d.sorotTitik(null);
+          }
           bukaPanel(panelDaftar(organ));
         });
 
