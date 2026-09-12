@@ -118,7 +118,7 @@ window.App = window.App || {};
   });
 
   /* ---------------- Tombol toggle layer anatomi ---------------- */
-  const toggleLayer = cva('rounded-full px-3.5 py-1.5 text-xs font-medium transition', {
+  const toggleLayer = cva('whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition sm:px-3.5', {
     variants: {
       aktif: {
         true: 'bg-neutral-900 text-white',

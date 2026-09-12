@@ -169,7 +169,9 @@ window.App.pages = window.App.pages || {};
 
     render: function (ctx) {
       const organ = App.aksi.pilihOrgan(ctx.query.organ || App.state.ui.organAktifId);
-      const layers = App.aksi.layerOrgan(organ.id_organ);
+      /* Organ dalam selalu ditampilkan, jadi hanya selubung luar yang bisa dimatikan */
+      App.state.ui.layerAktif.organ_dalam = true;
+      const layers = App.aksi.layerOrgan(organ.id_organ).filter(function (l) { return l.nama_layer !== 'organ_dalam'; });
 
       return (
         '<section aria-labelledby="judul-eksplorasi">' +
@@ -212,8 +214,8 @@ window.App.pages = window.App.pages || {};
                 '</p>' +
 
                 '<section aria-labelledby="judul-layer" ' +
-                  'class="kaca absolute bottom-4 left-1/2 z-10 flex max-w-[calc(100%-2rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-1.5 rounded-full p-1.5">' +
-                  '<h2 id="judul-layer" class="mikro ml-2 mr-1 flex items-center gap-1.5">' + ikon('lapisan', 'h-4 w-4') + 'Layer</h2>' +
+                  'class="kaca absolute bottom-3 left-1/2 z-10 flex max-w-[calc(100%-1.5rem)] -translate-x-1/2 items-center gap-1 rounded-full p-1 sm:bottom-4 sm:gap-1.5 sm:p-1.5">' +
+                  '<h2 id="judul-layer" class="mikro ml-2 mr-1 flex items-center gap-1.5">' + ikon('lapisan', 'h-4 w-4') + '<span class="hidden sm:inline">Layer</span></h2>' +
                   layers.map(tombolLayer).join('') +
                   '<p id="status-layer" class="sr-only" role="status" aria-live="polite"></p>' +
                 '</section>' +
