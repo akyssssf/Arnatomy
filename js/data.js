@@ -1,7 +1,7 @@
 /* ==========================================================================
    data.js — Data awal (seed) mengikuti kamus data SKPL Bab VI
-   Tabel: users, organs, body_parts, layers, part_content
-   Catatan: seluruh data hanya hidup di memori (tanpa localStorage/sessionStorage).
+   Tabel: users, organs, body_parts, layers, part_content, plus daftar sistem
+   organ untuk katalog. Seluruh data hanya hidup di memori.
    ========================================================================== */
 window.App = window.App || {};
 
@@ -16,6 +16,18 @@ window.App = window.App || {};
     { id_user: 3, nama: 'Admin Konten',       email: 'admin@arnatomy.id', password: 'admin123', role: 'admin', asal_sekolah: null }
   ];
 
+  /* Katalog sistem organ. Yang berstatus 'segera' belum punya model dan konten. */
+  const sistem_organ = [
+    { id_sistem: 1, nama: 'Sistem Peredaran Darah', id_organ: 1,    status: 'tersedia', organ: 'Jantung',   gambar: 'assets/img/jantung.webp' },
+    { id_sistem: 2, nama: 'Sistem Pernapasan',      id_organ: 2,    status: 'tersedia', organ: 'Paru-paru', gambar: 'assets/img/paru.webp' },
+    { id_sistem: 3, nama: 'Sistem Saraf',           id_organ: null, status: 'segera',   organ: 'Otak',      gambar: 'assets/img/otak.webp' },
+    { id_sistem: 4, nama: 'Sistem Pencernaan',      id_organ: null, status: 'segera',   organ: 'Usus',      gambar: 'assets/img/usus.webp' },
+    { id_sistem: 5, nama: 'Sistem Ekskresi',        id_organ: null, status: 'segera',   organ: 'Ginjal',    gambar: 'assets/img/ginjal.webp' },
+    { id_sistem: 6, nama: 'Sistem Endokrin',        id_organ: null, status: 'segera',   organ: 'Pankreas',  gambar: 'assets/img/pankreas.webp' },
+    { id_sistem: 7, nama: 'Sistem Indra',           id_organ: null, status: 'segera',   organ: 'Mata',      gambar: 'assets/img/mata.webp' },
+    { id_sistem: 8, nama: 'Sistem Integumen',       id_organ: null, status: 'segera',   organ: 'Kulit',     gambar: 'assets/img/kulit.webp' }
+  ];
+
   const organs = [
     {
       id_organ: 1,
@@ -23,6 +35,7 @@ window.App = window.App || {};
       sistem_organ: 'Sistem Peredaran Darah',
       julukan: 'Pompa yang tidak pernah libur',
       file_model_3d: 'assets/models/heart.glb',
+      gambar: 'assets/img/jantung.webp',
       deskripsi: 'Organ berotot seukuran kepalan tangan yang memompa darah ke seluruh tubuh, ' +
         'mengantar oksigen dan zat gizi ke setiap sel, lalu membawa pulang karbon dioksida untuk dibuang.',
       fakta: [
@@ -33,6 +46,24 @@ window.App = window.App || {};
         { label: 'Suplai darah', nilai: 'Arteri koroner kiri dan kanan' },
         { label: 'Jumlah ruang', nilai: '4 ruang, 4 katup' }
       ]
+    },
+    {
+      id_organ: 2,
+      nama_organ: 'Paru-paru',
+      sistem_organ: 'Sistem Pernapasan',
+      julukan: 'Pintu masuk oksigen',
+      file_model_3d: 'assets/models/lungs.glb',
+      gambar: 'assets/img/paru.webp',
+      deskripsi: 'Sepasang organ berongga di rongga dada tempat udara yang dihirup bertukar gas dengan darah: ' +
+        'oksigen masuk ke pembuluh kapiler, karbon dioksida dilepas untuk dihembuskan.',
+      fakta: [
+        { label: 'Berat', nilai: 'Sekitar 1,1 kg untuk sepasang' },
+        { label: 'Kapasitas', nilai: 'Sekitar 6 liter udara' },
+        { label: 'Frekuensi', nilai: '12 sampai 20 napas per menit' },
+        { label: 'Letak', nilai: 'Rongga dada, dilindungi tulang rusuk' },
+        { label: 'Lobus', nilai: '3 di paru kanan, 2 di paru kiri' },
+        { label: 'Luas alveolus', nilai: 'Sekitar 70 meter persegi' }
+      ]
     }
   ];
 
@@ -41,13 +72,18 @@ window.App = window.App || {};
     { id_layer: 1, id_organ: 1, nama_layer: 'kulit',       label: 'Kulit',       urutan_tampil: 1 },
     { id_layer: 2, id_organ: 1, nama_layer: 'otot',        label: 'Otot',        urutan_tampil: 2 },
     { id_layer: 3, id_organ: 1, nama_layer: 'tulang',      label: 'Tulang',      urutan_tampil: 3 },
-    { id_layer: 4, id_organ: 1, nama_layer: 'organ_dalam', label: 'Organ Dalam', urutan_tampil: 4 }
+    { id_layer: 4, id_organ: 1, nama_layer: 'organ_dalam', label: 'Organ Dalam', urutan_tampil: 4 },
+    { id_layer: 5, id_organ: 2, nama_layer: 'kulit',       label: 'Kulit',       urutan_tampil: 1 },
+    { id_layer: 6, id_organ: 2, nama_layer: 'otot',        label: 'Otot',        urutan_tampil: 2 },
+    { id_layer: 7, id_organ: 2, nama_layer: 'tulang',      label: 'Tulang',      urutan_tampil: 3 },
+    { id_layer: 8, id_organ: 2, nama_layer: 'organ_dalam', label: 'Organ Dalam', urutan_tampil: 4 }
   ];
 
   /* posisi_koordinat_3d disimpan "x,y,z" sesuai SKPL, dinyatakan sebagai pecahan
      terhadap kotak batas (bounding box) model sehingga tidak bergantung skala file.
-     posisi_2d dipakai ilustrasi SVG cadangan bila WebGL atau model 3D gagal dimuat. */
+     posisi_2d dipakai gambar cadangan bila WebGL atau model 3D gagal dimuat. */
   const body_parts = [
+    /* ---- Jantung ---- */
     {
       id_bagian: 1, id_organ: 1, nama_bagian_internal: 'Atrium Kanan', parent_bagian_id: null,
       posisi_koordinat_3d: '-0.24,0.14,0.24', posisi_2d: '35,39',
@@ -101,11 +137,68 @@ window.App = window.App || {};
         { label: 'Letak', nilai: 'Antara atrium kiri dan ventrikel kiri' },
         { label: 'Menutup saat', nilai: 'Ventrikel berkontraksi (sistol)' }
       ]
+    },
+
+    /* ---- Paru-paru ---- */
+    {
+      id_bagian: 7, id_organ: 2, nama_bagian_internal: 'Trakea', parent_bagian_id: null,
+      posisi_koordinat_3d: '0.00,0.30,0.10', posisi_2d: '50,22',
+      fakta: [
+        { label: 'Panjang', nilai: '10 sampai 12 cm' },
+        { label: 'Penguat', nilai: '16 sampai 20 cincin tulang rawan' },
+        { label: 'Bermula dari', nilai: 'Laring (kotak suara)' }
+      ]
+    },
+    {
+      id_bagian: 8, id_organ: 2, nama_bagian_internal: 'Bronkus Utama', parent_bagian_id: null,
+      posisi_koordinat_3d: '0.00,0.06,0.12', posisi_2d: '50,44',
+      fakta: [
+        { label: 'Titik cabang', nilai: 'Karina, di ujung bawah trakea' },
+        { label: 'Jumlah', nilai: '2 bronkus: kanan dan kiri' },
+        { label: 'Bercabang menjadi', nilai: 'Bronkiolus yang makin halus' }
+      ]
+    },
+    {
+      id_bagian: 9, id_organ: 2, nama_bagian_internal: 'Paru-paru Kanan', parent_bagian_id: null,
+      posisi_koordinat_3d: '-0.22,0.14,0.30', posisi_2d: '30,40',
+      fakta: [
+        { label: 'Jumlah lobus', nilai: '3 (atas, tengah, bawah)' },
+        { label: 'Ukuran', nilai: 'Lebih besar dari paru kiri' },
+        { label: 'Pembungkus', nilai: 'Dua lapis pleura' }
+      ]
+    },
+    {
+      id_bagian: 10, id_organ: 2, nama_bagian_internal: 'Paru-paru Kiri', parent_bagian_id: null,
+      posisi_koordinat_3d: '0.24,0.14,0.30', posisi_2d: '70,40',
+      fakta: [
+        { label: 'Jumlah lobus', nilai: '2 (atas dan bawah)' },
+        { label: 'Ciri khas', nilai: 'Lekukan jantung (cardiac notch)' },
+        { label: 'Ukuran', nilai: 'Lebih kecil, memberi ruang jantung' }
+      ]
+    },
+    {
+      id_bagian: 11, id_organ: 2, nama_bagian_internal: 'Lobus Bawah Paru Kanan', parent_bagian_id: 9,
+      posisi_koordinat_3d: '-0.26,-0.24,0.30', posisi_2d: '27,70',
+      fakta: [
+        { label: 'Posisi', nilai: 'Bagian paling bawah paru kanan' },
+        { label: 'Pembatas', nilai: 'Fisura oblik dari lobus tengah' },
+        { label: 'Menempel pada', nilai: 'Diafragma' }
+      ]
+    },
+    {
+      id_bagian: 12, id_organ: 2, nama_bagian_internal: 'Alveolus', parent_bagian_id: 10,
+      posisi_koordinat_3d: '0.28,-0.22,0.30', posisi_2d: '72,68',
+      fakta: [
+        { label: 'Jumlah', nilai: '300 sampai 500 juta' },
+        { label: 'Tebal dinding', nilai: 'Setebal satu sel' },
+        { label: 'Fungsi', nilai: 'Tempat pertukaran O2 dan CO2' }
+      ]
     }
   ];
 
   /* part_content: jenis_konten 'dasar' (FR-06) & 'dimmed' (FR-07) */
   const part_content = [
+    /* ---- Jantung ---- */
     {
       id_konten: 1, id_bagian: 1, jenis_konten: 'dasar', judul_tampil: 'Atrium Kanan',
       deskripsi: 'Ruang jantung kanan atas yang menerima darah miskin oksigen dari seluruh tubuh melalui vena cava superior dan vena cava inferior, lalu mengalirkannya ke ventrikel kanan.',
@@ -155,6 +248,58 @@ window.App = window.App || {};
       id_konten: 10, id_bagian: 6, jenis_konten: 'dasar', judul_tampil: 'Katup Mitral',
       deskripsi: 'Katup berdaun dua (bikuspidalis) di antara atrium kiri dan ventrikel kiri. Katup ini menutup saat ventrikel berkontraksi sehingga darah tidak kembali ke atrium — bunyi penutupannya menjadi bagian dari suara "lub" jantung.',
       status_tampilan: 'aktif', status_validasi: 'draft'
+    },
+
+    /* ---- Paru-paru ---- */
+    {
+      id_konten: 11, id_bagian: 7, jenis_konten: 'dasar', judul_tampil: 'Trakea',
+      deskripsi: 'Saluran udara utama berbentuk tabung sepanjang 10–12 cm dari laring ke rongga dada. Dindingnya diperkuat cincin tulang rawan agar tidak kempis saat kita menarik napas.',
+      status_tampilan: 'aktif', status_validasi: 'tervalidasi'
+    },
+    {
+      id_konten: 12, id_bagian: 7, jenis_konten: 'dimmed', judul_tampil: 'Cincin berbentuk C dan sapu silia',
+      deskripsi: 'Cincin tulang rawan trakea berbentuk huruf C dengan sisi belakang terbuka yang berhadapan dengan kerongkongan, sehingga kerongkongan leluasa melebar saat menelan. Lapisan dalam trakea dipenuhi sel bersilia yang terus menyapu lendir beserta debu ke atas menuju tenggorokan untuk ditelan atau dibatukkan.',
+      status_tampilan: 'dimmed', status_validasi: 'tervalidasi'
+    },
+    {
+      id_konten: 13, id_bagian: 8, jenis_konten: 'dasar', judul_tampil: 'Bronkus Utama',
+      deskripsi: 'Percabangan trakea menjadi bronkus kanan dan bronkus kiri pada titik yang disebut karina. Masing-masing masuk ke paru-paru dan bercabang lagi berkali-kali menjadi bronkiolus yang semakin halus.',
+      status_tampilan: 'aktif', status_validasi: 'tervalidasi'
+    },
+    {
+      id_konten: 14, id_bagian: 8, jenis_konten: 'dimmed', judul_tampil: 'Mengapa benda asing sering nyangkut di kanan?',
+      deskripsi: 'Bronkus kanan lebih lebar, lebih pendek, dan posisinya lebih tegak daripada bronkus kiri. Karena itu benda asing yang tidak sengaja terhirup lebih sering masuk ke paru-paru kanan. Fakta ini penting bagi dokter saat mencari benda yang tersedak.',
+      status_tampilan: 'dimmed', status_validasi: 'draft'
+    },
+    {
+      id_konten: 15, id_bagian: 9, jenis_konten: 'dasar', judul_tampil: 'Paru-paru Kanan',
+      deskripsi: 'Paru-paru kanan terdiri dari tiga lobus: atas, tengah, dan bawah. Ukurannya sedikit lebih besar dan lebih pendek daripada paru-paru kiri karena hati mendesak diafragma di sisi kanan.',
+      status_tampilan: 'aktif', status_validasi: 'tervalidasi'
+    },
+    {
+      id_konten: 16, id_bagian: 9, jenis_konten: 'dimmed', judul_tampil: 'Pleura, selaput licin pembungkus paru',
+      deskripsi: 'Setiap paru dibungkus dua lapis selaput pleura dengan lapisan cairan sangat tipis di antaranya. Cairan ini membuat paru bisa mengembang dan mengempis ribuan kali sehari tanpa bergesekan dengan dinding dada. Bila ruang ini terisi udara, paru bisa mengempis (pneumotoraks).',
+      status_tampilan: 'dimmed', status_validasi: 'tervalidasi'
+    },
+    {
+      id_konten: 17, id_bagian: 10, jenis_konten: 'dasar', judul_tampil: 'Paru-paru Kiri',
+      deskripsi: 'Paru-paru kiri hanya memiliki dua lobus, atas dan bawah. Di sisi dalamnya terdapat lekukan (cardiac notch) yang memberi ruang bagi jantung, sehingga paru kiri lebih kecil daripada paru kanan.',
+      status_tampilan: 'aktif', status_validasi: 'tervalidasi'
+    },
+    {
+      id_konten: 18, id_bagian: 11, jenis_konten: 'dasar', judul_tampil: 'Lobus Bawah Paru Kanan',
+      deskripsi: 'Lobus terbesar pada paru-paru kanan, dipisahkan dari lobus tengah oleh fisura oblik. Bagian bawahnya duduk di atas diafragma, otot lebar yang bergerak turun saat kita menarik napas.',
+      status_tampilan: 'aktif', status_validasi: 'tervalidasi'
+    },
+    {
+      id_konten: 19, id_bagian: 12, jenis_konten: 'dasar', judul_tampil: 'Alveolus',
+      deskripsi: 'Kantong udara mikroskopis berbentuk seperti buah anggur di ujung bronkiolus. Di dindingnya yang sangat tipis, oksigen berpindah ke darah kapiler dan karbon dioksida keluar untuk dihembuskan.',
+      status_tampilan: 'aktif', status_validasi: 'tervalidasi'
+    },
+    {
+      id_konten: 20, id_bagian: 12, jenis_konten: 'dimmed', judul_tampil: 'Seluas lapangan tenis',
+      deskripsi: 'Jumlah alveolus orang dewasa sekitar 300–500 juta, dengan luas permukaan total ± 70 meter persegi, hampir seluas lapangan tenis. Luas yang besar itulah yang memungkinkan pertukaran gas berlangsung cepat dalam sekali tarikan napas.',
+      status_tampilan: 'dimmed', status_validasi: 'tervalidasi'
     }
   ];
 
@@ -196,8 +341,44 @@ window.App = window.App || {};
       letak: 'Terletak di antara atrium kiri dan ventrikel kiri.',
       gangguan: 'Jika katup bocor (regurgitasi), sebagian darah berbalik arah dan jantung bekerja lebih berat.',
       ringkas: 'Katup mitral bekerja seperti pintu satu arah di dalam jantung.'
+    },
+    7: {
+      fungsi: 'Trakea mengalirkan udara dari tenggorokan ke bronkus sambil menyaring debu dengan lendir dan silia.',
+      letak: 'Di depan kerongkongan, memanjang dari bawah laring sampai bercabang di rongga dada.',
+      gangguan: 'Radang trakea (trakeitis) membuat batuk kering dan suara serak.',
+      ringkas: 'Trakea adalah pipa udara utama yang diperkuat cincin tulang rawan supaya tidak kempis.'
+    },
+    8: {
+      fungsi: 'Bronkus membagi udara dari trakea ke paru kanan dan kiri, lalu bercabang terus menjadi bronkiolus.',
+      letak: 'Percabangannya (karina) berada di rongga dada, kira-kira sejajar tulang dada bagian atas.',
+      gangguan: 'Bronkitis adalah radang bronkus yang membuat lendir berlebih dan napas berbunyi.',
+      ringkas: 'Bronkus seperti dua cabang besar pohon terbalik yang memasok udara ke seluruh paru.'
+    },
+    9: {
+      fungsi: 'Paru-paru kanan menampung udara dan menukar oksigen dengan karbon dioksida di tiga lobusnya.',
+      letak: 'Sisi kanan rongga dada, sedikit lebih tinggi karena hati mendorong diafragma dari bawah.',
+      gangguan: 'Pneumonia sering menyerang lobus bawah karena cairan mudah mengumpul di sana.',
+      ringkas: 'Paru kanan sedikit lebih besar dan punya tiga lobus, paru kiri hanya dua.'
+    },
+    10: {
+      fungsi: 'Paru-paru kiri menukar gas seperti paru kanan, dengan dua lobus yang berbagi ruang dengan jantung.',
+      letak: 'Sisi kiri rongga dada, dengan lekukan di sisi dalam tempat jantung bersandar.',
+      gangguan: 'Efusi pleura, penumpukan cairan di selaput paru, bisa membuat napas terasa pendek.',
+      ringkas: 'Paru kiri lebih kecil karena harus berbagi tempat dengan jantung.'
+    },
+    11: {
+      fungsi: 'Lobus bawah paru kanan menyumbang porsi terbesar pertukaran gas saat bernapas dalam.',
+      letak: 'Bagian paling bawah paru kanan, duduk di atas diafragma.',
+      gangguan: 'Bagian ini paling sering terkena pneumonia karena letaknya di dasar paru.',
+      ringkas: 'Lobus bawah paling banyak mengembang saat kita menarik napas dalam-dalam.'
+    },
+    12: {
+      fungsi: 'Alveolus adalah tempat sebenarnya oksigen masuk ke darah dan karbon dioksida keluar.',
+      letak: 'Di ujung bronkiolus, tersebar di seluruh jaringan paru seperti tandan anggur.',
+      gangguan: 'Pada emfisema, dinding alveolus rusak sehingga luas pertukaran gas berkurang.',
+      ringkas: 'Alveolus jumlahnya ratusan juta, dengan luas total hampir seluas lapangan tenis.'
     }
   };
 
-  App.seed = { users, organs, layers, body_parts, part_content, pengetahuan_ai };
+  App.seed = { users, sistem_organ, organs, layers, body_parts, part_content, pengetahuan_ai };
 })(window.App);

@@ -1,8 +1,10 @@
 # ARnatomy — Front-End Prototipe
 
 Prototipe front-end mandiri untuk **ARnatomy**, aplikasi pembelajaran anatomi berbasis
-Augmented Reality untuk siswa SMP–SMA. Dibangun mengikuti dokumen SKPL v1.0 (approved),
-dengan ruang lingkup **Sistem Peredaran Darah (jantung dan pembuluh darah)**.
+Augmented Reality untuk siswa SMP–SMA. Dibangun mengikuti dokumen SKPL v1.0 (approved).
+Ruang lingkup SKPL adalah **Sistem Peredaran Darah (jantung)**; prototipe ini menambah
+**Sistem Pernapasan (paru-paru)** sebagai organ kedua yang bisa dijelajah, sementara enam
+sistem lain tampil di katalog dengan status *segera hadir*.
 
 Mode AR perangkat tidak diaktifkan pada prototipe web ini. Sebagai gantinya, organ
 ditampilkan sebagai **model 3D interaktif** yang dapat diputar, diperbesar, dan diberi
@@ -34,7 +36,7 @@ python3 -m http.server 8123
 lalu buka `http://localhost:8123`.
 
 Berkas `index.html` tetap bisa dibuka langsung dengan klik dua kali, tetapi pada mode itu
-model 3D gagal dimuat dan halaman eksplorasi otomatis turun ke **ilustrasi SVG dua dimensi**
+model 3D gagal dimuat dan halaman eksplorasi otomatis turun ke **gambar render dua dimensi**
 dengan titik interaktif yang sama. Jalur cadangan ini memang disengaja dan ikut diuji.
 
 Koneksi internet dibutuhkan untuk memuat Tailwind dan Three.js dari CDN serta untuk
@@ -58,8 +60,8 @@ arnatomy-frontend/
 ├── css/
 │   └── style.css           # Custom di luar Tailwind: titik interaktif, akordeon, fokus
 ├── assets/
-│   ├── models/heart.glb    # Model 3D jantung (placeholder, lihat catatan di bawah)
-│   └── img/jantung.webp    # Render statis dari model yang sama, untuk hero dan thumbnail
+│   ├── models/             # heart.glb, lungs.glb (placeholder, lihat catatan di bawah)
+│   └── img/                # Render statis tiap organ (webp transparan) + maskot.webp
 ├── js/
 │   ├── ikon.js             # Kumpulan ikon garis (inline SVG) untuk seluruh halaman
 │   ├── variants.js         # Pola CVA manual (button, badge, card, bubble, tab, dst.)
@@ -67,12 +69,12 @@ arnatomy-frontend/
 │   ├── state.js            # State di memori + aksi & selector
 │   ├── ui.js               # Helper: escaping, format waktu, toast, modal dialog
 │   ├── api.js              # Simulasi panggilan API (async/await + timeout)
-│   ├── svg.js              # Ilustrasi anatomi berlapis (cadangan bila 3D gagal)
 │   ├── viewer3d.js         # Modul ES: scene Three.js, kamera, titik pada permukaan
 │   ├── layout.js           # Header, navigasi responsif, footer
 │   ├── router.js           # Routing hash + guard login & peran (RBAC)
 │   ├── app.js              # Titik masuk aplikasi
 │   └── pages/
+│       ├── landing.js      # Halaman depan publik (sebelum login)
 │       ├── login.js        # Halaman Login
 │       ├── beranda.js      # Halaman Utama
 │       ├── eksplorasi.js   # Halaman Eksplorasi (model 3D)
@@ -83,46 +85,58 @@ arnatomy-frontend/
 ```
 
 Pemisahan tanggung jawab: **data/state** (`data.js`, `state.js`), **fungsi render**
-(`pages/*.js`, `svg.js`, `layout.js`), **event handler** (fungsi `mount()` tiap halaman),
+(`pages/*.js`, `layout.js`), **event handler** (fungsi `mount()` tiap halaman),
 dan **scene 3D** (`viewer3d.js`). Markup beserta atribut ARIA titik interaktif dibuat oleh
 halaman; `viewer3d.js` hanya mengurus posisi layarnya tiap frame.
 
-## Catatan model 3D
+## Catatan aset
 
-`assets/models/heart.glb` diambil sementara dari repositori publik
-[thebuggeddev/anatomy](https://github.com/thebuggeddev/anatomy) (`public/models/heart.glb`).
+**Model 3D.** `assets/models/heart.glb` dan `lungs.glb` diambil sementara dari repositori
+publik [thebuggeddev/anatomy](https://github.com/thebuggeddev/anatomy) (`public/models/`).
 Repositori itu **tidak menyertakan berkas LICENSE**, dan metadata berkas menunjukkan model
-dihasilkan oleh generator 3D Tripo, sehingga berkas ini berstatus **placeholder** dan
-direncanakan diganti model buatan sendiri.
+dihasilkan generator 3D Tripo, sehingga keduanya berstatus **placeholder** dan direncanakan
+diganti model buatan sendiri. Menggantinya cukup menimpa berkasnya atau mengubah
+`file_model_3d` pada `js/data.js`; titik interaktif menyesuaikan sendiri karena posisinya
+ditembakkan ke permukaan model.
 
-Menggantinya cukup satu langkah: timpa `assets/models/heart.glb`, atau ubah
-`file_model_3d` pada `js/data.js`. Titik interaktif menyesuaikan sendiri karena
-posisinya ditembakkan ke permukaan model, bukan dipatok pada koordinat mentah.
+**Render statis.** Semua gambar organ di `assets/img/` (`jantung`, `paru`, serta `otak`,
+`usus`, `ginjal`, `pankreas`, `mata`, `kulit` untuk kartu *segera hadir*) dirender sendiri
+dari model repositori yang sama lewat `App.viewer3d.cuplikan()`, lalu disimpan sebagai WebP
+transparan. Model organ yang belum tersedia tidak ikut di-commit, hanya rendernya.
 
-`assets/img/jantung.webp` (1350 px, latar transparan) dirender dari model yang sama
-lewat `App.viewer3d.cuplikan()`, lalu dipakai sebagai gambar hero sebelum model 3D
-siap dan sebagai thumbnail kartu. Bila model diganti, render ulang gambar ini dengan
-cara yang sama agar tetap konsisten.
+**Maskot.** `assets/img/maskot.webp` adalah "Arno", robot asisten belajar. Sumber:
+[Cute Cartoon Robot oleh bcogwene di Pixabay](https://pixabay.com/illustrations/cute-cartoon-robot-funny-character-807306/),
+**Pixabay Content License** (bebas dipakai, tanpa atribusi). Latar putih aslinya dihapus
+dengan Pillow (flood fill dari tepi) agar bisa diletakkan di atas warna apa pun.
 
 ## Peta halaman ↔ SKPL
 
 | Rute | Halaman | Kebutuhan yang diwakili |
 |---|---|---|
+| `#/` | Landing publik | Katalog sistem organ, alur belajar, ajakan masuk |
 | `#/login` | Login | FR-01, TC-01, TC-02 |
-| `#/beranda` | Halaman Utama | Bab VII — pintasan eksplorasi & riwayat |
-| `#/eksplorasi` | Eksplorasi organ 3D | FR-03, FR-04, FR-05, FR-06, FR-07, FR-09, FR-14 |
+| `#/beranda` | Dashboard belajar | Bab VII — progres per sistem, lanjutkan belajar, aktivitas |
+| `#/eksplorasi?organ=<id>` | Eksplorasi organ 3D | FR-03, FR-04, FR-05, FR-06, FR-07, FR-09, FR-14 |
 | `#/asisten?bagian=<id>` | Asisten AI | FR-08, TC-07 |
 | `#/riwayat` | Riwayat Belajar | FR-14 |
 | `#/admin` | Dashboard Administrator | FR-10, FR-11 (khusus peran `admin`) |
 
-Halaman eksplorasi disusun tiga kolom: pustaka bagian tubuh di kiri, penampil model di
-tengah, dan panel penjelasan di kanan. Penjelasan label tampil pada panel kanan, bukan
-pada popup melayang, agar teks panjang dan daftar fakta tetap terbaca sambil model diputar.
+Halaman eksplorasi menampilkan model 3D selebar halaman. Penjelasan bagian tubuh muncul
+pada **panel samping yang meluncur masuk** (laci dari kanan di layar lebar, lembar dari bawah
+di layar sempit) begitu titik diketuk; tombol "Daftar bagian" membuka panel yang sama berisi
+daftar seluruh bagian sebagai jalan masuk untuk pengguna keyboard. Organ dipilih lewat
+pemilih di kepala halaman atau parameter `?organ=`.
+
+**Navigasi kaca.** Pil navigasi gelap tembus pandang mengambang di atas halaman. Saat halaman
+berada di atas, tiap butir menampilkan ikon dan label; begitu digulir ke bawah, label
+menyusut sehingga tersisa ikon saja. Varian publik (landing) dan varian setelah login memakai
+komponen yang sama.
 
 ## Model data (mengikuti Bab VI SKPL)
 
 ```js
-organs         { id_organ, nama_organ, sistem_organ, julukan, file_model_3d, deskripsi, fakta[] }
+sistem_organ   { id_sistem, nama, id_organ, status: 'tersedia'|'segera', organ, gambar }
+organs         { id_organ, nama_organ, sistem_organ, julukan, file_model_3d, gambar, deskripsi, fakta[] }
 body_parts     { id_bagian, id_organ, nama_bagian_internal, parent_bagian_id,
                  posisi_koordinat_3d, posisi_2d, fakta[] }
 layers         { id_layer, id_organ, nama_layer, urutan_tampil }
@@ -137,11 +151,13 @@ laporan_kesalahan { id_laporan, id_user, id_konten, deskripsi_laporan, status_ti
 pecahan terhadap kotak batas model, jadi tidak ikut berubah bila berkas model diganti
 dengan skala berbeda. Saat model dimuat, koordinat itu dipakai sebagai titik bidik: sinar
 ditembakkan dari posisi kamera awal, lalu penanda diletakkan pada permukaan pertama yang
-terkena. `posisi_2d` (persen) hanya dipakai ilustrasi SVG cadangan.
+terkena. `posisi_2d` (persen) hanya dipakai gambar cadangan dua dimensi.
 
-Isi data awal: 6 bagian tubuh jantung (Atrium Kanan, Atrium Kiri, Ventrikel Kanan,
-Ventrikel Kiri, Aorta, dan Katup Mitral sebagai sub-bagian Atrium Kiri). Semuanya punya
-label dasar; empat di antaranya juga punya label dimmed.
+Isi data awal: 6 bagian jantung (Atrium Kanan, Atrium Kiri, Ventrikel Kanan, Ventrikel
+Kiri, Aorta, Katup Mitral sebagai sub-bagian Atrium Kiri) dan 6 bagian paru-paru (Trakea,
+Bronkus Utama, Paru-paru Kanan, Paru-paru Kiri, Lobus Bawah Paru Kanan sebagai sub-bagian,
+Alveolus sebagai sub-bagian). Semuanya punya label dasar; delapan di antaranya juga punya
+label dimmed.
 
 ## Kinerja penampil 3D
 
@@ -197,10 +213,12 @@ serta satu strip marquee biru. Ikon garis berasal dari `js/ikon.js` (inline SVG)
 dipakai hemat: tombol utama, titik, strip, dan penanda aktif. Fon dimuat dari Google
 Fonts dengan cadangan `system-ui`.
 
-**Aset organ di halaman lain.** Halaman login dan beranda memakai penampil 3D yang sama
-dalam mode dekoratif (berputar pelan, tanpa titik), dengan gambar statis tampil lebih dulu
-lalu memudar begitu model siap. Kartu menu memakai render abu-abu yang berwarna saat
-disorot.
+**Aset organ di halaman lain.** Landing dan login memakai penampil 3D yang sama dalam mode
+dekoratif (berputar pelan, tanpa titik), dengan gambar statis tampil lebih dulu lalu memudar
+begitu model siap. Kartu sistem organ memakai render abu-abu yang berwarna saat disorot.
+
+**Maskot Arno** muncul di hero landing, kartu sapaan dashboard, avatar Asisten AI, layar
+memuat model 3D, dan kondisi kosong.
 
 **Glassmorphism.** Kelas `.kaca` (latar putih tembus pandang + `backdrop-filter`) hanya
 dipakai pada kartu yang melayang di atas organ, tombol alat, dan bilah layer. Header
@@ -239,7 +257,7 @@ otomatis pada `prefers-reduced-motion: reduce`.
   beserta tombol "Coba lagi") dapat diperagakan tanpa memutus internet.
 - **Model 3D**: ubah `file_model_3d` pada `js/data.js` ke nama berkas yang tidak ada, atau
   buka `index.html` langsung tanpa server. Halaman akan menampilkan pemberitahuan dan
-  beralih ke ilustrasi SVG dua dimensi.
+  beralih ke gambar render dua dimensi dengan titik yang sama.
 
 ## Catatan
 

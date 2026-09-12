@@ -23,11 +23,12 @@ window.App.pages = window.App.pages || {};
   /* ---------------- Panel: daftar konten ---------------- */
   function barisKonten(konten) {
     const bagian = App.aksi.bagianById(konten.id_bagian);
+    const organ = App.aksi.organById(bagian.id_organ);
     return (
       '<tr class="border-b border-black/5 last:border-0">' +
         '<th scope="row" class="px-3 py-3 text-left align-top">' +
           '<span class="block text-sm font-semibold">' + ui.esc(konten.judul_tampil) + '</span>' +
-          '<span class="block text-xs text-neutral-400">' + ui.esc(bagian.nama_bagian_internal) + '</span>' +
+          '<span class="block text-xs text-neutral-400">' + ui.esc(bagian.nama_bagian_internal) + ' &middot; ' + ui.esc(organ.nama_organ) + '</span>' +
         '</th>' +
         '<td class="px-3 py-3 align-top">' +
           '<span class="' + v.badge({ status: konten.jenis_konten }) + '">' + ui.esc(konten.jenis_konten) + '</span>' +

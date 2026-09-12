@@ -90,6 +90,10 @@ window.App = window.App || {};
     const dekoratif = Boolean(opsi.dekoratif);
     const posisiAwal = POSISI_KAMERA_AWAL.clone();
     if (opsi.jarak) posisiAwal.setLength(opsi.jarak);
+    /* Wadah tegak (HP) lebih sempit daripada modelnya; kamera dimundurkan
+       sebanding rasio agar seluruh organ tetap masuk bingkai. */
+    const aspekWadah = (opsi.wadah.clientWidth || 1) / (opsi.wadah.clientHeight || 1);
+    if (aspekWadah < 1) posisiAwal.setLength(posisiAwal.length() / Math.max(aspekWadah, 0.55) * 0.95);
     let lebar = wadah.clientWidth || 1;
     let tinggi = wadah.clientHeight || 1;
 
@@ -289,6 +293,7 @@ window.App = window.App || {};
       pmrem: pmrem, pengamat: pengamat, pengamatTampak: pengamatTampak,
       wadah: wadah, lapisan: lapisan, titik: titik, panggung: panggung,
       mintaGambar: mintaGambar,
+      posisiAwal: posisiAwal,
       arahkanKamera: function (posisi) { targetKamera = posisi; perluGambar = true; }
     };
   }
@@ -312,11 +317,12 @@ window.App = window.App || {};
      kamera dimundurkan otomatis agar seluruh lapisan tetap masuk bingkai. */
   function sesuaikanJarak() {
     if (!sesi) return;
+    const posisiAwalSesi = sesi.posisiAwal;
     const adaSelubung = Object.keys(sesi.lapisan).some(function (nama) {
       return sesi.lapisan[nama].visible;
     });
     const jarakSekarang = sesi.camera.position.distanceTo(sesi.controls.target);
-    const jarakTujuan = adaSelubung ? 2.55 : 1.85;
+    const jarakTujuan = adaSelubung ? posisiAwalSesi.length() * 1.38 : posisiAwalSesi.length();
     if (Math.abs(jarakSekarang - jarakTujuan) < 0.05) return;
     if (adaSelubung && jarakSekarang > jarakTujuan) return;
     const arah = sesi.camera.position.clone().sub(sesi.controls.target).setLength(jarakTujuan);
@@ -342,7 +348,7 @@ window.App = window.App || {};
   function reset() {
     if (!sesi) return;
     sesi.controls.autoRotate = false;
-    sesi.arahkanKamera(POSISI_KAMERA_AWAL.clone());
+    sesi.arahkanKamera(sesi.posisiAwal.clone());
   }
 
   /** Memutar kamera sampai menghadap titik yang dipilih pengguna. */

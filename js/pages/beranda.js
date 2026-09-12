@@ -1,7 +1,7 @@
 /* ==========================================================================
-   pages/beranda.js — Halaman Utama
-   Pintasan menuju eksplorasi sistem peredaran darah dan riwayat belajar
-   (SKPL Bab VII, tabel antarmuka role User).
+   pages/beranda.js — Dashboard belajar siswa
+   Ringkasan progres per sistem organ, kartu lanjutkan belajar, aktivitas
+   terakhir, dan pintasan (SKPL Bab VII, tabel antarmuka role User).
    ========================================================================== */
 window.App = window.App || {};
 window.App.pages = window.App.pages || {};
@@ -13,57 +13,80 @@ window.App.pages = window.App.pages || {};
   const v = App.v;
   const ikon = App.ikon;
 
-  /* Kartu menu: ikon di kiri, judul dan keterangan di kanan */
-  function kartuMenu(opsi) {
+  function pesanMaskot(persenTotal, namaDepan) {
+    if (persenTotal === 0) return 'Halo ' + namaDepan + '! Belum ada bagian yang dibuka. Mulai dari jantung, yuk.';
+    if (persenTotal < 50) return 'Bagus, ' + namaDepan + '. Sudah ' + persenTotal + '% bagian dibuka. Lanjutkan!';
+    if (persenTotal < 100) return 'Tinggal sedikit lagi, ' + namaDepan + '. ' + persenTotal + '% sudah dipelajari.';
+    return 'Semua bagian sudah dibuka, ' + namaDepan + '. Coba tanya asisten untuk memperdalam.';
+  }
+
+  /* Kartu sistem organ dengan progres; yang belum tersedia ditandai segera */
+  function kartuSistem(sistem) {
+    const tersedia = sistem.status === 'tersedia';
+    const progres = tersedia ? App.aksi.progresOrgan(sistem.id_organ) : null;
+    const isiDalam =
+      '<div class="grid h-20 w-20 shrink-0 place-items-center rounded-2xl bg-[#f1f2f4]">' +
+        '<img src="' + ui.esc(sistem.gambar) + '" alt="" aria-hidden="true" ' +
+          'class="' + (tersedia ? 'organ-abu' : 'grayscale opacity-60') + ' h-16 w-16 object-contain" />' +
+      '</div>' +
+      '<div class="min-w-0 flex-1">' +
+        '<p class="mikro">' + ui.esc(sistem.organ) + '</p>' +
+        '<h3 class="mt-0.5 truncate text-lg font-semibold leading-tight">' + ui.esc(sistem.nama) + '</h3>' +
+        (tersedia
+          ? '<div class="mt-2.5 flex items-center gap-3">' +
+              '<div class="h-1.5 flex-1 overflow-hidden rounded-full bg-black/8" role="progressbar" ' +
+                'aria-valuenow="' + progres.persen + '" aria-valuemin="0" aria-valuemax="100" ' +
+                'aria-label="Progres ' + ui.esc(sistem.nama) + '">' +
+                '<div class="h-full rounded-full bg-[#1a6dff]" style="width:' + progres.persen + '%"></div>' +
+              '</div>' +
+              '<span class="text-xs font-semibold tabular-nums">' + progres.persen + '%</span>' +
+            '</div>'
+          : '<span class="' + v.badge({ status: 'netral' }) + ' mt-2.5">Segera hadir</span>') +
+      '</div>';
+
+    if (!tersedia) {
+      return '<article class="muncul flex items-center gap-4 rounded-2xl bg-white p-4 opacity-75">' + isiDalam + '</article>';
+    }
     return (
-      '<article class="muncul kartu-angkat ' + v.kartu({ padding: 'md' }) + ' relative flex items-center gap-5">' +
-        '<span class="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-[#f1f2f4] text-neutral-800">' +
-          ikon(opsi.ikon, 'h-7 w-7') +
-        '</span>' +
-        '<div class="min-w-0 flex-1">' +
-          '<h3 class="text-xl font-semibold">' +
-            '<a href="#/' + opsi.rute + '" class="after:absolute after:inset-0">' + ui.esc(opsi.judul) + '</a>' +
-          '</h3>' +
-          '<p class="mt-1 text-sm leading-relaxed text-neutral-500">' + ui.esc(opsi.deskripsi) + '</p>' +
-        '</div>' +
-        '<span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#1a6dff] text-white">' +
+      '<article class="muncul kartu-angkat group relative flex items-center gap-4 rounded-2xl bg-white p-4">' +
+        isiDalam +
+        '<a href="#/eksplorasi?organ=' + sistem.id_organ + '" aria-label="Buka ' + ui.esc(sistem.nama) + '" ' +
+          'class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#1a6dff] text-white after:absolute after:inset-0">' +
           ikon('panah', 'h-4 w-4') +
+        '</a>' +
+      '</article>'
+    );
+  }
+
+  function barisAktivitas(r) {
+    const bagian = App.aksi.bagianById(r.id_bagian);
+    const organ = bagian ? App.aksi.organById(bagian.id_organ) : null;
+    return (
+      '<li class="flex items-center gap-3 py-2.5">' +
+        '<span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#f1f2f4] text-neutral-700">' +
+          ikon(r.jenis_konten === 'dimmed' ? 'lapisan' : 'jantung', 'h-4 w-4') +
         '</span>' +
-      '</article>'
-    );
-  }
-
-  /* Kartu utama eksplorasi: gambar organ abu-abu yang berwarna saat disorot */
-  function kartuEksplorasi() {
-    return (
-      '<article class="group muncul kartu-angkat relative flex min-h-[15rem] overflow-hidden rounded-2xl bg-white p-5 lg:col-span-2 lg:p-7">' +
-        '<div class="relative z-10 flex max-w-sm flex-col justify-between">' +
-          '<div>' +
-            '<p class="mikro">Sistem peredaran darah</p>' +
-            '<h3 class="titik-biru mt-3 text-3xl font-semibold">' +
-              '<a href="#/eksplorasi" class="after:absolute after:inset-0">Eksplorasi Organ 3D</a>' +
-            '</h3>' +
-            '<p class="mt-2 text-sm leading-relaxed text-neutral-500">' +
-              'Putar model jantung, nyalakan layer anatomi, buka label dasar dan label dimmed.' +
-            '</p>' +
-          '</div>' +
-          '<span class="mt-6 inline-flex w-fit items-center gap-2 rounded-full bg-[#1a6dff] px-4 py-2 text-sm font-medium text-white">' +
-            'Buka model' + ikon('panah', 'h-4 w-4') +
+        '<span class="min-w-0 flex-1">' +
+          '<span class="block truncate text-sm font-medium">' + ui.esc(bagian ? bagian.nama_bagian_internal : '-') + '</span>' +
+          '<span class="block text-[11px] text-neutral-400">' +
+            ui.esc(organ ? organ.nama_organ : '') + ' &middot; label ' + ui.esc(r.jenis_konten) +
           '</span>' +
-        '</div>' +
-        '<img src="assets/img/jantung.webp" alt="" aria-hidden="true" ' +
-          'class="organ-abu pointer-events-none absolute -bottom-10 -right-6 w-56 sm:w-64 lg:-right-2 lg:w-72" />' +
-      '</article>'
+        '</span>' +
+        '<span class="text-[11px] text-neutral-400">' + ui.esc(ui.formatWaktu(r.waktu_akses)) + '</span>' +
+      '</li>'
     );
   }
 
-  function ubin(label, nilai, keterangan) {
+  function pintasan(rute, namaIkon, judul, teks) {
     return (
-      '<div class="muncul ' + v.kartu({ nada: 'aksen', padding: 'md' }) + '">' +
-        '<p class="mikro">' + ui.esc(label) + '</p>' +
-        '<p class="mt-3 text-4xl font-semibold tracking-tight">' + ui.esc(nilai) + '</p>' +
-        '<p class="mt-1 text-xs text-neutral-500">' + ui.esc(keterangan) + '</p>' +
-      '</div>'
+      '<a href="#/' + rute + '" class="kartu-angkat flex items-center gap-3 rounded-2xl bg-white p-4">' +
+        '<span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#f1f2f4] text-neutral-800">' + ikon(namaIkon, 'h-5 w-5') + '</span>' +
+        '<span class="min-w-0 flex-1">' +
+          '<span class="block text-sm font-semibold">' + ui.esc(judul) + '</span>' +
+          '<span class="block truncate text-[11px] text-neutral-400">' + ui.esc(teks) + '</span>' +
+        '</span>' +
+        ikon('panah', 'h-4 w-4 text-neutral-400') +
+      '</a>'
     );
   }
 
@@ -72,103 +95,106 @@ window.App.pages = window.App.pages || {};
 
     render: function () {
       const user = App.state.sesi.user;
-      const organ = App.state.organs[0];
-      const total = App.state.body_parts.length;
-      const dipelajari = App.aksi.jumlahBagianDipelajari();
-      const persen = total ? Math.round((dipelajari / total) * 100) : 0;
       const namaDepan = user.nama.split(' ')[0];
       const jam = new Date().getHours();
       const sapaan = jam < 11 ? 'Selamat pagi' : jam < 15 ? 'Selamat siang' : jam < 19 ? 'Selamat sore' : 'Selamat malam';
 
-      const kartuAdmin = user.role === 'admin'
-        ? kartuMenu({
-            rute: 'admin', ikon: 'perisai',
-            judul: 'Dashboard Administrator',
-            deskripsi: 'Kelola label dasar dan dimmed, ubah status validasi, tindak lanjuti laporan kesalahan.'
-          })
-        : '';
+      const totalBagian = App.state.body_parts.length;
+      const dipelajari = App.aksi.jumlahBagianDipelajari();
+      const persenTotal = totalBagian ? Math.round((dipelajari / totalBagian) * 100) : 0;
+      const terakhir = App.aksi.riwayatTerakhir();
+      const bagianTerakhir = terakhir ? App.aksi.bagianById(terakhir.id_bagian) : null;
+      const organLanjut = bagianTerakhir ? App.aksi.organById(bagianTerakhir.id_organ) : App.state.organs[0];
+      const progresLanjut = App.aksi.progresOrgan(organLanjut.id_organ);
+      const aktivitas = App.state.learning_history.slice(-5).reverse();
+      const dimmedDibuka = App.state.learning_history.filter(function (r) { return r.jenis_konten === 'dimmed'; }).length;
 
       return (
         '<section aria-labelledby="judul-beranda">' +
 
-          /* Hero: sapaan di kiri, organ 3D di kanan */
-          '<div class="grid gap-6 pt-6 sm:pt-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">' +
+          '<div class="flex flex-wrap items-end justify-between gap-4 pt-4">' +
             '<div>' +
-              '<p class="mikro mb-3">' + ui.esc(organ.sistem_organ) + '</p>' +
-              '<h1 id="judul-beranda" class="titik-biru denyut text-4xl font-semibold leading-[0.95] sm:text-5xl lg:text-6xl">' +
+              '<p class="mikro mb-3">Dashboard belajar</p>' +
+              '<h1 id="judul-beranda" class="titik-biru text-4xl font-semibold leading-[0.95] sm:text-5xl">' +
                 ui.judulKata([[sapaan + ','], [namaDepan]]) +
               '</h1>' +
-              '<div class="muncul mt-7 flex flex-wrap items-center gap-5" style="transition-delay:300ms">' +
-                '<a href="#/eksplorasi" class="' + v.tombol({ ukuran: 'lg' }) + '">' +
-                  'Mulai eksplorasi' + ikon('panah', 'h-4 w-4') +
-                '</a>' +
-                '<p class="max-w-xs text-sm leading-relaxed text-neutral-500">' +
-                  'Lanjutkan belajar dari bagian yang belum dibuka, atau ulangi yang sudah.' +
+            '</div>' +
+            '<p class="mikro">' + ui.esc(user.role) + (user.asal_sekolah ? ' &middot; ' + ui.esc(user.asal_sekolah) : '') + '</p>' +
+          '</div>' +
+
+          /* Baris utama: lanjutkan belajar + maskot */
+          '<div class="mt-8 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">' +
+            '<article class="muncul group relative flex flex-col justify-between overflow-hidden rounded-3xl bg-white p-6 sm:p-7">' +
+              '<div class="relative z-10 max-w-sm">' +
+                '<p class="mikro">' + (terakhir ? 'Lanjutkan belajar' : 'Mulai belajar') + '</p>' +
+                '<h2 class="titik-biru mt-3 text-3xl font-semibold">' + ui.esc(organLanjut.nama_organ) + '</h2>' +
+                '<p class="mt-2 text-sm leading-relaxed text-neutral-500">' +
+                  ui.esc(organLanjut.sistem_organ) + ' &middot; ' + progresLanjut.dipelajari + ' dari ' + progresLanjut.total + ' bagian dibuka' +
+                  (bagianTerakhir ? '. Terakhir: ' + ui.esc(bagianTerakhir.nama_bagian_internal) + '.' : '.') +
                 '</p>' +
               '</div>' +
-            '</div>' +
-
-            '<div class="muncul relative aspect-[4/3] overflow-hidden rounded-3xl bg-[#f1f2f4] lg:aspect-[5/4]" style="transition-delay:150ms">' +
-              '<span class="piringan-organ" aria-hidden="true"></span>' +
-              '<div id="hero-3d" class="absolute inset-0"></div>' +
-              '<img src="assets/img/jantung.webp" alt="Model 3D jantung manusia" ' +
-                'class="hero-gambar melayang pointer-events-none absolute left-1/2 top-1/2 w-[64%] -translate-x-1/2 -translate-y-1/2" />' +
-              '<p class="mikro kaca absolute right-4 top-4 rounded-full px-3 py-1.5">' + ui.esc(organ.nama_organ) + '</p>' +
-              '<div class="kaca melayang-lambat absolute bottom-4 left-4 w-[min(15rem,70%)] rounded-2xl px-4 py-3">' +
-                '<p class="mikro">Progres</p>' +
-                '<div class="mt-2 flex items-end justify-between gap-3">' +
-                  '<p class="text-3xl font-semibold leading-none">' + persen + '%</p>' +
-                  '<p class="text-xs text-neutral-500">' + dipelajari + ' dari ' + total + ' bagian</p>' +
-                '</div>' +
-                '<div class="mt-2.5 h-1 w-full overflow-hidden rounded-full bg-black/10" ' +
-                  'role="progressbar" aria-valuenow="' + persen + '" aria-valuemin="0" aria-valuemax="100" ' +
-                  'aria-label="Persentase bagian tubuh yang sudah dipelajari">' +
-                  '<div class="h-full rounded-full bg-[#1a6dff] transition-all" style="width: ' + persen + '%"></div>' +
+              '<div class="relative z-10 mt-8 flex flex-wrap items-center gap-4">' +
+                '<a href="#/eksplorasi?organ=' + organLanjut.id_organ + '" class="' + v.tombol({ ukuran: 'md' }) + '">' +
+                  (terakhir ? 'Lanjutkan' : 'Buka model') + ikon('panah', 'h-4 w-4') +
+                '</a>' +
+                '<div class="flex items-center gap-2 text-xs text-neutral-500">' +
+                  '<div class="h-1.5 w-28 overflow-hidden rounded-full bg-black/8" role="progressbar" aria-valuenow="' + progresLanjut.persen + '" aria-valuemin="0" aria-valuemax="100" aria-label="Progres ' + ui.esc(organLanjut.nama_organ) + '">' +
+                    '<div class="h-full rounded-full bg-[#1a6dff]" style="width:' + progresLanjut.persen + '%"></div>' +
+                  '</div>' +
+                  '<span class="font-semibold tabular-nums">' + progresLanjut.persen + '%</span>' +
                 '</div>' +
               '</div>' +
-            '</div>' +
+              '<img src="' + ui.esc(organLanjut.gambar) + '" alt="" aria-hidden="true" ' +
+                'class="organ-abu pointer-events-none absolute -bottom-10 -right-10 w-44 opacity-25 sm:-right-4 sm:w-60 sm:opacity-100 lg:-right-2 lg:w-64" />' +
+            '</article>' +
+
+            '<article class="muncul flex flex-col justify-between rounded-3xl bg-[#1a6dff] p-6 text-white sm:p-7">' +
+              '<div class="flex items-start gap-4">' +
+                ui.maskot('maskot-goyang h-20 w-20 shrink-0') +
+                '<div>' +
+                  '<p class="mikro text-white/60">Arno</p>' +
+                  '<p class="mt-2 text-lg font-medium leading-snug">' + ui.esc(pesanMaskot(persenTotal, namaDepan)) + '</p>' +
+                '</div>' +
+              '</div>' +
+              '<dl class="mt-8 grid grid-cols-3 gap-3 border-t border-white/15 pt-5">' +
+                '<div><dt class="text-[11px] uppercase tracking-[0.08em] text-white/60">Dibuka</dt><dd class="mt-1 text-2xl font-semibold">' + dipelajari + '<span class="text-sm text-white/60">/' + totalBagian + '</span></dd></div>' +
+                '<div><dt class="text-[11px] uppercase tracking-[0.08em] text-white/60">Dimmed</dt><dd class="mt-1 text-2xl font-semibold">' + dimmedDibuka + '</dd></div>' +
+                '<div><dt class="text-[11px] uppercase tracking-[0.08em] text-white/60">Tanya AI</dt><dd class="mt-1 text-2xl font-semibold">' + App.state.ai_conversations.length + '</dd></div>' +
+              '</dl>' +
+            '</article>' +
           '</div>' +
 
-          '<div class="muncul mt-10">' +
-            ui.marquee(['Model Organ 3D', 'Label Dasar', 'Label Dimmed', 'Asisten AI', 'Riwayat Belajar'], 'Fitur') +
+          /* Sistem organ */
+          '<div class="mt-12 flex flex-wrap items-end justify-between gap-4">' +
+            '<h2 class="titik-biru text-3xl font-semibold sm:text-4xl">Sistem organ</h2>' +
+            '<p class="text-sm text-neutral-500">Progres tiap sistem tercatat otomatis.</p>' +
+          '</div>' +
+          '<div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">' +
+            App.state.sistem_organ.map(kartuSistem).join('') +
           '</div>' +
 
-          /* Ubin angka */
-          '<div class="mt-8 grid gap-4 sm:grid-cols-3">' +
-            ubin('Bagian terdata', String(total), organ.nama_organ) +
-            ubin('Label tersedia', String(App.state.part_content.length), 'Label dasar dan dimmed') +
-            ubin('Sudah dibuka', String(dipelajari), 'Tercatat pada sesi ini') +
-          '</div>' +
-
-          /* Menu */
-          '<h2 class="titik-biru muncul mt-12 text-3xl font-semibold sm:text-4xl">Menu</h2>' +
-          '<div class="mt-5 grid gap-4 lg:grid-cols-3">' +
-            kartuEksplorasi() +
-            '<div class="grid gap-4">' +
-              kartuMenu({
-                rute: 'asisten', ikon: 'chat',
-                judul: 'Asisten AI',
-                deskripsi: 'Tanya fungsi, letak, atau gangguan pada bagian jantung.'
-              }) +
-              kartuMenu({
-                rute: 'riwayat', ikon: 'riwayat',
-                judul: 'Riwayat Belajar',
-                deskripsi: dipelajari
-                  ? dipelajari + ' bagian tubuh tercatat pada sesi ini.'
-                  : 'Terisi otomatis saat label dibuka.'
-              }) +
-            '</div>' +
-            (kartuAdmin ? '<div class="lg:col-span-3">' + kartuAdmin + '</div>' : '') +
+          /* Aktivitas & pintasan */
+          '<div class="mt-12 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">' +
+            '<section aria-labelledby="judul-aktivitas" class="muncul rounded-3xl bg-white p-6">' +
+              '<h2 id="judul-aktivitas" class="titik-biru text-2xl font-semibold">Aktivitas terakhir</h2>' +
+              (aktivitas.length
+                ? '<ul class="mt-3 divide-y divide-black/5">' + aktivitas.map(barisAktivitas).join('') + '</ul>'
+                : '<p class="mt-3 text-sm text-neutral-500">Belum ada aktivitas. Buka salah satu bagian organ untuk mulai mencatat.</p>') +
+              '<a href="#/riwayat" class="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[#1a6dff]">Lihat semua riwayat' + ikon('panah', 'h-4 w-4') + '</a>' +
+            '</section>' +
+            '<section aria-labelledby="judul-pintasan" class="muncul">' +
+              '<h2 id="judul-pintasan" class="titik-biru text-2xl font-semibold">Pintasan</h2>' +
+              '<div class="mt-3 grid gap-3">' +
+                pintasan('asisten', 'chat', 'Asisten AI', 'Tanya fungsi, letak, atau gangguan') +
+                pintasan('riwayat', 'riwayat', 'Riwayat belajar', 'Rekam bagian yang sudah dibuka') +
+                (user.role === 'admin' ? pintasan('admin', 'perisai', 'Dashboard Admin', 'Kelola konten dan laporan') : '') +
+              '</div>' +
+            '</section>' +
           '</div>' +
         '</section>'
       );
     },
 
-    mount: function () {
-      ui.pasangHero3d('hero-3d', { jarak: 1.6, kecepatanPutar: 0.7 });
-      App.pages.beranda.bersihkan = function () {
-        if (App.viewer3d) App.viewer3d.bersihkan();
-      };
-    }
+    mount: function () { /* halaman statis: navigasi ditangani tautan hash */ }
   };
 })(window.App);

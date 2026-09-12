@@ -10,6 +10,8 @@
 
 [hidden] { display: none !important; }
 
+/* Kelas komponen diletakkan di layer components agar utility Tailwind bisa menimpanya */
+@layer components {
 /* --- Tipografi ------------------------------------------------------------ */
 body {
   font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -131,9 +133,8 @@ h1, h2, h3, .tampilan {
   position: absolute;
   left: 0;
   top: 0;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  width: 1.5rem;
+  height: 1.5rem;
   padding: 0;
   border: 0;
   background: none;
@@ -144,8 +145,8 @@ h1, h2, h3, .tampilan {
 .nomor-titik {
   display: grid;
   place-items: center;
-  height: 1.5rem;
-  width: 1.5rem;
+  height: 100%;
+  width: 100%;
   border-radius: 9999px;
   background: #ffffff;
   color: #111827;
@@ -161,7 +162,11 @@ h1, h2, h3, .tampilan {
   color: #ffffff;
   box-shadow: 0 0 0 4px rgba(26, 109, 255, 0.22), 0 6px 18px rgba(26, 109, 255, 0.4);
 }
+/* Label nama diposisikan absolut agar tidak menggeser titik pusat penanda */
 .nama-titik {
+  position: absolute;
+  left: calc(100% + 0.5rem);
+  top: 50%;
   white-space: nowrap;
   border-radius: 9999px;
   background: rgba(17, 24, 39, 0.78);
@@ -172,12 +177,12 @@ h1, h2, h3, .tampilan {
   font-weight: 500;
   color: #ffffff;
   opacity: 0;
-  transform: translateX(-0.35rem);
+  transform: translate(-0.35rem, -50%);
   transition: opacity 0.18s ease, transform 0.18s ease;
 }
 .titik-3d:hover .nama-titik,
 .titik-3d:focus-visible .nama-titik,
-.titik-3d[aria-pressed="true"] .nama-titik { opacity: 1; transform: translateX(0); }
+.titik-3d[aria-pressed="true"] .nama-titik { opacity: 1; transform: translate(0, -50%); }
 
 /* Titik yang berada di sisi belakang organ */
 .titik-tertutup { opacity: 0.28; }
@@ -218,6 +223,80 @@ h1, h2, h3, .tampilan {
   color: #ffffff;
   -webkit-backdrop-filter: blur(18px) saturate(1.3);
   backdrop-filter: blur(18px) saturate(1.3);
+}
+
+/* --- Navigasi kaca mengambang ------------------------------------------- */
+.nav-kaca {
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  transition: padding 0.35s var(--lengkung);
+}
+.nav-label {
+  display: inline-block;
+  max-width: 9rem;
+  overflow: hidden;
+  white-space: nowrap;
+  opacity: 1;
+  transition: max-width 0.35s var(--lengkung), opacity 0.2s ease, margin 0.35s var(--lengkung);
+}
+.nav-butir {
+  padding-left: 0.85rem;
+  padding-right: 0.85rem;
+  transition: padding 0.35s var(--lengkung), background 0.2s ease, color 0.2s ease;
+}
+.nav-ringkas .nav-label,
+.nav-selalu-ringkas .nav-label {
+  max-width: 0;
+  opacity: 0;
+  margin-left: -0.5rem;
+}
+.nav-ringkas .nav-butir,
+.nav-selalu-ringkas .nav-butir { padding-left: 0.7rem; padding-right: 0.7rem; }
+@media (max-width: 767px) {
+  .nav-label { max-width: 0; opacity: 0; margin-left: -0.5rem; }
+  .nav-butir { padding-left: 0.7rem; padding-right: 0.7rem; }
+}
+
+/* --- Panel samping halaman eksplorasi ------------------------------------ *
+   Laci dari kanan pada layar lebar, lembar dari bawah pada layar sempit.  */
+.panel-samping {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 46;
+  width: min(27rem, 100%);
+  transform: translateX(104%);
+  transition: transform 0.5s var(--lengkung);
+  will-change: transform;
+}
+.panel-samping.terbuka { transform: none; }
+@media (max-width: 767px) {
+  .panel-samping {
+    top: auto;
+    left: 0;
+    width: 100%;
+    max-height: 84vh;
+    transform: translateY(104%);
+  }
+}
+.tirai {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  background: rgba(17, 24, 39, 0.18);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+.tirai.terbuka { opacity: 1; pointer-events: auto; }
+
+/* --- Maskot ----------------------------------------------------------------- */
+.maskot { transition: transform 0.4s var(--lengkung); }
+.maskot:hover { transform: translateY(-4px) rotate(-3deg); }
+.maskot-goyang { animation: goyang 3.2s ease-in-out infinite; transform-origin: 50% 90%; }
+@keyframes goyang {
+  0%, 100% { transform: rotate(-2deg); }
+  50%      { transform: rotate(2deg); }
 }
 
 /* --- Motion ---------------------------------------------------------------- */
@@ -300,5 +379,6 @@ h1, h2, h3, .tampilan {
   .marquee-jalur { animation: none; }
   .muncul { opacity: 1; transform: none; }
   .kata > span { transform: none; }
-  .melayang, .melayang-lambat { animation: none; }
+  .melayang, .melayang-lambat, .maskot-goyang { animation: none; }
+}
 }

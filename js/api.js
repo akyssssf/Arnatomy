@@ -48,8 +48,8 @@ window.App = window.App || {};
     const basis = bagian ? App.seed.pengetahuan_ai[bagian.id_bagian] : null;
 
     if (!basis) {
-      return 'Untuk saat ini aku baru menguasai materi sistem peredaran darah pada organ jantung. ' +
-             'Buka halaman Eksplorasi, pilih salah satu bagian jantung, lalu ajukan pertanyaannya lagi.';
+      return 'Untuk saat ini aku baru menguasai materi jantung (sistem peredaran darah) dan paru-paru (sistem pernapasan). ' +
+             'Pilih salah satu bagiannya pada daftar konteks, lalu ajukan pertanyaannya lagi.';
     }
 
     const nama = bagian.nama_bagian_internal;
@@ -59,8 +59,10 @@ window.App = window.App || {};
     if (/letak|dimana|di mana|posisi|lokasi/.test(teks)) potongan.push(basis.letak);
     if (/gangguan|penyakit|kelainan|masalah|sakit/.test(teks)) potongan.push(basis.gangguan);
     if (/beda|perbedaan|banding|dibanding/.test(teks)) {
-      potongan.push('Bedanya terletak pada tujuan aliran darah: sisi kanan jantung mengurus perjalanan ke paru-paru, ' +
-                    'sedangkan sisi kiri mengurus perjalanan ke seluruh tubuh.');
+      potongan.push(bagian.id_organ === 2
+        ? 'Bedanya, paru kanan punya tiga lobus dan lebih besar, sedangkan paru kiri hanya dua lobus karena berbagi ruang dengan jantung.'
+        : 'Bedanya terletak pada tujuan aliran darah: sisi kanan jantung mengurus perjalanan ke paru-paru, ' +
+          'sedangkan sisi kiri mengurus perjalanan ke seluruh tubuh.');
     }
 
     if (!potongan.length) potongan.push(basis.fungsi, basis.ringkas);
