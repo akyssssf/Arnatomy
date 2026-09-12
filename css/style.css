@@ -22,16 +22,15 @@ h1, h2, h3, .tampilan {
   letter-spacing: -0.035em;
 }
 
-/* Motif titik biru di akhir judul */
+/* Motif titik biru di akhir judul. Dibuat dari glif bulat (bukan kotak
+   inline-block) supaya tidak bisa turun baris terpisah dari kata terakhir. */
 .titik-biru::after {
-  content: "";
-  display: inline-block;
-  width: 0.28em;
-  height: 0.28em;
-  margin-left: 0.18em;
-  border-radius: 9999px;
-  background: var(--biru);
-  vertical-align: 0.04em;
+  content: "\25CF";
+  margin-left: 0.22em;
+  font-size: 0.42em;
+  line-height: 0;
+  vertical-align: 0.28em;
+  color: var(--biru);
 }
 
 /* Label mikro dengan garis miring di depan, seperti "/ EST 2023" */
@@ -256,39 +255,37 @@ h1, h2, h3, .tampilan {
   .nav-butir { padding-left: 0.7rem; padding-right: 0.7rem; }
 }
 
-/* --- Panel samping halaman eksplorasi ------------------------------------ *
-   Laci dari kanan pada layar lebar, lembar dari bawah pada layar sempit.  */
+/* --- Panel penjelasan halaman eksplorasi ---------------------------------- *
+   Berada di dalam kartu penampil: meluncur dari kanan pada layar lebar,
+   dari bawah pada layar sempit. Kartu penampil ber-overflow-hidden, jadi
+   posisi awalnya di luar bingkai tidak terlihat.                            */
 .panel-samping {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 46;
-  width: min(27rem, 100%);
-  transform: translateX(104%);
-  transition: transform 0.5s var(--lengkung);
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 20;
+  width: min(25rem, calc(100% - 2rem));
+  opacity: 0;
+  transform: translateX(calc(100% + 1.5rem));
+  transition: transform 0.55s var(--lengkung), opacity 0.35s ease;
   will-change: transform;
 }
-.panel-samping.terbuka { transform: none; }
+.panel-samping.terbuka { opacity: 1; transform: none; }
 @media (max-width: 767px) {
   .panel-samping {
     top: auto;
-    left: 0;
-    width: 100%;
-    max-height: 84vh;
-    transform: translateY(104%);
+    left: 0.5rem;
+    right: 0.5rem;
+    bottom: 0.5rem;
+    width: auto;
+    max-height: 56%;
+    transform: translateY(calc(100% + 1.5rem));
   }
 }
-.tirai {
-  position: fixed;
-  inset: 0;
-  z-index: 45;
-  background: rgba(17, 24, 39, 0.18);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.35s ease;
-}
-.tirai.terbuka { opacity: 1; pointer-events: auto; }
+
+/* Varian kaca lebih pekat untuk panel berisi teks panjang */
+.kaca-tebal { background: rgba(255, 255, 255, 0.9); }
 
 /* --- Motion ---------------------------------------------------------------- */
 :root { --lengkung: cubic-bezier(0.2, 0.7, 0.2, 1); }
@@ -331,14 +328,11 @@ h1, h2, h3, .tampilan {
   50%      { transform: translateY(-12px); }
 }
 
-/* Titik biru berdenyut lembut pada judul hero */
-.titik-biru.denyut::after {
-  animation: denyut 3s ease-in-out infinite;
-  transform-origin: center;
-}
+/* Titik biru berdenyut lembut pada judul hero (opacity, karena glif inline) */
+.titik-biru.denyut::after { animation: denyut 3s ease-in-out infinite; }
 @keyframes denyut {
-  0%, 100% { transform: scale(1); }
-  50%      { transform: scale(1.3); }
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.45; }
 }
 
 /* Kartu terangkat saat disorot */
