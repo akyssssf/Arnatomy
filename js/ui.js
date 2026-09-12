@@ -139,19 +139,12 @@ window.App = window.App || {};
     );
   }
 
-  /** Gambar maskot robot. Dekoratif secara default (alt kosong). */
-  function maskot(kelas, alt) {
-    return (
-      '<img src="assets/img/maskot.webp" alt="' + esc(alt || '') + '" ' +
-        (alt ? '' : 'aria-hidden="true" ') +
-        'class="maskot pointer-events-none select-none ' + (kelas || 'h-16 w-16') + '" />'
-    );
-  }
-
   function kondisiKosong(judul, deskripsi, tombolHtml) {
     return (
       '<div class="' + App.v.kartu({ padding: 'lg' }) + ' flex flex-col items-start gap-4 sm:flex-row sm:items-center">' +
-        maskot('maskot-goyang h-20 w-20 shrink-0') +
+        '<span class="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#f1f2f4] text-neutral-700">' +
+          App.ikon('info', 'h-5 w-5') +
+        '</span>' +
         '<div class="flex-1">' +
           '<h2 class="text-base font-semibold">' + esc(judul) + '</h2>' +
           '<p class="mt-0.5 max-w-lg text-sm text-neutral-500">' + esc(deskripsi) + '</p>' +
@@ -254,7 +247,6 @@ window.App = window.App || {};
     spinner: spinner,
     judulHalaman: judulHalaman,
     marquee: marquee,
-    maskot: maskot,
     kondisiKosong: kondisiKosong
   };
 })(window.App);

@@ -21,10 +21,8 @@ window.App.pages = window.App.pages || {};
   ];
 
   function bubble(peran, isi, waktu) {
-    const avatar = peran === 'ai' ? ui.maskot('h-8 w-8 shrink-0 self-end') : '';
     return (
       '<li class="flex items-end gap-2">' +
-        avatar +
         '<div class="' + v.bubble({ peran: peran }) + '">' +
           '<p>' + ui.esc(isi) + '</p>' +
           (waktu ? '<p class="mt-1 text-[10px] opacity-70">' + ui.esc(ui.formatWaktu(waktu)) + '</p>' : '') +
@@ -57,7 +55,6 @@ window.App.pages = window.App.pages || {};
           ) +
 
           '<div class="muncul ' + v.kartu({ padding: 'md' }) + ' mb-3 flex items-center gap-4">' +
-            ui.maskot('maskot-goyang hidden h-20 w-20 shrink-0 sm:block') +
             '<div class="min-w-0 flex-1">' +
             '<div class="flex flex-wrap items-end gap-3">' +
               '<div class="min-w-[12rem] flex-1">' +
@@ -128,8 +125,8 @@ window.App.pages = window.App.pages || {};
       function gambarPercakapan() {
         const bagian = bagianTerpilih();
         const sapaan = bagian
-          ? 'Halo, aku Arno. Kita sedang membahas ' + bagian.nama_bagian_internal + '. Mau tanya apa?'
-          : 'Halo, aku Arno. Pilih dulu bagian tubuh di atas supaya jawabanku nyambung.';
+          ? 'Konteks saat ini: ' + bagian.nama_bagian_internal + '. Silakan ajukan pertanyaan.'
+          : 'Pilih dulu bagian tubuh di atas supaya jawabannya nyambung.';
 
         let isi = bubble('ai', sapaan, null);
         App.state.ai_conversations.forEach(function (p) {
@@ -145,9 +142,8 @@ window.App.pages = window.App.pages || {};
         li.id = 'indikator-mengetik';
         li.className = 'flex items-end gap-2';
         li.innerHTML =
-          ui.maskot('h-8 w-8 shrink-0 self-end') +
           '<div class="' + v.bubble({ peran: 'ai' }) + '">' +
-            '<span class="text-xs text-neutral-400">Arno sedang mengetik...</span>' +
+            '<span class="text-xs text-neutral-400">Asisten sedang mengetik...</span>' +
           '</div>';
         daftar.appendChild(li);
         gulirKeBawah();

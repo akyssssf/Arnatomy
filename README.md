@@ -61,7 +61,7 @@ arnatomy-frontend/
 │   └── style.css           # Custom di luar Tailwind: titik interaktif, akordeon, fokus
 ├── assets/
 │   ├── models/             # heart.glb, lungs.glb (placeholder, lihat catatan di bawah)
-│   └── img/                # Render statis tiap organ (webp transparan) + maskot.webp
+│   └── img/                # Render statis tiap organ (webp transparan)
 ├── js/
 │   ├── ikon.js             # Kumpulan ikon garis (inline SVG) untuk seluruh halaman
 │   ├── variants.js         # Pola CVA manual (button, badge, card, bubble, tab, dst.)
@@ -103,11 +103,6 @@ ditembakkan ke permukaan model.
 `usus`, `ginjal`, `pankreas`, `mata`, `kulit` untuk kartu *segera hadir*) dirender sendiri
 dari model repositori yang sama lewat `App.viewer3d.cuplikan()`, lalu disimpan sebagai WebP
 transparan. Model organ yang belum tersedia tidak ikut di-commit, hanya rendernya.
-
-**Maskot.** `assets/img/maskot.webp` adalah "Arno", robot asisten belajar. Sumber:
-[Cute Cartoon Robot oleh bcogwene di Pixabay](https://pixabay.com/illustrations/cute-cartoon-robot-funny-character-807306/),
-**Pixabay Content License** (bebas dipakai, tanpa atribusi). Latar putih aslinya dihapus
-dengan Pillow (flood fill dari tepi) agar bisa diletakkan di atas warna apa pun.
 
 ## Peta halaman ↔ SKPL
 
@@ -216,9 +211,6 @@ Fonts dengan cadangan `system-ui`.
 **Aset organ di halaman lain.** Landing dan login memakai penampil 3D yang sama dalam mode
 dekoratif (berputar pelan, tanpa titik), dengan gambar statis tampil lebih dulu lalu memudar
 begitu model siap. Kartu sistem organ memakai render abu-abu yang berwarna saat disorot.
-
-**Maskot Arno** muncul di hero landing, kartu sapaan dashboard, avatar Asisten AI, layar
-memuat model 3D, dan kondisi kosong.
 
 **Glassmorphism.** Kelas `.kaca` (latar putih tembus pandang + `backdrop-filter`) hanya
 dipakai pada kartu yang melayang di atas organ, tombol alat, dan bilah layer. Header

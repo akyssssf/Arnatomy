@@ -290,15 +290,6 @@ h1, h2, h3, .tampilan {
 }
 .tirai.terbuka { opacity: 1; pointer-events: auto; }
 
-/* --- Maskot ----------------------------------------------------------------- */
-.maskot { transition: transform 0.4s var(--lengkung); }
-.maskot:hover { transform: translateY(-4px) rotate(-3deg); }
-.maskot-goyang { animation: goyang 3.2s ease-in-out infinite; transform-origin: 50% 90%; }
-@keyframes goyang {
-  0%, 100% { transform: rotate(-2deg); }
-  50%      { transform: rotate(2deg); }
-}
-
 /* --- Motion ---------------------------------------------------------------- */
 :root { --lengkung: cubic-bezier(0.2, 0.7, 0.2, 1); }
 
@@ -379,6 +370,6 @@ h1, h2, h3, .tampilan {
   .marquee-jalur { animation: none; }
   .muncul { opacity: 1; transform: none; }
   .kata > span { transform: none; }
-  .melayang, .melayang-lambat, .maskot-goyang { animation: none; }
+  .melayang, .melayang-lambat { animation: none; }
 }
 }
