@@ -196,7 +196,7 @@ window.App.pages = window.App.pages || {};
 
                 '<div id="status-3d" role="status" aria-live="polite" ' +
                   'class="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#f1f2f4]/85 text-sm font-medium text-neutral-500">' +
-                  ui.maskot('maskot-goyang h-20 w-20') +
+                  ui.spinner('h-6 w-6') +
                   '<span data-teks-status>Menyiapkan penampil 3D</span>' +
                 '</div>' +
 

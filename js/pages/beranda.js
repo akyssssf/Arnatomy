@@ -13,11 +13,11 @@ window.App.pages = window.App.pages || {};
   const v = App.v;
   const ikon = App.ikon;
 
-  function pesanMaskot(persenTotal, namaDepan) {
-    if (persenTotal === 0) return 'Halo ' + namaDepan + '! Belum ada bagian yang dibuka. Mulai dari jantung, yuk.';
-    if (persenTotal < 50) return 'Bagus, ' + namaDepan + '. Sudah ' + persenTotal + '% bagian dibuka. Lanjutkan!';
-    if (persenTotal < 100) return 'Tinggal sedikit lagi, ' + namaDepan + '. ' + persenTotal + '% sudah dipelajari.';
-    return 'Semua bagian sudah dibuka, ' + namaDepan + '. Coba tanya asisten untuk memperdalam.';
+  function pesanProgres(persenTotal) {
+    if (persenTotal === 0) return 'Belum ada bagian yang dibuka. Mulai dari jantung.';
+    if (persenTotal < 50) return persenTotal + '% bagian sudah dibuka. Lanjutkan ke bagian berikutnya.';
+    if (persenTotal < 100) return persenTotal + '% bagian sudah dipelajari, tinggal sedikit lagi.';
+    return 'Semua bagian sudah dibuka. Gunakan asisten untuk memperdalam.';
   }
 
   /* Kartu sistem organ dengan progres; yang belum tersedia ditandai segera */
@@ -122,7 +122,7 @@ window.App.pages = window.App.pages || {};
             '<p class="mikro">' + ui.esc(user.role) + (user.asal_sekolah ? ' &middot; ' + ui.esc(user.asal_sekolah) : '') + '</p>' +
           '</div>' +
 
-          /* Baris utama: lanjutkan belajar + maskot */
+          /* Baris utama: lanjutkan belajar + ringkasan */
           '<div class="mt-8 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">' +
             '<article class="muncul group relative flex flex-col justify-between overflow-hidden rounded-3xl bg-white p-6 sm:p-7">' +
               '<div class="relative z-10 max-w-sm">' +
@@ -149,12 +149,10 @@ window.App.pages = window.App.pages || {};
             '</article>' +
 
             '<article class="muncul flex flex-col justify-between rounded-3xl bg-[#1a6dff] p-6 text-white sm:p-7">' +
-              '<div class="flex items-start gap-4">' +
-                ui.maskot('maskot-goyang h-20 w-20 shrink-0') +
-                '<div>' +
-                  '<p class="mikro text-white/60">Arno</p>' +
-                  '<p class="mt-2 text-lg font-medium leading-snug">' + ui.esc(pesanMaskot(persenTotal, namaDepan)) + '</p>' +
-                '</div>' +
+              '<div>' +
+                '<p class="mikro text-white/60">Ringkasan</p>' +
+                '<p class="mt-3 text-5xl font-semibold tracking-tight">' + persenTotal + '%</p>' +
+                '<p class="mt-2 text-sm leading-relaxed text-white/80">' + ui.esc(pesanProgres(persenTotal)) + '</p>' +
               '</div>' +
               '<dl class="mt-8 grid grid-cols-3 gap-3 border-t border-white/15 pt-5">' +
                 '<div><dt class="text-[11px] uppercase tracking-[0.08em] text-white/60">Dibuka</dt><dd class="mt-1 text-2xl font-semibold">' + dipelajari + '<span class="text-sm text-white/60">/' + totalBagian + '</span></dd></div>' +

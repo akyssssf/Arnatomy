@@ -1,7 +1,7 @@
 /* ==========================================================================
    pages/landing.js — Halaman depan publik (sebelum login)
    Hero dengan organ 3D, katalog sistem organ (tersedia / segera), cara
-   belajar, dan ajakan masuk bersama maskot.
+   belajar, dan ajakan masuk.
    ========================================================================== */
 window.App = window.App || {};
 window.App.pages = window.App.pages || {};
@@ -67,7 +67,7 @@ window.App.pages = window.App.pages || {};
             '</div>' +
           '</div>' +
 
-          /* Panggung organ 3D dengan maskot menyapa */
+          /* Panggung organ 3D */
           '<div class="muncul relative mt-10 overflow-hidden rounded-3xl bg-[#f1f2f4]" style="transition-delay:200ms">' +
             '<div class="relative aspect-[4/3] w-full sm:aspect-[16/9] lg:aspect-[21/9]">' +
               '<span class="piringan-organ" aria-hidden="true"></span>' +
@@ -77,12 +77,9 @@ window.App.pages = window.App.pages || {};
               '<p class="mikro kaca absolute left-4 top-4 rounded-full px-3 py-1.5">Model 3D &middot; ' + ui.esc(organ.nama_organ) + '</p>' +
               '<p class="mikro kaca absolute right-4 top-4 hidden rounded-full px-3 py-1.5 sm:block">SKPL v1.0</p>' +
 
-              '<div class="kaca melayang-lambat absolute bottom-4 left-4 flex max-w-[min(20rem,80%)] items-center gap-3 rounded-2xl p-3 pr-4">' +
-                ui.maskot('maskot-goyang h-14 w-14 shrink-0') +
-                '<div class="min-w-0">' +
-                  '<p class="mikro">Arno, asisten belajar</p>' +
-                  '<p class="mt-1 text-sm font-medium leading-snug">Halo! Mau mulai dari jantung atau paru-paru?</p>' +
-                '</div>' +
+              '<div class="kaca melayang-lambat absolute bottom-4 left-4 max-w-[min(18rem,80%)] rounded-2xl px-4 py-3">' +
+                '<p class="mikro">' + ui.esc(organ.sistem_organ) + '</p>' +
+                '<p class="mt-1 text-sm font-medium leading-snug">' + ui.esc(organ.julukan) + '. Seret untuk memutar.</p>' +
               '</div>' +
 
               '<div class="kaca absolute bottom-4 right-4 hidden rounded-2xl px-4 py-3 sm:block">' +
@@ -129,7 +126,7 @@ window.App.pages = window.App.pages || {};
           '</div>' +
         '</section>' +
 
-        /* Ajakan masuk bersama maskot */
+        /* Ajakan masuk */
         '<section aria-labelledby="judul-ajak" class="pt-16">' +
           '<div class="muncul relative overflow-hidden rounded-3xl bg-neutral-900 px-6 py-10 text-white sm:px-10 sm:py-14">' +
             '<div class="grid gap-8 md:grid-cols-[1fr_auto] md:items-center">' +
@@ -141,7 +138,8 @@ window.App.pages = window.App.pages || {};
                 '</p>' +
                 '<a href="#/login" class="' + v.tombol({ ukuran: 'lg' }) + ' mt-6">Masuk sekarang' + ikon('panah', 'h-4 w-4') + '</a>' +
               '</div>' +
-              ui.maskot('melayang h-40 w-40 md:h-52 md:w-52') +
+              '<img src="' + ui.esc(App.state.organs[1].gambar) + '" alt="" aria-hidden="true" ' +
+                'class="melayang h-40 w-40 object-contain md:h-56 md:w-56" />' +
             '</div>' +
           '</div>' +
         '</section>'
