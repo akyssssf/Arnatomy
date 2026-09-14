@@ -1,5 +1,10 @@
 # ARnatomy — Next.js App Router
 
+> **Catatan penamaan:** Modul praktikum menyebut `middleware.ts`, tapi Next.js 16
+> (versi yang dipakai project ini) mengganti nama konvensi tersebut menjadi `proxy.ts`.
+> Fungsinya identik — baca cookie sesi, cocokkan matcher, redirect sebelum halaman
+> dirender. Lihat `src/proxy.ts`.
+
 Migrasi penuh prototipe front-end **ARnatomy** (pembelajaran anatomi berbasis AR untuk siswa
 SMP–SMA, SKPL v1.0) dari versi vanilla HTML/JS ke arsitektur React modern. Organ tetap
 ditampilkan sebagai model 3D interaktif (Three.js) karena kamera AR perangkat tidak diaktifkan
