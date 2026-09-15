@@ -68,8 +68,7 @@ interface TitikInternal {
   mesh: THREE.Mesh[];
 }
 
-const WARNA_SOROT = new THREE.Color(0x1a6dff);
-const OPASITAS_HANTU = 0.22;
+const OPASITAS_HANTU = 0.3;
 
 /** Mengubah pola "VH_M_right_*_segment" menjadi RegExp yang cocok utuh. */
 function polaKeRegExp(pola: string): RegExp {
@@ -235,9 +234,9 @@ export async function buatPenampil(opsi: OpsiPenampil): Promise<Penampil> {
   });
   let kuatTujuan = 0;
 
-  /* Sorotan per-mesh: mesh terpilih diberi tint biru, mesh lain jadi "hantu"
-     tembus pandang agar bagian di dalam organ (mis. katup) ikut terlihat.
-     Peralihannya dianimasikan lewat transisiSorot 0..1. */
+  /* Sorotan per-mesh: mesh terpilih tetap berwarna asli, mesh lain kehilangan
+     saturasi (abu-abu) dan menjadi tembus pandang agar bagian di dalam organ
+     (mis. katup) ikut terlihat. Peralihannya dianimasikan lewat transisiSorot 0..1. */
   let meshTerpilih: THREE.Mesh[] = [];
   let transisiSorot = 0;
   let transisiTujuan = 0;
@@ -323,8 +322,13 @@ export async function buatPenampil(opsi: OpsiPenampil): Promise<Penampil> {
     daftar = sumber.map((b) => {
       const klon = (b instanceof THREE.MeshStandardMaterial ? b.clone() : new THREE.MeshStandardMaterial()) as THREE.MeshStandardMaterial;
       klon.transparent = true;
+      klon.vertexColors = false; // warna per-vertex diabaikan agar bisa di-abu-abukan
       klon.onBeforeCompile = () => {};
       klon.needsUpdate = true;
+      /* Simpan warna asli dan versi abu-abunya (luminans) untuk dicampur saat transisi */
+      const asliWarna = klon.color.clone();
+      const abu = 0.299 * asliWarna.r + 0.587 * asliWarna.g + 0.114 * asliWarna.b;
+      klon.userData = { asliWarna, abuWarna: new THREE.Color(abu, abu, abu) };
       return klon;
     });
     bahanSorot.set(m, daftar);
@@ -339,16 +343,24 @@ export async function buatPenampil(opsi: OpsiPenampil): Promise<Penampil> {
     }
     const terpilih = new Set(meshTerpilih);
     for (const m of semuaMesh) {
+      if (terpilih.has(m)) {
+        /* Bagian terpilih dibiarkan persis seperti aslinya */
+        const asli = bahanAsli.get(m);
+        if (asli) m.material = asli;
+        m.renderOrder = 1;
+        continue;
+      }
       const daftar = bahanTurunan(m);
-      const dipilih = terpilih.has(m);
       for (const b of daftar) {
-        b.opacity = dipilih ? 1 : 1 - (1 - OPASITAS_HANTU) * t;
-        b.depthWrite = dipilih || t < 0.5;
-        b.emissive.copy(WARNA_SOROT);
-        b.emissiveIntensity = dipilih ? 0.45 * t : 0;
+        const { asliWarna, abuWarna } = b.userData as { asliWarna: THREE.Color; abuWarna: THREE.Color };
+        b.color.copy(asliWarna).lerp(abuWarna, t);
+        b.opacity = 1 - (1 - OPASITAS_HANTU) * t;
+        /* depthWrite dimatikan sejak awal transisi; membaliknya di tengah animasi
+           membuat kilatan kedua saat mesh dalam tiba-tiba tembus terlihat */
+        b.depthWrite = false;
       }
       m.material = daftar.length === 1 ? daftar[0]! : daftar;
-      m.renderOrder = dipilih ? 1 : 0;
+      m.renderOrder = 0;
     }
   }
 
@@ -535,10 +547,13 @@ export async function buatPenampil(opsi: OpsiPenampil): Promise<Penampil> {
     sorotTitik(idTitik) {
       const t = idTitik === null ? undefined : titik.find((x) => x.id === idTitik);
       if (t?.mesh.length) {
-        /* Model bernama: sorot mesh-nya, redupkan sisanya; cincin shader dimatikan */
+        /* Model bernama: sorot mesh-nya, redupkan sisanya; cincin shader dimatikan.
+           Diterapkan langsung juga, sebab bila transisi sudah penuh (pindah dari
+           bagian lain) gelung render tidak memanggil terapkanSorotMesh lagi. */
         meshTerpilih = t.mesh;
         transisiTujuan = 1;
         kuatTujuan = 0;
+        if (transisiSorot > 0) terapkanSorotMesh(transisiSorot);
       } else {
         transisiTujuan = 0;
         if (t) {
