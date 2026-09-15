@@ -175,8 +175,22 @@ Escape; tab admin `tablist/tab/tabpanel` + roving `tabindex` + panah/Home/End; g
 
 ## Catatan aset
 
-`public/models/heart.glb` dan `lungs.glb` masih placeholder dari repositori publik
-[thebuggeddev/anatomy](https://github.com/thebuggeddev/anatomy) (tanpa LICENSE, dihasilkan
-generator Tripo) dan direncanakan diganti model berlisensi. Render statis di `public/img/`
-dibuat sendiri dari model tersebut. Fon Inter/Inter Tight (OFL) di-host sendiri lewat
-`next/font/local` (`src/app/fonts/`).
+Model 3D dan seluruh render organ berasal dari **HuBMAP Human Reference Atlas (HRA)**,
+3D Reference Organ Set (adult male), lisensi **CC BY 4.0**. `heart.glb` = jantung HRA +
+pembuluh besar dari objek vaskulatur HRA; `lungs.glb` = paru + trakea + bronkus utama HRA;
+keduanya digabung dan dikompresi Meshopt (1,4 MB dan 3,2 MB). Rincian objek, versi, dan
+adaptasi ada di [`public/models/ATTRIBUTION.md`](public/models/ATTRIBUTION.md). Kredit juga
+ditampilkan di footer aplikasi.
+
+Keuntungan model HRA untuk pembelajaran: tiap struktur adalah **mesh bernama**
+(`VH_M_left_cardiac_atrium`, `VH_M_trachea`, `VH_M_right_*_bronchopulmonary_segment`, ...).
+Kolom `mesh_3d` pada `body_parts` memetakan bagian tubuh ke nama node itu, sehingga:
+
+- titik interaktif ditambatkan ke permukaan mesh bagian itu sendiri (bagian di sisi belakang,
+  mis. atrium kiri, tetap ditandai di tempat yang benar dan diredupkan sampai model diputar);
+- saat dipilih, mesh bagian itu diberi tint biru dan mesh lain menjadi tembus pandang, sehingga
+  struktur di dalam organ (katup mitral, cabang bronkus) ikut terlihat;
+- `posisi_koordinat_3d` (format `"x,y,z"` SKPL) tetap ada sebagai cadangan bila nama node
+  tidak ditemukan, dan `posisi_2d` dipakai gambar cadangan dua dimensi.
+
+Fon Inter/Inter Tight (OFL) di-host sendiri lewat `next/font/local` (`src/app/fonts/`).

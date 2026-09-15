@@ -33,7 +33,7 @@ export function HeroLanding({ organ, sudahMasuk, jumlahTersedia, jumlahSistem }:
       <Muncul jeda={200} kelas="relative mt-10 overflow-hidden rounded-3xl bg-abu">
         <div className="relative aspect-[4/3] w-full sm:aspect-[16/9] lg:aspect-[21/9]">
           <span className="piringan-organ" aria-hidden="true" />
-          <Hero3D urlModel={organ.file_model_3d} jarak={1.5} kecepatanPutar={0.7} />
+          <Hero3D urlModel={organ.file_model_3d} jarak={1.95} kecepatanPutar={0.7} />
           <Image src={organ.gambar} alt="Model 3D jantung manusia" width={675} height={675} priority
             className="hero-gambar melayang pointer-events-none absolute left-1/2 top-1/2 h-[82%] w-auto -translate-x-1/2 -translate-y-1/2" />
           <p className="mikro kaca absolute left-4 top-4 rounded-full px-3 py-1.5">Model 3D &middot; {organ.nama_organ}</p>

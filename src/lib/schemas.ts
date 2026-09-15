@@ -74,6 +74,10 @@ export const BodyPartSchema = z.object({
   parent_bagian_id: z.number().int().positive().nullable(),
   posisi_koordinat_3d: z.string().regex(POLA_KOORDINAT_3D, "format harus x,y,z"),
   posisi_2d: z.string().regex(POLA_KOORDINAT_2D, "format harus x,y (persen)"),
+  /* Pola nama node pada berkas .glb (boleh memakai *) yang membentuk bagian ini.
+     Bila cocok, titik ditambatkan ke pusat mesh dan mesh itulah yang disorot;
+     bila kosong/tidak cocok, posisi_koordinat_3d dipakai sebagai cadangan. */
+  mesh_3d: z.array(z.string()).default([]),
   fakta: z.array(FaktaSchema),
 });
 export type BodyPart = z.infer<typeof BodyPartSchema>;

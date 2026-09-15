@@ -24,7 +24,7 @@ export function HeroLogin({ organ, jumlahOrgan, jumlahBagian, jumlahLabel }: {
 
       <Muncul jeda={200} kelas="relative aspect-square overflow-hidden rounded-3xl bg-abu">
         <span className="piringan-organ" aria-hidden="true" />
-        <Hero3D urlModel={organ.file_model_3d} jarak={1.55} kecepatanPutar={0.8} />
+        <Hero3D urlModel={organ.file_model_3d} jarak={1.85} kecepatanPutar={0.8} />
         <Image src={organ.gambar} alt="Model 3D jantung manusia" width={520} height={520} priority
           className="hero-gambar melayang pointer-events-none absolute left-1/2 top-1/2 w-[78%] -translate-x-1/2 -translate-y-1/2" />
         <p className="mikro kaca absolute right-4 top-4 rounded-full px-3 py-1.5">Model 3D</p>

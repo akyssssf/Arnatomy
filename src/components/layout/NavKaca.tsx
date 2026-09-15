@@ -37,8 +37,12 @@ export function NavKaca({ user }: { user: SesiUser | null }) {
   const queryClient = useQueryClient();
   const tampilkanToast = useUIStore((s) => s.tampilkanToast);
   const [ringkas, setRingkas] = useState(false);
+  /* Varian publik: bagian landing yang sedang terlihat (untuk penanda aktif) */
+  const [bagianAktif, setBagianAktif] = useState("atas");
   const [sedangKeluar, setSedangKeluar] = useState(false);
   const terjadwal = useRef(false);
+  /* Selama gulir halus hasil klik, penanda aktif dikunci ke tujuan klik */
+  const terkunci = useRef(false);
 
   useEffect(() => {
     function saatGulir() {
@@ -46,6 +50,15 @@ export function NavKaca({ user }: { user: SesiUser | null }) {
       terjadwal.current = true;
       requestAnimationFrame(() => {
         setRingkas(window.scrollY > 48);
+        /* Bagian aktif = bagian terakhir yang tepinya sudah lewat sepertiga layar */
+        if (!terkunci.current) {
+          let aktif = "atas";
+          for (const m of MENU_PUBLIK) {
+            const el = document.getElementById(`bagian-${m.gulir}`);
+            if (el && el.getBoundingClientRect().top <= window.innerHeight / 3) aktif = m.gulir;
+          }
+          setBagianAktif(aktif);
+        }
         terjadwal.current = false;
       });
     }
@@ -69,6 +82,9 @@ export function NavKaca({ user }: { user: SesiUser | null }) {
   }
 
   function gulirKe(tujuan: string) {
+    setBagianAktif(tujuan);
+    terkunci.current = true;
+    setTimeout(() => { terkunci.current = false; }, 900);
     if (tujuan === "atas") { window.scrollTo({ top: 0, behavior: "smooth" }); return; }
     document.getElementById(`bagian-${tujuan}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -95,10 +111,11 @@ export function NavKaca({ user }: { user: SesiUser | null }) {
                   </li>
                 );
               })
-            : MENU_PUBLIK.map((m, i) => (
+            : MENU_PUBLIK.map((m) => (
                 <li key={m.gulir}>
                   <button type="button" title={m.label} onClick={() => gulirKe(m.gulir)}
-                    className={`${KELAS_BUTIR} ${i === 0 ? KELAS_AKTIF : KELAS_PASIF}`}>
+                    aria-current={bagianAktif === m.gulir ? "true" : undefined}
+                    className={`${KELAS_BUTIR} ${bagianAktif === m.gulir ? KELAS_AKTIF : KELAS_PASIF}`}>
                     <Ikon nama={m.ikon} kelas="h-[18px] w-[18px] shrink-0" />
                     <span className="nav-label">{m.label}</span>
                   </button>

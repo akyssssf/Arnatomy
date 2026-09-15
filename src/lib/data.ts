@@ -82,13 +82,16 @@ export const layers = z.array(LayerSchema).parse([
   { id_layer: 8, id_organ: 2, nama_layer: 'organ_dalam', label: 'Organ Dalam', urutan_tampil: 4 }
 ]);
 
-/* posisi_koordinat_3d "x,y,z" = pecahan kotak batas model (tidak bergantung skala file).
-   posisi_2d dipakai gambar cadangan bila WebGL atau model gagal dimuat. */
+/* mesh_3d = nama node pada model HRA (HuBMAP Human Reference Atlas) yang
+   membentuk bagian ini. posisi_koordinat_3d "x,y,z" (pecahan kotak batas
+   model) hanya cadangan bila nama node tidak ditemukan; posisi_2d dipakai
+   gambar cadangan bila WebGL atau model gagal dimuat. */
 export const body_parts = z.array(BodyPartSchema).parse([
   /* ---- Jantung ---- */
   {
     id_bagian: 1, id_organ: 1, nama_bagian_internal: 'Atrium Kanan', parent_bagian_id: null,
-    posisi_koordinat_3d: '-0.24,0.14,0.24', posisi_2d: '35,39',
+    posisi_koordinat_3d: '-0.213,-0.023,0.012', posisi_2d: '35,52',
+    mesh_3d: ['VH_M_right_cardiac_atrium'],
     fakta: [
       { label: 'Tebal dinding', nilai: 'Sekitar 2 mm' },
       { label: 'Menerima dari', nilai: 'Vena cava superior dan inferior' },
@@ -97,7 +100,8 @@ export const body_parts = z.array(BodyPartSchema).parse([
   },
   {
     id_bagian: 2, id_organ: 1, nama_bagian_internal: 'Atrium Kiri', parent_bagian_id: null,
-    posisi_koordinat_3d: '0.25,0.17,0.10', posisi_2d: '63,39',
+    posisi_koordinat_3d: '-0.085,0.046,-0.141', posisi_2d: '44,46',
+    mesh_3d: ['VH_M_left_cardiac_atrium'],
     fakta: [
       { label: 'Menerima dari', nilai: 'Empat vena pulmonalis' },
       { label: 'Mengalir ke', nilai: 'Ventrikel kiri' },
@@ -106,7 +110,8 @@ export const body_parts = z.array(BodyPartSchema).parse([
   },
   {
     id_bagian: 3, id_organ: 1, nama_bagian_internal: 'Ventrikel Kanan', parent_bagian_id: null,
-    posisi_koordinat_3d: '-0.16,-0.22,0.30', posisi_2d: '40,64',
+    posisi_koordinat_3d: '-0.006,-0.074,0.148', posisi_2d: '50,56',
+    mesh_3d: ['VH_M_heart_right_ventricle'],
     fakta: [
       { label: 'Tebal dinding', nilai: '3 sampai 5 mm' },
       { label: 'Memompa ke', nilai: 'Paru-paru lewat arteri pulmonalis' },
@@ -115,7 +120,8 @@ export const body_parts = z.array(BodyPartSchema).parse([
   },
   {
     id_bagian: 4, id_organ: 1, nama_bagian_internal: 'Ventrikel Kiri', parent_bagian_id: null,
-    posisi_koordinat_3d: '0.18,-0.26,0.18', posisi_2d: '63,66',
+    posisi_koordinat_3d: '0.142,-0.121,0.054', posisi_2d: '60,59',
+    mesh_3d: ['VH_M_heart_left_ventricle'],
     fakta: [
       { label: 'Tebal dinding', nilai: '8 sampai 15 mm' },
       { label: 'Memompa ke', nilai: 'Seluruh tubuh lewat aorta' },
@@ -124,7 +130,8 @@ export const body_parts = z.array(BodyPartSchema).parse([
   },
   {
     id_bagian: 5, id_organ: 1, nama_bagian_internal: 'Aorta', parent_bagian_id: null,
-    posisi_koordinat_3d: '0.00,0.44,-0.02', posisi_2d: '50,19',
+    posisi_koordinat_3d: '-0.104,0.294,-0.088', posisi_2d: '44,30',
+    mesh_3d: ['VH_M_ascending_aorta', 'VH_M_aortic_arch'],
     fakta: [
       { label: 'Diameter', nilai: '2,5 sampai 3,5 cm' },
       { label: 'Jenis', nilai: 'Arteri terbesar dalam tubuh' },
@@ -133,7 +140,8 @@ export const body_parts = z.array(BodyPartSchema).parse([
   },
   {
     id_bagian: 6, id_organ: 1, nama_bagian_internal: 'Katup Mitral', parent_bagian_id: 2,
-    posisi_koordinat_3d: '0.16,0.02,0.22', posisi_2d: '58,52',
+    posisi_koordinat_3d: '0.023,-0.046,-0.122', posisi_2d: '52,52',
+    mesh_3d: ['VH_M_mitral_valve'],
     fakta: [
       { label: 'Jumlah daun', nilai: '2 daun katup (bikuspidalis)' },
       { label: 'Letak', nilai: 'Antara atrium kiri dan ventrikel kiri' },
@@ -144,7 +152,8 @@ export const body_parts = z.array(BodyPartSchema).parse([
   /* ---- Paru-paru ---- */
   {
     id_bagian: 7, id_organ: 2, nama_bagian_internal: 'Trakea', parent_bagian_id: null,
-    posisi_koordinat_3d: '0.00,0.30,0.10', posisi_2d: '50,22',
+    posisi_koordinat_3d: '-0.030,0.271,0.066', posisi_2d: '48,33',
+    mesh_3d: ['VH_M_trachea', 'VH_M_tracheal_cartilage'],
     fakta: [
       { label: 'Panjang', nilai: '10 sampai 12 cm' },
       { label: 'Penguat', nilai: '16 sampai 20 cincin tulang rawan' },
@@ -153,7 +162,8 @@ export const body_parts = z.array(BodyPartSchema).parse([
   },
   {
     id_bagian: 8, id_organ: 2, nama_bagian_internal: 'Bronkus Utama', parent_bagian_id: null,
-    posisi_koordinat_3d: '0.00,0.06,0.12', posisi_2d: '50,44',
+    posisi_koordinat_3d: '-0.010,0.030,-0.045', posisi_2d: '51,49',
+    mesh_3d: ['VH_M_left_main_bronchus', 'VH_M_right_main_bronchus', 'VH_M_cartilage_of_the_main_bronchus_*', 'VH_M_carina'],
     fakta: [
       { label: 'Titik cabang', nilai: 'Karina, di ujung bawah trakea' },
       { label: 'Jumlah', nilai: '2 bronkus: kanan dan kiri' },
@@ -162,7 +172,8 @@ export const body_parts = z.array(BodyPartSchema).parse([
   },
   {
     id_bagian: 9, id_organ: 2, nama_bagian_internal: 'Paru-paru Kanan', parent_bagian_id: null,
-    posisi_koordinat_3d: '-0.22,0.14,0.30', posisi_2d: '30,40',
+    posisi_koordinat_3d: '-0.250,0.000,-0.020', posisi_2d: '33,56',
+    mesh_3d: ['VH_M_right_*_bronchopulmonary_segment', 'VH_M_hilum_*R'],
     fakta: [
       { label: 'Jumlah lobus', nilai: '3 (atas, tengah, bawah)' },
       { label: 'Ukuran', nilai: 'Lebih besar dari paru kiri' },
@@ -171,7 +182,8 @@ export const body_parts = z.array(BodyPartSchema).parse([
   },
   {
     id_bagian: 10, id_organ: 2, nama_bagian_internal: 'Paru-paru Kiri', parent_bagian_id: null,
-    posisi_koordinat_3d: '0.24,0.14,0.30', posisi_2d: '70,40',
+    posisi_koordinat_3d: '0.250,0.000,-0.020', posisi_2d: '67,55',
+    mesh_3d: ['VH_M_left_*_bronchopulmonary_segment', 'VH_M_hilum_*L'],
     fakta: [
       { label: 'Jumlah lobus', nilai: '2 (atas dan bawah)' },
       { label: 'Ciri khas', nilai: 'Lekukan jantung (cardiac notch)' },
@@ -180,7 +192,8 @@ export const body_parts = z.array(BodyPartSchema).parse([
   },
   {
     id_bagian: 11, id_organ: 2, nama_bagian_internal: 'Lobus Bawah Paru Kanan', parent_bagian_id: 9,
-    posisi_koordinat_3d: '-0.26,-0.24,0.30', posisi_2d: '27,70',
+    posisi_koordinat_3d: '-0.270,-0.170,-0.120', posisi_2d: '33,63',
+    mesh_3d: ['VH_M_right_superior_bronchopulmonary_segment', 'VH_M_right_*_basal_bronchopulmonary_segment'],
     fakta: [
       { label: 'Posisi', nilai: 'Bagian paling bawah paru kanan' },
       { label: 'Pembatas', nilai: 'Fisura oblik dari lobus tengah' },
@@ -189,7 +202,8 @@ export const body_parts = z.array(BodyPartSchema).parse([
   },
   {
     id_bagian: 12, id_organ: 2, nama_bagian_internal: 'Alveolus', parent_bagian_id: 10,
-    posisi_koordinat_3d: '0.28,-0.22,0.30', posisi_2d: '72,68',
+    posisi_koordinat_3d: '0.343,-0.179,-0.180', posisi_2d: '71,65',
+    mesh_3d: ['VH_M_left_lateral_basal_bronchopulmonary_segment'],
     fakta: [
       { label: 'Jumlah', nilai: '300 sampai 500 juta' },
       { label: 'Tebal dinding', nilai: 'Setebal satu sel' },

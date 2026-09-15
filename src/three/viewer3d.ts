@@ -17,10 +17,12 @@ import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js"
 export interface TitikMasukan {
   id: number;
   el: HTMLElement;
-  /** pecahan kotak batas model, dari posisi_koordinat_3d "x,y,z" */
+  /** pecahan kotak batas model, dari posisi_koordinat_3d "x,y,z" (cadangan) */
   x: number;
   y: number;
   z: number;
+  /** pola nama node .glb (boleh memakai *) yang membentuk bagian ini */
+  mesh?: string[];
 }
 
 export interface OpsiPenampil {
@@ -62,6 +64,16 @@ interface TitikInternal {
   normal: THREE.Vector3;
   tertutup: boolean;
   tersembunyi: boolean;
+  /** mesh bernama yang membentuk bagian ini (kosong bila model tanpa nama node) */
+  mesh: THREE.Mesh[];
+}
+
+const WARNA_SOROT = new THREE.Color(0x1a6dff);
+const OPASITAS_HANTU = 0.22;
+
+/** Mengubah pola "VH_M_right_*_segment" menjadi RegExp yang cocok utuh. */
+function polaKeRegExp(pola: string): RegExp {
+  return new RegExp("^" + pola.split("*").map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join(".*") + "$");
 }
 
 function muatModel(loader: GLTFLoader, url: string, saatProgres?: (persen: number) => void): Promise<GLTF> {
@@ -130,7 +142,7 @@ export async function buatPenampil(opsi: OpsiPenampil): Promise<Penampil> {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
   renderer.setSize(lebar, tinggi);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  renderer.toneMappingExposure = 0.92;
   renderer.domElement.style.display = "block";
   renderer.domElement.style.touchAction = "none";
   wadah.appendChild(renderer.domElement);
@@ -138,6 +150,9 @@ export async function buatPenampil(opsi: OpsiPenampil): Promise<Penampil> {
   const scene = new THREE.Scene();
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  /* Model HRA berwarna rata tanpa tekstur; pencahayaan dibuat lebih lembut
+     supaya warnanya tidak pudar dan sorotan spekular tidak "meledak". */
+  scene.environmentIntensity = 0.55;
 
   const camera = new THREE.PerspectiveCamera(42, lebar / tinggi, 0.01, 100);
   camera.position.copy(posisiAwal);
@@ -161,11 +176,11 @@ export async function buatPenampil(opsi: OpsiPenampil): Promise<Penampil> {
     controls.maxPolarAngle = Math.PI * 0.65;
   }
 
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x93a8cc, 0.45));
-  const cahayaUtama = new THREE.DirectionalLight(0xffffff, 1.5);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x93a8cc, 0.35));
+  const cahayaUtama = new THREE.DirectionalLight(0xffffff, 1.1);
   cahayaUtama.position.set(2.5, 3, 4);
   scene.add(cahayaUtama);
-  const cahayaIsi = new THREE.DirectionalLight(0xd9e5ff, 0.6);
+  const cahayaIsi = new THREE.DirectionalLight(0xd9e5ff, 0.45);
   cahayaIsi.position.set(-3, 0.5, -2.5);
   scene.add(cahayaIsi);
 
@@ -220,6 +235,14 @@ export async function buatPenampil(opsi: OpsiPenampil): Promise<Penampil> {
   });
   let kuatTujuan = 0;
 
+  /* Sorotan per-mesh: mesh terpilih diberi tint biru, mesh lain jadi "hantu"
+     tembus pandang agar bagian di dalam organ (mis. katup) ikut terlihat.
+     Peralihannya dianimasikan lewat transisiSorot 0..1. */
+  let meshTerpilih: THREE.Mesh[] = [];
+  let transisiSorot = 0;
+  let transisiTujuan = 0;
+  const bahanSorot = new Map<THREE.Mesh, THREE.MeshStandardMaterial[]>();
+
   const kotak = new THREE.Box3().setFromObject(organ);
   const ukuran = kotak.getSize(new THREE.Vector3());
   const pusat = kotak.getCenter(new THREE.Vector3());
@@ -230,6 +253,22 @@ export async function buatPenampil(opsi: OpsiPenampil): Promise<Penampil> {
   pembungkus.scale.setScalar(skala);
   panggung.add(pembungkus);
   const ukuranNormal = ukuran.clone().multiplyScalar(skala);
+
+  /* Daftar mesh bernama (model HRA memberi nama anatomi tiap node) dan
+     material aslinya, untuk sorotan per-mesh dan pemulihan. */
+  const semuaMesh: THREE.Mesh[] = [];
+  organ.traverse((obj) => { if (obj instanceof THREE.Mesh) semuaMesh.push(obj); });
+  const bahanAsli = new Map<THREE.Mesh, THREE.Material | THREE.Material[]>();
+  for (const m of semuaMesh) bahanAsli.set(m, m.material);
+  function cariMesh(pola: string[] | undefined): THREE.Mesh[] {
+    if (!pola?.length) return [];
+    const daftarRe = pola.map(polaKeRegExp);
+    return semuaMesh.filter((m) => {
+      /* nama biasanya ada di node induk; mesh anak sering tanpa nama */
+      const nama = m.name || m.parent?.name || "";
+      return daftarRe.some((re) => re.test(nama));
+    });
+  }
 
   const lapisan = buatLapisan();
   for (const objek of Object.values(lapisan)) {
@@ -244,19 +283,74 @@ export async function buatPenampil(opsi: OpsiPenampil): Promise<Penampil> {
 
   /* posisi_koordinat_3d dipakai sebagai titik bidik: sinar dari posisi kamera
      awal ke titik itu, penanda diletakkan pada permukaan pertama yang kena. */
-  function tempelkanKePermukaan(sasaran: THREE.Vector3): THREE.Vector3 {
+  function tempelkanKePermukaan(sasaran: THREE.Vector3, hanyaPada?: THREE.Object3D[]): THREE.Vector3 {
     const arah = sasaran.clone().sub(posisiAwal).normalize();
     raycaster.set(posisiAwal, arah);
-    const kena = raycaster.intersectObject(pembungkus, true);
-    const pertama = kena[0];
+    /* Bagian bernama ditempelkan ke permukaan mesh-nya sendiri, bukan ke
+       permukaan organ yang kebetulan di depannya, supaya bagian belakang
+       (mis. atrium kiri) tetap ditandai di tempat yang benar dan diredupkan
+       sampai pengguna memutar model. */
+    const kena = hanyaPada?.length
+      ? raycaster.intersectObjects(hanyaPada, true)
+      : raycaster.intersectObject(pembungkus, true);
+    const pertama = kena[0] ?? raycaster.intersectObject(pembungkus, true)[0];
     if (!pertama) return sasaran;
     return pertama.point.clone().addScaledVector(arah, -0.035);
   }
 
+  const kotakSementara = new THREE.Box3();
   const titik: TitikInternal[] = opsi.titik.map((t) => {
-    const posisi = tempelkanKePermukaan(new THREE.Vector3(t.x * ukuranNormal.x, t.y * ukuranNormal.y, t.z * ukuranNormal.z));
-    return { id: t.id, el: t.el, posisi, normal: posisi.clone().normalize(), tertutup: false, tersembunyi: false };
+    const mesh = cariMesh(t.mesh);
+    let sasaran: THREE.Vector3;
+    if (mesh.length) {
+      /* Titik bidik = pusat gabungan kotak batas mesh bernama (koordinat dunia) */
+      kotakSementara.makeEmpty();
+      for (const m of mesh) kotakSementara.expandByObject(m);
+      sasaran = kotakSementara.getCenter(new THREE.Vector3());
+    } else {
+      sasaran = new THREE.Vector3(t.x * ukuranNormal.x, t.y * ukuranNormal.y, t.z * ukuranNormal.z);
+    }
+    const posisi = tempelkanKePermukaan(sasaran, mesh);
+    return { id: t.id, el: t.el, posisi, normal: posisi.clone().normalize(), tertutup: false, tersembunyi: false, mesh };
   });
+
+  /** Material turunan per mesh (klon dari aslinya) agar bisa diubah tanpa menyentuh material bersama. */
+  function bahanTurunan(m: THREE.Mesh): THREE.MeshStandardMaterial[] {
+    let daftar = bahanSorot.get(m);
+    if (daftar) return daftar;
+    const asli = bahanAsli.get(m);
+    const sumber = Array.isArray(asli) ? asli : asli ? [asli] : [];
+    daftar = sumber.map((b) => {
+      const klon = (b instanceof THREE.MeshStandardMaterial ? b.clone() : new THREE.MeshStandardMaterial()) as THREE.MeshStandardMaterial;
+      klon.transparent = true;
+      klon.onBeforeCompile = () => {};
+      klon.needsUpdate = true;
+      return klon;
+    });
+    bahanSorot.set(m, daftar);
+    return daftar;
+  }
+
+  /** Menerapkan derajat transisi (0 = tampilan asli, 1 = sorotan penuh). */
+  function terapkanSorotMesh(t: number) {
+    if (t <= 0) {
+      for (const m of semuaMesh) { const asli = bahanAsli.get(m); if (asli) m.material = asli; }
+      return;
+    }
+    const terpilih = new Set(meshTerpilih);
+    for (const m of semuaMesh) {
+      const daftar = bahanTurunan(m);
+      const dipilih = terpilih.has(m);
+      for (const b of daftar) {
+        b.opacity = dipilih ? 1 : 1 - (1 - OPASITAS_HANTU) * t;
+        b.depthWrite = dipilih || t < 0.5;
+        b.emissive.copy(WARNA_SOROT);
+        b.emissiveIntensity = dipilih ? 0.45 * t : 0;
+      }
+      m.material = daftar.length === 1 ? daftar[0]! : daftar;
+      m.renderOrder = dipilih ? 1 : 0;
+    }
+  }
 
   const layar = new THREE.Vector3();
   const arahPandang = new THREE.Vector3();
@@ -314,6 +408,15 @@ export async function buatPenampil(opsi: OpsiPenampil): Promise<Penampil> {
     if (targetOrbit) {
       controls.target.lerp(targetOrbit, 0.09);
       if (controls.target.distanceTo(targetOrbit) < 0.004) targetOrbit = null;
+      perluGambar = true;
+    }
+    if (Math.abs(transisiSorot - transisiTujuan) > 0.005) {
+      transisiSorot += (transisiTujuan - transisiSorot) * 0.12;
+      terapkanSorotMesh(transisiSorot);
+      perluGambar = true;
+    } else if (transisiSorot !== transisiTujuan) {
+      transisiSorot = transisiTujuan;
+      terapkanSorotMesh(transisiSorot);
       perluGambar = true;
     }
     if (Math.abs(uniformSorot.uKuat.value - kuatTujuan) > 0.005) {
@@ -416,7 +519,9 @@ export async function buatPenampil(opsi: OpsiPenampil): Promise<Penampil> {
       if (arah.lengthSq() === 0) return;
       const pusatBaru = t.posisi.clone().multiplyScalar(0.45);
       const jarak = Math.max(controls.minDistance, posisiAwal.length() * faktorJarak);
-      arah.y = Math.max(arah.y, -0.2) + 0.18;
+      /* Sedikit dari atas, tetapi dibatasi agar bagian di puncak organ (mis. aorta)
+         tidak membuat kamera menghadap lurus ke bawah */
+      arah.y = Math.min(Math.max(arah.y, -0.2) + 0.18, 0.5);
       arah.normalize();
       controls.autoRotate = false;
       arahkanOrbit(pusatBaru);
@@ -429,11 +534,19 @@ export async function buatPenampil(opsi: OpsiPenampil): Promise<Penampil> {
     },
     sorotTitik(idTitik) {
       const t = idTitik === null ? undefined : titik.find((x) => x.id === idTitik);
-      if (t) {
-        uniformSorot.uSorot.value.copy(t.posisi);
-        uniformSorot.uRadius.value = 0.16;
+      if (t?.mesh.length) {
+        /* Model bernama: sorot mesh-nya, redupkan sisanya; cincin shader dimatikan */
+        meshTerpilih = t.mesh;
+        transisiTujuan = 1;
+        kuatTujuan = 0;
+      } else {
+        transisiTujuan = 0;
+        if (t) {
+          uniformSorot.uSorot.value.copy(t.posisi);
+          uniformSorot.uRadius.value = 0.16;
+        }
+        kuatTujuan = t ? 1 : 0;
       }
-      kuatTujuan = t ? 1 : 0;
       perluGambar = true;
     },
     geserTampilan(px, py) {
@@ -460,6 +573,7 @@ export async function buatPenampil(opsi: OpsiPenampil): Promise<Penampil> {
           m.dispose();
         }
       });
+      for (const daftar of bahanSorot.values()) for (const b of daftar) b.dispose();
       pmrem.dispose();
       renderer.dispose();
       renderer.domElement.remove();
