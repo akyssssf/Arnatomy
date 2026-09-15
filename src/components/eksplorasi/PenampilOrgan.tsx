@@ -90,7 +90,7 @@ export function PenampilOrgan({ organ, bagian, layers, konten, judul, pemilihOrg
     const titik = bagian.map((b) => {
       const k = koordinat3d(b);
       const elemen = elTitik.current.get(b.id_bagian);
-      return elemen ? { id: b.id_bagian, el: elemen, x: k.x, y: k.y, z: k.z } : null;
+      return elemen ? { id: b.id_bagian, el: elemen, x: k.x, y: k.y, z: k.z, mesh: b.mesh_3d } : null;
     }).filter((t) => t !== null);
 
     (async () => {
