@@ -1,0 +1,76 @@
+# ==========================================================================
+# CI/CD ARnatomy — lint (Biome + ESLint) → type-check → unit test + coverage
+# → build Next.js → SonarQube Cloud scan (Quality Gate). Deploy produksi
+# dilakukan Vercel lewat integrasi GitHub pada branch ini setelah CI hijau.
+# ==========================================================================
+name: CI
+
+on:
+  push:
+    branches: [nextjs, main]
+  pull_request:
+    branches: [nextjs, main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verifikasi:
+    name: Lint, type-check, test, build
+    runs-on: ubuntu-latest
+    env:
+      SESSION_SECRET: ci-only-secret-bukan-untuk-produksi-0123456789abcdef
+      # Diangkat ke env agar bisa dipakai pada kondisi `if` langkah Sonar
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # riwayat penuh untuk analisis Sonar (blame/new code)
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint (Biome)
+        run: npm run lint:biome
+
+      - name: Lint (ESLint + React Compiler rules)
+        run: npm run lint
+
+      - name: Type-check (strict TypeScript)
+        run: npm run typecheck
+
+      - name: Unit test + coverage (Vitest)
+        run: npm run test:coverage
+
+      - name: Build (Next.js / Turbopack)
+        run: npm run build
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/lcov.info
+          retention-days: 7
+
+      - name: SonarQube Cloud scan
+        # Dilewati bila secret belum diatur (fork/PR eksternal), tidak menggagalkan CI
+        if: ${{ env.SONAR_TOKEN != '' }}
+        uses: SonarSource/sonarqube-scan-action@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: SonarQube Quality Gate
+        if: ${{ env.SONAR_TOKEN != '' }}
+        uses: SonarSource/sonarqube-quality-gate-action@v1
+        timeout-minutes: 5
