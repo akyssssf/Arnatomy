@@ -185,15 +185,16 @@ export type LoginForm = z.infer<typeof LoginFormSchema>;
 /* FR-02: registrasi akun siswa/guru. Aturan sandi: minimal 8 karakter dengan
    huruf dan angka. Konfirmasi dicek lewat refine agar galat menempel ke field-nya. */
 export const PeranDaftarSchema = z.enum(["siswa", "guru"]);
+const SandiSchema = z
+  .string()
+  .min(8, "Kata sandi minimal 8 karakter.")
+  .regex(/[A-Za-z]/, "Kata sandi harus memuat huruf.")
+  .regex(/\d/, "Kata sandi harus memuat angka.");
 export const DaftarFormSchema = z
   .object({
     nama: z.string().trim().min(3, "Nama minimal 3 karakter.").max(80, "Nama terlalu panjang."),
     email: z.string().trim().min(1, "Email wajib diisi.").pipe(z.email("Format email tidak valid.")),
-    password: z
-      .string()
-      .min(8, "Kata sandi minimal 8 karakter.")
-      .regex(/[A-Za-z]/, "Kata sandi harus memuat huruf.")
-      .regex(/\d/, "Kata sandi harus memuat angka."),
+    password: SandiSchema,
     konfirmasi: z.string().min(1, "Ulangi kata sandi."),
     role: PeranDaftarSchema,
     asal_sekolah: z
@@ -205,9 +206,38 @@ export const DaftarFormSchema = z
   .refine((d) => d.password === d.konfirmasi, { path: ["konfirmasi"], message: "Konfirmasi tidak sama." });
 export type DaftarForm = z.infer<typeof DaftarFormSchema>;
 
-/* FR-13: admin mengubah status aktif akun */
-export const AkunPatchSchema = z.object({ aktif: z.boolean() });
+/* FR-13: admin menambah / mengubah akun. Sandi wajib saat tambah, opsional saat ubah. */
+export const AkunBuatSchema = z.object({
+  nama: z.string().trim().min(3, "Nama minimal 3 karakter.").max(80, "Nama terlalu panjang."),
+  email: z.string().trim().min(1, "Email wajib diisi.").pipe(z.email("Format email tidak valid.")),
+  password: SandiSchema,
+  role: PeranSchema,
+  asal_sekolah: z
+    .string()
+    .trim()
+    .max(120, "Nama sekolah terlalu panjang.")
+    .transform((v) => (v ? v : null)),
+});
+export type AkunBuat = z.infer<typeof AkunBuatSchema>;
+export const AkunPatchSchema = AkunBuatSchema.partial()
+  .extend({ aktif: z.boolean().optional(), password: SandiSchema.or(z.literal("")).optional() })
+  .refine((d) => Object.keys(d).length > 0, "Tidak ada perubahan.");
 export type AkunPatch = z.infer<typeof AkunPatchSchema>;
+
+/* FR-12: aset model 3D per organ. Satu model aktif per organ: bawaan (berkas
+   statis public/models) atau unggahan admin yang disimpan di memori server. */
+export const SumberAsetSchema = z.enum(["bawaan", "unggahan"]);
+export const AsetModelSchema = z.object({
+  id_organ: OrganIdSchema,
+  nama_berkas: z.string().min(1),
+  ukuran_byte: z.number().int().min(0),
+  sumber: SumberAsetSchema,
+  url: z.string().startsWith("/").endsWith(".glb"),
+  versi: z.number().int().min(0),
+  waktu: z.iso.datetime().nullable(),
+});
+export type AsetModel = z.infer<typeof AsetModelSchema>;
+export const BATAS_UKURAN_MODEL = 15 * 1024 * 1024;
 
 /* FR-15: kiriman kuesioner SUS */
 export const UmpanBalikFormSchema = z.object({

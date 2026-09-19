@@ -16,6 +16,7 @@ const TAB: { id: JenisTab; label: string }[] = [
   { id: "konten", label: "Konten Label" },
   { id: "laporan", label: "Laporan Kesalahan" },
   { id: "akun", label: "Pengguna" },
+  { id: "aset", label: "Aset 3D" },
   { id: "umpan-balik", label: "Umpan Balik" },
 ];
 
@@ -23,8 +24,16 @@ function adalahTab(nilai: string): nilai is JenisTab {
   return TAB.some((t) => t.id === nilai);
 }
 
-/* panelUmpanBalik: Server Component (RingkasanSusAdmin) yang dioper sebagai node */
-export function TabAdmin({ idAdmin, panelUmpanBalik }: { idAdmin: UserId; panelUmpanBalik: React.ReactNode }) {
+/* panelAset & panelUmpanBalik: Server Component (DaftarAset, RingkasanSusAdmin) yang dioper sebagai node */
+export function TabAdmin({
+  idAdmin,
+  panelAset,
+  panelUmpanBalik,
+}: {
+  idAdmin: UserId;
+  panelAset: React.ReactNode;
+  panelUmpanBalik: React.ReactNode;
+}) {
   const tabAktif = useUIStore((s) => s.tabAdminAktif);
   const setTabAdmin = useUIStore((s) => s.setTabAdmin);
   const { daftar: laporan } = useLaporanKesalahan({ aktif: true });
@@ -53,6 +62,9 @@ export function TabAdmin({ idAdmin, panelUmpanBalik }: { idAdmin: UserId; panelU
       </TabsContent>
       <TabsContent value="akun" id="panel-akun">
         <PanelAkun idAdmin={idAdmin} />
+      </TabsContent>
+      <TabsContent value="aset" id="panel-aset">
+        {panelAset}
       </TabsContent>
       <TabsContent value="umpan-balik" id="panel-umpan-balik">
         {panelUmpanBalik}

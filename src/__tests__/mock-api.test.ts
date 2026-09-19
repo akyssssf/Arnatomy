@@ -1,20 +1,34 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  ambilAkun,
   ambilKonten,
   ambilLaporan,
   ambilPercakapan,
   ambilRiwayat,
   catatRiwayat,
+  daftar,
   GalatApi,
+  hapusAkun,
+  hapusAsetModel,
   keluar,
   kirimLaporan,
   kirimPertanyaan,
   masuk,
   perbaruiKonten,
+  tambahAkun,
   tindakLanjutiLaporan,
   tutupRiwayat,
+  ubahAkun,
+  unggahAset,
 } from "@/lib/mock-api";
-import { BagianIdSchema, KontenIdSchema, LaporanIdSchema, RiwayatIdSchema } from "@/lib/schemas";
+import {
+  BagianIdSchema,
+  KontenIdSchema,
+  LaporanIdSchema,
+  OrganIdSchema,
+  RiwayatIdSchema,
+  UserIdSchema,
+} from "@/lib/schemas";
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -48,6 +62,48 @@ describe("mock-api (lapisan fetch klien)", () => {
     expect(url).toBe("/api/asisten");
     expect(init?.method).toBe("POST");
     expect(JSON.parse(String(init?.body))).toMatchObject({ pertanyaan: "x", simulasiGagal: false });
+  });
+
+  it("akun & aset: JSON untuk akun, multipart tanpa Content-Type JSON untuk unggah model", async () => {
+    const akun = { id_user: 1001, nama: "Dina", email: "dina@s.id", role: "siswa", asal_sekolah: null, aktif: true };
+    fetchMock.mockResolvedValueOnce(jsonResponse({ user: { ...akun, aktif: undefined } }, 201));
+    await daftar({
+      nama: "Dina",
+      email: "dina@s.id",
+      password: "rahasia123",
+      konfirmasi: "rahasia123",
+      role: "siswa",
+      asal_sekolah: "SMP",
+    });
+    fetchMock.mockResolvedValueOnce(jsonResponse([akun]));
+    expect((await ambilAkun())[0]?.aktif).toBe(true);
+    fetchMock.mockResolvedValueOnce(jsonResponse(akun, 201));
+    await tambahAkun({ nama: "Dina", email: "dina@s.id", password: "rahasia123", role: "siswa", asal_sekolah: null });
+    fetchMock.mockResolvedValueOnce(jsonResponse({ ...akun, aktif: false }));
+    expect((await ubahAkun(UserIdSchema.parse(1001), { aktif: false })).aktif).toBe(false);
+    fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true }));
+    await hapusAkun(UserIdSchema.parse(1001));
+    expect(fetchMock.mock.calls[4]?.[1]?.method).toBe("DELETE");
+
+    const aset = {
+      id_organ: 1,
+      nama_berkas: "x.glb",
+      ukuran_byte: 24,
+      sumber: "unggahan",
+      url: "/api/model/1/v1.glb",
+      versi: 1,
+      waktu: "2026-09-19T01:00:00.000Z",
+    };
+    fetchMock.mockResolvedValueOnce(jsonResponse(aset, 201));
+    await unggahAset(OrganIdSchema.parse(1), new File([new Uint8Array(24)], "x.glb"));
+    const [url, init] = fetchMock.mock.calls[5] ?? [];
+    expect(url).toBe("/api/aset");
+    expect(init?.body).toBeInstanceOf(FormData);
+    expect((init?.headers ?? {}) as Record<string, string>).not.toHaveProperty("Content-Type");
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ ...aset, sumber: "bawaan", url: "/models/heart.glb", versi: 0, waktu: null }),
+    );
+    expect((await hapusAsetModel(OrganIdSchema.parse(1))).sumber).toBe("bawaan");
   });
 
   it("galat server diubah jadi GalatApi dengan pesan dari body dan status", async () => {

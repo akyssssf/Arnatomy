@@ -11,7 +11,7 @@ const DAFTAR: { rute: Rute; ikon: NamaIkon; judul: string; teks: string; hanyaAd
     rute: "/admin",
     ikon: "perisai",
     judul: "Dashboard Admin",
-    teks: "Konten, laporan, akun, umpan balik",
+    teks: "Konten, laporan, akun, aset 3D, SUS",
     hanyaAdmin: true,
   },
 ];

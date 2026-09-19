@@ -1,13 +1,13 @@
 /* ==========================================================================
    useAkun — server state akun pengguna untuk dashboard admin (FR-13).
    Daftar hanya diambil bila `aktif` (tab Pengguna terbuka). Mutasi
-   nonaktifkan/aktifkan dan hapus menginvalidasi cache ['akun'].
+   tambah, ubah (termasuk nonaktifkan/aktifkan), dan hapus menginvalidasi cache ['akun'].
    ========================================================================== */
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ambilAkun, hapusAkun, ubahStatusAkun } from "@/lib/mock-api";
-import type { UserId } from "@/lib/schemas";
+import { ambilAkun, hapusAkun, tambahAkun, ubahAkun } from "@/lib/mock-api";
+import type { AkunBuat, AkunPatch, UserId } from "@/lib/schemas";
 import { KUNCI } from "./kunci-query";
 
 export function useAkun(opsi: { aktif?: boolean } = {}) {
@@ -22,8 +22,13 @@ export function useAkun(opsi: { aktif?: boolean } = {}) {
     gcTime: 1000 * 60 * 10,
   });
 
-  const ubahStatus = useMutation({
-    mutationFn: ({ idUser, aktif }: { idUser: UserId; aktif: boolean }) => ubahStatusAkun(idUser, { aktif }),
+  const tambah = useMutation({
+    mutationFn: (input: AkunBuat) => tambahAkun(input),
+    onSuccess: segarkan,
+  });
+
+  const ubah = useMutation({
+    mutationFn: ({ idUser, input }: { idUser: UserId; input: AkunPatch }) => ubahAkun(idUser, input),
     onSuccess: segarkan,
   });
 
@@ -32,5 +37,5 @@ export function useAkun(opsi: { aktif?: boolean } = {}) {
     onSuccess: segarkan,
   });
 
-  return { daftar, ubahStatus, hapus };
+  return { daftar, tambah, ubah, hapus };
 }

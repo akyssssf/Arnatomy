@@ -5,6 +5,7 @@
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { ChatAsisten } from "@/components/asisten/ChatAsisten";
+import { OpsiKonteks } from "@/components/asisten/OpsiKonteks";
 import { JudulHalaman } from "@/components/ui/JudulHalaman";
 import { KUNCI } from "@/hooks/kunci-query";
 import { ambilSesi } from "@/lib/auth";
@@ -33,7 +34,11 @@ export default async function HalamanAsisten(props: PageProps<"/asisten">) {
         deskripsi="Jawaban disusun menurut bagian tubuh yang dipilih sebagai konteks, dengan bahasa untuk jenjang SMP dan SMA."
       />
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <ChatAsisten organs={organs} bagian={body_parts} idBagianAwal={idBagianAwal} />
+        <ChatAsisten
+          bagian={body_parts}
+          idBagianAwal={idBagianAwal}
+          opsiKonteks={<OpsiKonteks organs={organs} bagian={body_parts} />}
+        />
       </HydrationBoundary>
     </section>
   );

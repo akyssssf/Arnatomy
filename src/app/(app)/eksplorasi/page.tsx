@@ -9,12 +9,13 @@ import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { KepalaEksplorasi } from "@/components/eksplorasi/KepalaEksplorasi";
+import { KeteranganModel } from "@/components/eksplorasi/KeteranganModel";
 import { PemilihOrgan } from "@/components/eksplorasi/PemilihOrgan";
 import { PenampilOrgan } from "@/components/eksplorasi/PenampilOrgan";
 import { KUNCI } from "@/hooks/kunci-query";
 import { ambilSesi } from "@/lib/auth";
 import { bagianOrgan, layerOrgan, organById, organs } from "@/lib/data";
-import { riwayatUser, semuaKonten } from "@/lib/db";
+import { asetOrgan, riwayatUser, semuaKonten } from "@/lib/db";
 
 /* Tanpa ?organ= -> organ pertama; ?organ= yang tidak terdaftar -> null (404) */
 function organDariQuery(nilai: string | string[] | undefined) {
@@ -35,8 +36,11 @@ export async function generateMetadata(props: PageProps<"/eksplorasi">): Promise
 export default async function HalamanEksplorasi(props: PageProps<"/eksplorasi">) {
   const [sesi, query] = await Promise.all([ambilSesi(), props.searchParams]);
   if (!sesi) return null;
-  const organ = organDariQuery(query.organ);
-  if (!organ) notFound();
+  const organDasar = organDariQuery(query.organ);
+  if (!organDasar) notFound();
+  /* FR-12: model unggahan admin (bila ada) menggantikan berkas bawaan */
+  const aset = asetOrgan(organDasar.id_organ);
+  const organ = { ...organDasar, file_model_3d: aset?.url ?? organDasar.file_model_3d };
 
   const bagian = bagianOrgan(organ.id_organ);
   /* Organ dalam selalu tampil, jadi hanya selubung luar yang jadi toggle */
@@ -60,6 +64,7 @@ export default async function HalamanEksplorasi(props: PageProps<"/eksplorasi">)
           konten={konten}
           judul={<KepalaEksplorasi organ={organ} />}
           pemilihOrgan={<PemilihOrgan organs={organs} aktifId={organ.id_organ} />}
+          keterangan={<KeteranganModel organ={organ} aset={aset} />}
         />
       </HydrationBoundary>
     </section>

@@ -49,7 +49,7 @@ Route Handler mock dengan jeda buatan.
 | `npm run lint:biome` / `npm run format` | lint + format dengan Biome (Rust) |
 | `npm run lint` | ESLint (aturan Next + React Compiler) |
 | `npm run typecheck` | `tsc --noEmit` (strict) |
-| `npm test` / `npm run test:coverage` | Vitest (84 uji) + laporan coverage lcov untuk Sonar |
+| `npm test` / `npm run test:coverage` | Vitest (90 uji) + laporan coverage lcov untuk Sonar |
 | `npm run build` | build produksi Next.js (Turbopack) |
 
 ### Akun demo
@@ -74,7 +74,7 @@ Login yang gagal 5× untuk satu email+IP diblokir 10 menit (HTTP 429).
 | `/asisten` | masuk | asisten AI (FR-08) |
 | `/riwayat` | masuk | riwayat belajar (FR-14) |
 | `/umpan-balik` | masuk | kuesioner SUS (FR-15) |
-| `/admin` | admin | konten label (FR-10), laporan (FR-11), pengguna (FR-13), umpan balik (FR-15) |
+| `/admin` | admin | konten label (FR-10), laporan (FR-11), pengguna: tambah/ubah/nonaktifkan/hapus (FR-13), aset model 3D: unggah/ganti/kembalikan (FR-12), umpan balik (FR-15) |
 | `/robots.txt`, `/sitemap.xml`, `/manifest.webmanifest`, `/opengraph-image` | publik | Metadata API |
 | `/api/*` | lihat tabel struktur | endpoint tak dikenal → JSON 404 (`api/[...rute]`) |
 
@@ -115,7 +115,9 @@ arnatomy-next/
 │   │       ├── login             POST: verifikasi hash PBKDF2, pembatas laju 429, cookie sesi
 │   │       ├── logout            POST (tombol keluar) · GET ?alasan=nonaktif (paksa keluar, redirect /login)
 │   │       ├── daftar            POST registrasi (409 email terpakai) -> langsung masuk
-│   │       ├── akun, akun/[id]   GET daftar (admin), PATCH {aktif}, DELETE (admin, bukan diri sendiri)
+│   │       ├── akun, akun/[id]   GET daftar, POST tambah, PATCH ubah (nama/email/peran/sekolah/sandi/aktif), DELETE (admin, bukan diri sendiri)
+│   │       ├── aset, aset/[id]   GET model aktif per organ, POST multipart unggah .glb (magic bytes, ≤15 MB), DELETE kembalikan bawaan (admin)
+│   │       ├── model/[id]/[berkas]  GET v<versi>.glb: menyajikan model unggahan dari memori (publik, cache immutable)
 │   │       ├── umpan-balik       GET (admin: semua; lainnya: milik sendiri), POST kuesioner SUS
 │   │       ├── asisten           GET riwayat, POST tanya (simulasiGagal -> 503)
 │   │       ├── laporan, laporan/[id]   POST kirim (simulasiGagal -> 503), PATCH tindak lanjut (admin)
@@ -133,14 +135,15 @@ arnatomy-next/
 │   │   ├── login/       HeroLogin (RSC) · FormLogin (klien)
 │   │   ├── daftar/      PanduanDaftar, PilihanPeran (RSC) · FormDaftar (klien)
 │   │   ├── umpan-balik/ PernyataanSus, RingkasanSus (RSC) · FormSus (klien)
-│   │   ├── beranda/     KartuLanjutkan, KartuRingkasan, KartuSistemProgres, AktivitasTerakhir, Pintasan (RSC)
-│   │   ├── eksplorasi/  KepalaEksplorasi, PemilihOrgan (RSC) · PenampilOrgan, PanelPenjelasan, FormLaporan (klien)
-│   │   ├── asisten/     ChatAsisten (klien)
+│   │   ├── beranda/     SapaanBeranda, GridSistemOrgan, KartuLanjutkan, KartuRingkasan, KartuSistemProgres, AktivitasTerakhir, Pintasan (RSC)
+│   │   ├── eksplorasi/  KepalaEksplorasi, PemilihOrgan, KeteranganModel (RSC) · PenampilOrgan, PanelPenjelasan, FormLaporan (klien)
+│   │   ├── asisten/     OpsiKonteks (RSC) · ChatAsisten (klien)
 │   │   ├── riwayat/     TabelRiwayat (RSC)
-│   │   ├── admin/       RingkasanSusAdmin (RSC) · TabAdmin, PanelKonten, PanelLaporan, PanelAkun, FormEditKonten (klien)
+│   │   ├── admin/       RingkasanSusAdmin, DaftarAset (RSC) · TabAdmin, PanelKonten, PanelLaporan, PanelAkun, FormAkun,
+│   │   │                AksiAset, FormEditKonten (klien)
 │   │   └── providers/   QueryProvider (klien)
 │   ├── hooks/           kunci-query, useAiConversations, useLaporanKesalahan, useKontenLabel, useRiwayatBelajar,
-│   │                    useAkun, useUmpanBalik
+│   │                    useAkun, useUmpanBalik, useAsetModel
 │   ├── store/           useUIStore.ts (Zustand, client UI state saja)
 │   ├── lib/
 │   │   ├── schemas.ts   skema Zod + z.infer semua entitas & form, branded ID, utility types
@@ -148,7 +151,8 @@ arnatomy-next/
 │   │   ├── utils.ts     cn() (clsx + tailwind-merge)
 │   │   ├── data.ts      seed data master (divalidasi Zod saat modul dimuat)
 │   │   ├── db.ts        "basis data" mock di memori server (server-only, globalThis): konten, riwayat,
-│   │   │                percakapan, laporan, umpan balik SUS, akun (seed di-hash + hasil registrasi)
+│   │   │                percakapan, laporan, umpan balik SUS, akun (seed di-hash + registrasi + CRUD admin),
+│   │   │                aset model 3D unggahan (byte di memori, berversi)
 │   │   ├── sandi.ts     hash & verifikasi kata sandi PBKDF2-SHA256 (Web Crypto, waktu konstan)
 │   │   ├── pembatas.ts  pembatas laju percobaan login (5 gagal / 10 menit per email+IP)
 │   │   ├── sus.ts       10 pernyataan SUS, skala Likert, predikat skor
@@ -165,7 +169,7 @@ arnatomy-next/
 
 ## Server vs Client Component
 
-54 dari 77 berkas `.tsx` (**70%**) adalah Server Component (hitung: `grep -L '"use client"'`). Batas `"use client"` ditaruh di
+59 dari 84 berkas `.tsx` (**70%**) adalah Server Component (hitung: `grep -L '"use client"'`). Batas `"use client"` ditaruh di
 "daun" hirarki, hanya untuk yang benar-benar butuh browser:
 
 | Client Component | Alasan |
@@ -175,7 +179,8 @@ arnatomy-next/
 | `TabAdmin`, `PanelKonten`, `PanelLaporan` | `useQuery`/`useMutation`, roving tabindex, state tab (Zustand) |
 | `NavKaca` | listener `scroll`, `usePathname`, tombol keluar |
 | `dialog`/`tabs`/`checkbox` (Radix), `Toaster`, `Muncul`, `QueryProvider`, `error.tsx`, `global-error.tsx` | primitif Radix/`IntersectionObserver`/Zustand/`QueryClient`/boundary wajib klien |
-| `FormDaftar`, `FormSus` | hanya galat + submit; pilihan peran, pernyataan SUS, dan ringkasan dioper sebagai RSC (`has-checked:` untuk gaya terpilih) |
+| `FormDaftar`, `FormSus`, `FormAkun` | hanya galat + submit (input tak terkendali, FormData); pilihan peran, pernyataan SUS, dan ringkasan dioper sebagai RSC (`has-checked:` untuk gaya terpilih) |
+| `AksiAset` | daun klien (input berkas + tombol) di dalam `DaftarAset` (RSC); `ChatAsisten` menerima `<optgroup>` dari `OpsiKonteks` (RSC) |
 
 Semua `page.tsx`, kedua `layout.tsx`, `loading.tsx`, dan komponen presentasional
 (kartu, tabel, hero, katalog, ikon, badge) adalah Server Component. Bagian server yang harus
@@ -242,8 +247,8 @@ dengan `refine` konfirmasi sandi, `LaporanFormSchema`, `KontenFormSchema`, `Pert
 - **Unit test (Vitest, jsdom/node):** `src/__tests__/` — skema Zod, seed data, codec sesi HMAC, env,
   basis data mock, penyusun jawaban, format, varian CVA, `mock-api` (fetch + timeout + validasi),
   Zustand store, empat hook TanStack Query (query + mutasi + invalidasi), seluruh Route Handler
-  (termasuk registrasi, kelola akun, SUS, 429, catch-all 404), hash sandi, pembatas laju,
-  dan `proxy.ts` (redirect + CSP). Coverage pada kode yang diuji ≈ 94% statements / 95% lines
+  (termasuk registrasi, CRUD akun, unggah/sajikan/hapus model .glb multipart, SUS, 429, catch-all 404),
+  hash sandi, pembatas laju, dan `proxy.ts` (redirect + CSP). Coverage pada kode yang diuji ≈ 93% statements / 95% lines
   (`npm run test:coverage`). Komponen presentasional dan penampil WebGL diverifikasi di browser
   dan dikecualikan dari perhitungan coverage (`sonar.coverage.exclusions`).
 - **Pipeline** `.github/workflows/ci.yml`: Biome → ESLint → `tsc` → Vitest + coverage → `next build`
@@ -292,6 +297,8 @@ tercatat pada paint pertama; TanStack Query hanya dimuat di segmen `(app)`.
 - **Akun dinonaktifkan**: sebagai admin, tab Pengguna → "Nonaktifkan" akun yang sedang masuk di
   peramban lain → permintaan berikutnya dari peramban itu dialihkan ke `/login?auth_error=nonaktif`.
 - **Brute force**: 5× kata sandi salah → percobaan ke-6 dibalas 429 dengan pesan sisa waktu.
+- **Unggah model**: tab Aset 3D → pilih berkas non-.glb / >15 MB (ditolak di klien) atau .glb palsu tanpa
+  magic bytes `glTF` (ditolak server 400); unggah yang sah langsung mengganti model di `/eksplorasi`.
 
 ## Aksesibilitas (dipertahankan dari versi vanilla)
 

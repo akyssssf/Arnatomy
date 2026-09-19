@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  AkunBuatSchema,
+  AkunPatchSchema,
+  AsetModelSchema,
   BagianIdSchema,
   BodyPartSchema,
   DaftarFormSchema,
@@ -144,5 +147,29 @@ describe("skema formulir tambahan (FR-02, FR-15)", () => {
     expect(UmpanBalikFormSchema.safeParse({ jawaban: Array(10).fill(3), komentar: "x".repeat(501) }).success).toBe(
       false,
     );
+  });
+});
+
+describe("skema admin (FR-12, FR-13)", () => {
+  it("AkunBuatSchema: sekolah kosong -> null; AkunPatchSchema: objek kosong ditolak, sandi kosong diizinkan", () => {
+    const dibuat = AkunBuatSchema.parse({
+      nama: "Admin 2",
+      email: "a2@arnatomy.id",
+      password: "sandi1234",
+      role: "admin",
+      asal_sekolah: "",
+    });
+    expect(dibuat.asal_sekolah).toBeNull();
+    expect(AkunPatchSchema.safeParse({}).success).toBe(false);
+    expect(AkunPatchSchema.safeParse({ password: "" }).success).toBe(true);
+    expect(AkunPatchSchema.safeParse({ password: "lemah" }).success).toBe(false);
+    expect(AkunPatchSchema.safeParse({ role: "dewa" }).success).toBe(false);
+  });
+
+  it("AsetModelSchema: url harus berawalan / dan berakhiran .glb", () => {
+    const dasar = { id_organ: 1, nama_berkas: "heart.glb", ukuran_byte: 10, sumber: "bawaan", versi: 0, waktu: null };
+    expect(AsetModelSchema.safeParse({ ...dasar, url: "/models/heart.glb" }).success).toBe(true);
+    expect(AsetModelSchema.safeParse({ ...dasar, url: "/api/model/1/v1" }).success).toBe(false);
+    expect(AsetModelSchema.safeParse({ ...dasar, url: "http://x/heart.glb" }).success).toBe(false);
   });
 });

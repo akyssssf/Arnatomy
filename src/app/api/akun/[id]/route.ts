@@ -1,9 +1,10 @@
-/* /api/akun/[id] — FR-13: PATCH {aktif} menonaktifkan/mengaktifkan akun,
-   DELETE menghapus akun beserta data belajarnya. Admin tidak dapat
-   mengubah akunnya sendiri agar sistem tidak kehilangan administrator. */
+/* /api/akun/[id] — FR-13: PATCH mengubah data akun (nama, email, peran,
+   sekolah, sandi baru, status aktif), DELETE menghapus akun beserta data
+   belajarnya. Admin tidak dapat mengubah/menghapus akunnya sendiri dari sini
+   agar sistem tidak kehilangan administrator. */
 import { NextResponse } from "next/server";
 import { bacaBody, galat, idDariParam, wajibSesi } from "@/lib/api-util";
-import { hapusAkun, jeda, setAkunAktif } from "@/lib/db";
+import { hapusAkun, jeda, perbaruiAkun } from "@/lib/db";
 import { AkunPatchSchema, UserIdSchema } from "@/lib/schemas";
 
 export async function PATCH(request: Request, ctx: RouteContext<"/api/akun/[id]">) {
@@ -16,9 +17,10 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/akun/[id]"
   if (!body.ok) return body.respons;
 
   await jeda(300);
-  const akun = await setAkunAktif(idUser, body.data.aktif);
-  if (!akun) return galat("akun tidak ditemukan.", 404);
-  return NextResponse.json(akun);
+  const hasil = await perbaruiAkun(idUser, body.data);
+  if (hasil.status === "tidak-ada") return galat("akun tidak ditemukan.", 404);
+  if (hasil.status === "email-ganda") return galat("Email sudah dipakai akun lain.", 409);
+  return NextResponse.json(hasil.akun);
 }
 
 export async function DELETE(_request: Request, ctx: RouteContext<"/api/akun/[id]">) {

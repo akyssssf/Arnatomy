@@ -27,3 +27,8 @@ export function sapaan(jam: number): string {
   if (jam < 19) return "Selamat sore";
   return "Selamat malam";
 }
+
+/** Ukuran berkas ringkas: KB di bawah 1 MB, selain itu MB satu desimal. */
+export function formatUkuran(byte: number): string {
+  return byte >= 1024 * 1024 ? `${(byte / 1024 / 1024).toFixed(1)} MB` : `${Math.round(byte / 1024)} KB`;
+}

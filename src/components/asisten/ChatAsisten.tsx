@@ -14,7 +14,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { useAiConversations } from "@/hooks/useAiConversations";
 import { formatWaktu } from "@/lib/format";
 import { GalatApi } from "@/lib/mock-api";
-import { type BagianId, type BodyPart, type Organ, PertanyaanFormSchema } from "@/lib/schemas";
+import { type BagianId, type BodyPart, PertanyaanFormSchema } from "@/lib/schemas";
 import { alert, bubble, input, kartu, tombol } from "@/lib/variants";
 import { useUIStore } from "@/store/useUIStore";
 
@@ -37,12 +37,13 @@ function Bubble({ peran, isi, waktu }: { peran: "user" | "ai"; isi: string; wakt
 }
 
 export function ChatAsisten({
-  organs,
   bagian,
+  opsiKonteks,
   idBagianAwal,
 }: {
-  organs: Organ[];
   bagian: BodyPart[];
+  /* <option>/<optgroup> dirender di server (OpsiKonteks) */
+  opsiKonteks: React.ReactNode;
   idBagianAwal: BagianId | null;
 }) {
   const { daftar, kirim } = useAiConversations();
@@ -110,18 +111,7 @@ export function ChatAsisten({
               }
               className={input()}
             >
-              <option value="">Tanpa konteks</option>
-              {organs.map((o) => (
-                <optgroup key={o.id_organ} label={o.nama_organ}>
-                  {bagian
-                    .filter((b) => b.id_organ === o.id_organ)
-                    .map((b) => (
-                      <option key={b.id_bagian} value={b.id_bagian}>
-                        {b.nama_bagian_internal}
-                      </option>
-                    ))}
-                </optgroup>
-              ))}
+              {opsiKonteks}
             </select>
           </div>
           <Link

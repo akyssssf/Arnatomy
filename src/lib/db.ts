@@ -14,11 +14,16 @@
    langsung dari Server Component.
    ========================================================================== */
 import "server-only";
-import { part_content_awal, users } from "./data";
+import { statSync } from "node:fs";
+import { join } from "node:path";
+import { organs, part_content_awal, users } from "./data";
 import { cekSandi, hashSandi } from "./sandi";
 import {
   type AiConversation,
   type Akun,
+  type AkunBuat,
+  type AkunPatch,
+  type AsetModel,
   type BagianId,
   type DaftarForm,
   type JenisKonten,
@@ -28,6 +33,7 @@ import {
   LaporanIdSchema,
   type LaporanKesalahan,
   type LearningHistory,
+  type OrganId,
   type PartContent,
   PercakapanIdSchema,
   type RiwayatId,
@@ -44,12 +50,21 @@ interface AkunTersimpan extends Akun {
   sandi_hash: string;
 }
 
+/** Model 3D unggahan admin (FR-12): byte disimpan di memori proses. */
+interface AsetUnggahan {
+  nama_berkas: string;
+  bytes: Uint8Array;
+  versi: number;
+  waktu: string;
+}
+
 interface Toko {
   part_content: PartContent[];
   learning_history: LearningHistory[];
   ai_conversations: AiConversation[];
   laporan_kesalahan: LaporanKesalahan[];
   umpan_balik: UmpanBalik[];
+  aset_model: Map<number, AsetUnggahan>;
   /* Diisi malas (async) karena hashing seed memakai crypto.subtle */
   akun: AkunTersimpan[] | null;
   akunSiap: Promise<AkunTersimpan[]> | null;
@@ -68,12 +83,17 @@ function toko(): Toko {
       ai_conversations: [],
       laporan_kesalahan: [],
       umpan_balik: [],
+      aset_model: new Map(),
       akun: null,
       akunSiap: null,
       urutanId: 1000,
     };
   }
-  return g[kunciGlobal];
+  /* Toko yang lahir sebelum HMR menambah kolom baru tetap dipakai: lengkapi kolomnya */
+  const t = g[kunciGlobal];
+  t.umpan_balik ??= [];
+  t.aset_model ??= new Map();
+  return t;
 }
 
 /** Id berikutnya, langsung "dimerek" lewat skema yang diminta. */
@@ -314,6 +334,40 @@ export async function setAkunAktif(idUser: UserId, aktif: boolean): Promise<Akun
   akun.aktif = aktif;
   return keAkun(akun);
 }
+/** FR-13: admin menambah akun (peran apa pun); null bila email sudah terpakai. */
+export async function tambahAkunAdmin(input: AkunBuat): Promise<Akun | null> {
+  const semua = await daftarAkun();
+  if (semua.some((a) => a.email.toLowerCase() === input.email.toLowerCase())) return null;
+  const akun: AkunTersimpan = {
+    id_user: idBaru(UserIdSchema),
+    nama: input.nama,
+    email: input.email.toLowerCase(),
+    role: input.role,
+    asal_sekolah: input.asal_sekolah,
+    aktif: true,
+    sandi_hash: await hashSandi(input.password),
+  };
+  semua.push(akun);
+  return keAkun(akun);
+}
+export type HasilPerbarui = { status: "ok"; akun: Akun } | { status: "tidak-ada" } | { status: "email-ganda" };
+/** FR-13: admin mengubah data akun; sandi kosong/absen = tidak diganti. */
+export async function perbaruiAkun(idUser: UserId, perubahan: AkunPatch): Promise<HasilPerbarui> {
+  const semua = await daftarAkun();
+  const akun = semua.find((a) => a.id_user === idUser);
+  if (!akun) return { status: "tidak-ada" };
+  const emailBaru = perubahan.email?.toLowerCase();
+  if (emailBaru && semua.some((a) => a.id_user !== idUser && a.email.toLowerCase() === emailBaru)) {
+    return { status: "email-ganda" };
+  }
+  if (perubahan.nama !== undefined) akun.nama = perubahan.nama;
+  if (emailBaru) akun.email = emailBaru;
+  if (perubahan.role !== undefined) akun.role = perubahan.role;
+  if (perubahan.asal_sekolah !== undefined) akun.asal_sekolah = perubahan.asal_sekolah;
+  if (perubahan.aktif !== undefined) akun.aktif = perubahan.aktif;
+  if (perubahan.password) akun.sandi_hash = await hashSandi(perubahan.password);
+  return { status: "ok", akun: keAkun(akun) };
+}
 /** FR-13: hapus akun beserta data belajarnya. */
 export async function hapusAkun(idUser: UserId): Promise<boolean> {
   const t = toko();
@@ -324,6 +378,66 @@ export async function hapusAkun(idUser: UserId): Promise<boolean> {
   bersihkanDataUser(idUser);
   t.umpan_balik = t.umpan_balik.filter((u) => u.id_user !== idUser);
   return true;
+}
+
+/* ---------------- aset model 3D (FR-12) ----------------
+   Setiap organ punya satu model aktif: unggahan admin (memori) bila ada,
+   selain itu berkas bawaan di public/models. URL unggahan memuat nomor versi
+   agar cache peramban tidak menyajikan model lama. */
+const MAGIC_GLB = "glTF";
+export function adalahGlb(bytes: Uint8Array): boolean {
+  return bytes.length > 12 && String.fromCharCode(...bytes.subarray(0, 4)) === MAGIC_GLB;
+}
+function ukuranBawaan(path: string): number {
+  try {
+    return statSync(join(process.cwd(), "public", path)).size;
+  } catch {
+    return 0;
+  }
+}
+export function asetOrgan(idOrgan: OrganId): AsetModel | null {
+  const organ = organs.find((o) => o.id_organ === idOrgan);
+  if (!organ) return null;
+  const unggahan = toko().aset_model.get(idOrgan);
+  if (unggahan) {
+    return {
+      id_organ: idOrgan,
+      nama_berkas: unggahan.nama_berkas,
+      ukuran_byte: unggahan.bytes.byteLength,
+      sumber: "unggahan",
+      url: `/api/model/${idOrgan}/v${unggahan.versi}.glb`,
+      versi: unggahan.versi,
+      waktu: unggahan.waktu,
+    };
+  }
+  return {
+    id_organ: idOrgan,
+    nama_berkas: organ.file_model_3d.split("/").pop() ?? organ.file_model_3d,
+    ukuran_byte: ukuranBawaan(organ.file_model_3d),
+    sumber: "bawaan",
+    url: organ.file_model_3d,
+    versi: 0,
+    waktu: null,
+  };
+}
+export function semuaAset(): AsetModel[] {
+  return organs.flatMap((o) => asetOrgan(o.id_organ) ?? []);
+}
+/** Mengunggah / memperbarui model organ; null bila organ tidak ada. */
+export function simpanAset(idOrgan: OrganId, namaBerkas: string, bytes: Uint8Array): AsetModel | null {
+  if (!organs.some((o) => o.id_organ === idOrgan)) return null;
+  const t = toko();
+  const versi = (t.aset_model.get(idOrgan)?.versi ?? 0) + 1;
+  t.aset_model.set(idOrgan, { nama_berkas: namaBerkas, bytes, versi, waktu: new Date().toISOString() });
+  return asetOrgan(idOrgan);
+}
+/** Menghapus unggahan sehingga organ kembali ke model bawaan; false bila tidak ada unggahan. */
+export function hapusAset(idOrgan: OrganId): boolean {
+  return toko().aset_model.delete(idOrgan);
+}
+export function bytesAset(idOrgan: OrganId, versi: number): Uint8Array | null {
+  const u = toko().aset_model.get(idOrgan);
+  return u && u.versi === versi ? u.bytes : null;
 }
 
 /* ---------------- Sesi ---------------- */

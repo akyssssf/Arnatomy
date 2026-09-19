@@ -60,6 +60,39 @@ describe("db: akun pengguna (FR-01, FR-02, FR-13)", () => {
   });
 });
 
+describe("db: aset model 3D (FR-12)", () => {
+  beforeEach(resetToko);
+
+  it("bawaan melaporkan ukuran berkas public/models; unggahan menaikkan versi; hapus mengembalikan bawaan", async () => {
+    const db = await import("@/lib/db");
+    const { OrganIdSchema } = await import("@/lib/schemas");
+    const id = OrganIdSchema.parse(2);
+    const bawaan = db.asetOrgan(id);
+    expect(bawaan).toMatchObject({ sumber: "bawaan", nama_berkas: "lungs.glb", url: "/models/lungs.glb", versi: 0 });
+    expect(bawaan?.ukuran_byte).toBeGreaterThan(1_000_000);
+    expect(db.asetOrgan(OrganIdSchema.parse(99))).toBeNull();
+    expect(db.simpanAset(OrganIdSchema.parse(99), "x.glb", new Uint8Array(20))).toBeNull();
+
+    const bytes = new Uint8Array(20);
+    bytes.set([0x67, 0x6c, 0x54, 0x46]);
+    expect(db.adalahGlb(bytes)).toBe(true);
+    expect(db.adalahGlb(new Uint8Array(20))).toBe(false);
+    expect(db.adalahGlb(new Uint8Array(4))).toBe(false);
+    expect(db.simpanAset(id, "paru.glb", bytes)).toMatchObject({
+      sumber: "unggahan",
+      versi: 1,
+      url: "/api/model/2/v1.glb",
+    });
+    expect(db.simpanAset(id, "paru2.glb", bytes)?.versi).toBe(2);
+    expect(db.bytesAset(id, 1)).toBeNull();
+    expect(db.bytesAset(id, 2)?.byteLength).toBe(20);
+    expect(db.semuaAset().map((a) => a.sumber)).toEqual(["bawaan", "unggahan"]);
+    expect(db.hapusAset(id)).toBe(true);
+    expect(db.hapusAset(id)).toBe(false);
+    expect(db.asetOrgan(id)?.sumber).toBe("bawaan");
+  });
+});
+
 describe("db: umpan balik SUS (FR-15)", () => {
   beforeEach(resetToko);
 

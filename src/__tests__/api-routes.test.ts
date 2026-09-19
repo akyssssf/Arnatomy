@@ -125,6 +125,99 @@ describe("Route Handlers", () => {
     expect(await (await GET()).json()).toHaveLength(2);
   });
 
+  it("/api/akun: POST tambah (409 email ganda) dan PATCH ubah data/sandi (409 email akun lain)", async () => {
+    const { POST } = await import("@/app/api/akun/route");
+    const { PATCH } = await import("@/app/api/akun/[id]/route");
+    const db = await import("@/lib/db");
+    ambilSesi.mockResolvedValue(siswa);
+    expect((await POST(post("/api/akun", {}))).status).toBe(403);
+
+    ambilSesi.mockResolvedValue(admin);
+    const dasar = {
+      nama: "Pak Budi",
+      email: "budi@sekolah.sch.id",
+      password: "sandi1234",
+      role: "guru",
+      asal_sekolah: "",
+    };
+    expect((await POST(post("/api/akun", { ...dasar, password: "lemah" }))).status).toBe(400);
+    const dibuat = await POST(post("/api/akun", dasar));
+    expect(dibuat.status).toBe(201);
+    const akun = await dibuat.json();
+    expect(akun).toMatchObject({ nama: "Pak Budi", role: "guru", asal_sekolah: null, aktif: true });
+    expect((await POST(post("/api/akun", dasar))).status).toBe(409);
+
+    const id = String(akun.id_user);
+    expect((await PATCH(patch(`/api/akun/${id}`, {}), konteks(id))).status).toBe(400);
+    expect((await PATCH(patch(`/api/akun/${id}`, { email: "siswa@arnatomy.id" }), konteks(id))).status).toBe(409);
+    const diubah = await PATCH(
+      patch(`/api/akun/${id}`, { nama: "Pak Budi S.", role: "admin", password: "baru12345" }),
+      konteks(id),
+    );
+    expect(diubah.status).toBe(200);
+    expect(await diubah.json()).toMatchObject({ nama: "Pak Budi S.", role: "admin" });
+    expect(await db.verifikasiLogin("budi@sekolah.sch.id", "baru12345")).toMatchObject({ status: "ok" });
+    /* sandi kosong = tidak diganti */
+    await PATCH(patch(`/api/akun/${id}`, { password: "", nama: "Budi" }), konteks(id));
+    expect(await db.verifikasiLogin("budi@sekolah.sch.id", "baru12345")).toMatchObject({ status: "ok" });
+  });
+
+  it("/api/aset & /api/model: unggah .glb (validasi magic bytes), sajikan, kembalikan bawaan", async () => {
+    const { GET, POST } = await import("@/app/api/aset/route");
+    const { DELETE } = await import("@/app/api/aset/[id]/route");
+    const { GET: ambilModel } = await import("@/app/api/model/[id]/[berkas]/route");
+    ambilSesi.mockResolvedValue(admin);
+
+    const awal = await (await GET()).json();
+    expect(awal).toHaveLength(2);
+    expect(awal[0]).toMatchObject({ id_organ: 1, sumber: "bawaan", url: "/models/heart.glb" });
+
+    const glb = new Uint8Array(new ArrayBuffer(24));
+    glb.set([0x67, 0x6c, 0x54, 0x46], 0); // "glTF"
+    const multipart = (nama: string, isi: Uint8Array<ArrayBuffer>, idOrgan = "1") => {
+      const form = new FormData();
+      form.set("id_organ", idOrgan);
+      form.set("berkas", new File([isi], nama, { type: "model/gltf-binary" }));
+      return new Request("http://localhost/api/aset", { method: "POST", body: form });
+    };
+    expect((await POST(post("/api/aset", {}))).status).toBe(400);
+    expect((await POST(multipart("jantung.glb", glb, "99"))).status).toBe(404);
+    expect((await POST(multipart("jantung.obj", glb))).status).toBe(400);
+    expect((await POST(multipart("palsu.glb", new Uint8Array(new ArrayBuffer(24))))).status).toBe(400);
+    const diunggah = await POST(multipart("jantung-baru.glb", glb));
+    expect(diunggah.status).toBe(201);
+    const aset = await diunggah.json();
+    expect(aset).toMatchObject({
+      id_organ: 1,
+      sumber: "unggahan",
+      versi: 1,
+      url: "/api/model/1/v1.glb",
+      ukuran_byte: 24,
+    });
+
+    const berkas = await ambilModel(new Request("http://localhost/api/model/1/v1.glb"), {
+      params: Promise.resolve({ id: "1", berkas: "v1.glb" }),
+    });
+    expect(berkas.status).toBe(200);
+    expect(berkas.headers.get("content-type")).toBe("model/gltf-binary");
+    expect((await berkas.arrayBuffer()).byteLength).toBe(24);
+    expect(
+      (
+        await ambilModel(new Request("http://localhost/api/model/1/v9.glb"), {
+          params: Promise.resolve({ id: "1", berkas: "v9.glb" }),
+        })
+      ).status,
+    ).toBe(404);
+
+    /* unggah ulang menaikkan versi */
+    expect((await (await POST(multipart("jantung-v2.glb", glb))).json()).versi).toBe(2);
+    expect((await DELETE(hapus("/api/aset/2"), konteks("2"))).status).toBe(404);
+    const kembali = await DELETE(hapus("/api/aset/1"), konteks("1"));
+    expect(await kembali.json()).toMatchObject({ sumber: "bawaan", url: "/models/heart.glb" });
+    ambilSesi.mockResolvedValue(siswa);
+    expect((await GET()).status).toBe(403);
+  });
+
   it("/api/umpan-balik: skor SUS dihitung server; siswa hanya melihat miliknya, admin semua", async () => {
     const { GET, POST } = await import("@/app/api/umpan-balik/route");
     ambilSesi.mockResolvedValue(siswa);

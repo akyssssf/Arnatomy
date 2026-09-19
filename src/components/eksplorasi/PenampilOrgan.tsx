@@ -45,6 +45,7 @@ export function PenampilOrgan({
   konten,
   judul,
   pemilihOrgan,
+  keterangan,
 }: {
   organ: Organ;
   bagian: BodyPart[];
@@ -53,6 +54,7 @@ export function PenampilOrgan({
   /* Potongan Server Component yang dioper sebagai node (tetap dirender di server) */
   judul: React.ReactNode;
   pemilihOrgan: React.ReactNode;
+  keterangan: React.ReactNode;
 }) {
   /* --- Client UI state (Zustand, selector presisi) --- */
   const layerAktif = useUIStore((s) => s.layerAktif);
@@ -461,10 +463,7 @@ export function PenampilOrgan({
             </aside>
           </div>
         </div>
-        <figcaption className="mt-3 px-1 text-[11px] text-neutral-400">
-          Gambar 1. Model 3D {organ.nama_organ} ({organ.file_model_3d}). Ketuk titik bernomor untuk membuka label;
-          kamera AR perangkat tidak diaktifkan pada prototipe web.
-        </figcaption>
+        {keterangan}
       </figure>
 
       {laporUntuk && (

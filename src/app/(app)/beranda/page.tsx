@@ -4,17 +4,16 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AktivitasTerakhir, AktivitasTerakhirSkeleton } from "@/components/beranda/AktivitasTerakhir";
+import { GridSistemOrgan } from "@/components/beranda/GridSistemOrgan";
 import { KartuLanjutkan } from "@/components/beranda/KartuLanjutkan";
 import { KartuRingkasan } from "@/components/beranda/KartuRingkasan";
-import { KartuSistemProgres } from "@/components/beranda/KartuSistemProgres";
 import { Pintasan } from "@/components/beranda/Pintasan";
+import { SapaanBeranda } from "@/components/beranda/SapaanBeranda";
 import { Muncul } from "@/components/motion/Muncul";
 import { Alert } from "@/components/ui/Alert";
-import { JudulKata } from "@/components/ui/JudulKata";
 import { ambilSesi } from "@/lib/auth";
-import { bagianById, bagianOrgan, body_parts, organById, organs, sistem_organ } from "@/lib/data";
+import { bagianById, bagianOrgan, body_parts, organById, organs } from "@/lib/data";
 import { percakapanUser, riwayatUser } from "@/lib/db";
-import { sapaan } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "Beranda",
@@ -38,10 +37,6 @@ export default async function HalamanBeranda(props: PageProps<"/beranda">) {
   const bagianTerakhir = bagianById(riwayat.at(-1)?.id_bagian);
   const organLanjut = organById(bagianTerakhir?.id_organ) ?? organs[0];
   if (!organLanjut) throw new Error("data organ awal tidak lengkap.");
-  const namaDepan = sesi.nama.split(" ")[0] ?? sesi.nama;
-  const jam = Number(
-    new Intl.DateTimeFormat("id-ID", { hour: "numeric", hour12: false, timeZone: "Asia/Jakarta" }).format(new Date()),
-  );
 
   return (
     <section aria-labelledby="judul-beranda" className="halaman-masuk">
@@ -50,18 +45,7 @@ export default async function HalamanBeranda(props: PageProps<"/beranda">) {
           Dashboard Admin hanya untuk peran administrator. Kamu diarahkan ke beranda.
         </Alert>
       )}
-      <div className="flex flex-wrap items-end justify-between gap-4 pt-4">
-        <div>
-          <p className="mikro mb-3">Dashboard belajar</p>
-          <h1 id="judul-beranda" className="titik-biru text-4xl font-semibold leading-[0.95] sm:text-5xl">
-            <JudulKata baris={[[`${sapaan(jam)},`], [namaDepan]]} />
-          </h1>
-        </div>
-        <p className="mikro">
-          {sesi.role}
-          {sesi.asal_sekolah ? ` · ${sesi.asal_sekolah}` : ""}
-        </p>
-      </div>
+      <SapaanBeranda sesi={sesi} />
 
       <div className="mt-8 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
         <Muncul>
@@ -82,17 +66,7 @@ export default async function HalamanBeranda(props: PageProps<"/beranda">) {
         </Muncul>
       </div>
 
-      <div className="mt-12 flex flex-wrap items-end justify-between gap-4">
-        <h2 className="titik-biru text-3xl font-semibold sm:text-4xl">Sistem organ</h2>
-        <p className="text-sm text-neutral-500">Progres tiap sistem tercatat otomatis.</p>
-      </div>
-      <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {sistem_organ.map((s, i) => (
-          <Muncul key={s.id_sistem} jeda={Math.min(i, 8) * 55}>
-            <KartuSistemProgres sistem={s} persen={s.id_organ ? progresOrgan(s.id_organ, idDibuka).persen : null} />
-          </Muncul>
-        ))}
-      </div>
+      <GridSistemOrgan persenOrgan={(idOrgan) => progresOrgan(idOrgan, idDibuka).persen} />
 
       <div className="mt-12 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
         <Suspense fallback={<AktivitasTerakhirSkeleton />}>

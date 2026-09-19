@@ -11,8 +11,11 @@ import {
   type AiConversation,
   AiConversationSchema,
   type Akun,
+  type AkunBuat,
   type AkunPatch,
   AkunSchema,
+  type AsetModel,
+  AsetModelSchema,
   type CatatRiwayatInput,
   type DaftarForm,
   type KontenForm,
@@ -24,6 +27,7 @@ import {
   type LearningHistory,
   LearningHistorySchema,
   type LoginForm,
+  type OrganId,
   type PartContent,
   PartContentSchema,
   type PertanyaanForm,
@@ -56,10 +60,12 @@ async function ambilJson<T>(skema: z.ZodType<T>, url: string, init?: RequestInit
   const pengendali = new AbortController();
   const penghitung = setTimeout(() => pengendali.abort(), BATAS_WAKTU_MS);
   try {
+    /* Body FormData (unggah berkas): biarkan peramban menyetel boundary multipart */
+    const jsonBody = !(init?.body instanceof FormData);
     const respons = await fetch(url, {
       ...init,
       signal: pengendali.signal,
-      headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
+      headers: { ...(jsonBody ? { "Content-Type": "application/json" } : {}), ...(init?.headers ?? {}) },
     });
     const mentah: unknown = await respons.json().catch(() => null);
     if (!respons.ok) {
@@ -107,11 +113,25 @@ export async function daftar(input: DaftarForm): Promise<SesiUser> {
 export function ambilAkun(): Promise<Akun[]> {
   return ambilJson(z.array(AkunSchema), "/api/akun");
 }
-export function ubahStatusAkun(idUser: UserId, input: AkunPatch): Promise<Akun> {
+export function tambahAkun(input: AkunBuat): Promise<Akun> {
+  return ambilJson(AkunSchema, "/api/akun", kirim("POST", input));
+}
+export function ubahAkun(idUser: UserId, input: AkunPatch): Promise<Akun> {
   return ambilJson(AkunSchema, `/api/akun/${idUser}`, kirim("PATCH", input));
 }
 export async function hapusAkun(idUser: UserId): Promise<void> {
   await ambilJson(RespOkSchema, `/api/akun/${idUser}`, { method: "DELETE" });
+}
+
+/* ---------------- Aset model 3D (FR-12, khusus admin) ---------------- */
+export function unggahAset(idOrgan: OrganId, berkas: File): Promise<AsetModel> {
+  const form = new FormData();
+  form.set("id_organ", String(idOrgan));
+  form.set("berkas", berkas);
+  return ambilJson(AsetModelSchema, "/api/aset", { method: "POST", body: form });
+}
+export function hapusAsetModel(idOrgan: OrganId): Promise<AsetModel> {
+  return ambilJson(AsetModelSchema, `/api/aset/${idOrgan}`, { method: "DELETE" });
 }
 
 /* ---------------- Umpan balik SUS (FR-15) ---------------- */

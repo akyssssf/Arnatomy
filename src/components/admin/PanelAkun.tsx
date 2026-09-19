@@ -1,7 +1,8 @@
 "use client";
 
 /* Client: tab Pengguna (FR-13). useAkun({aktif:true}) -> loading/error/empty
-   state; "Nonaktifkan/Aktifkan" dan "Hapus" = mutasi + invalidasi cache.
+   state; "Tambah akun"/"Ubah" membuka FormAkun; "Nonaktifkan/Aktifkan" dan
+   "Hapus" = mutasi + invalidasi cache.
    Akun admin yang sedang masuk tidak bisa diubah (dijaga juga di server).
    Setelah hapus, router.refresh() agar tab Umpan Balik (RSC) ikut segar. */
 import { useRouter } from "next/navigation";
@@ -14,14 +15,17 @@ import { useAkun } from "@/hooks/useAkun";
 import type { Akun, UserId } from "@/lib/schemas";
 import { alert, kartu, tombol } from "@/lib/variants";
 import { useUIStore } from "@/store/useUIStore";
+import { FormAkun } from "./FormAkun";
 
 const LABEL_PERAN: Record<Akun["role"], string> = { siswa: "Siswa", guru: "Guru", admin: "Administrator" };
 
 export function PanelAkun({ idAdmin }: { idAdmin: UserId }) {
   const router = useRouter();
-  const { daftar, ubahStatus, hapus } = useAkun({ aktif: true });
+  const { daftar, ubah, hapus } = useAkun({ aktif: true });
   const tampilkanToast = useUIStore((s) => s.tampilkanToast);
   const [akanDihapus, setAkanDihapus] = useState<Akun | null>(null);
+  /* null = modal tertutup; "baru" = tambah; Akun = ubah */
+  const [formAkun, setFormAkun] = useState<Akun | "baru" | null>(null);
 
   if (daftar.isPending) {
     return (
@@ -50,9 +54,9 @@ export function PanelAkun({ idAdmin }: { idAdmin: UserId }) {
     return <KondisiKosong judul="Belum ada akun" deskripsi="Akun muncul di sini setelah pengguna mendaftar." />;
   }
 
-  async function ubah(akun: Akun) {
+  async function ubahStatus(akun: Akun) {
     try {
-      await ubahStatus.mutateAsync({ idUser: akun.id_user, aktif: !akun.aktif });
+      await ubah.mutateAsync({ idUser: akun.id_user, input: { aktif: !akun.aktif } });
       tampilkanToast(`Akun ${akun.nama} ${akun.aktif ? "dinonaktifkan" : "diaktifkan kembali"}.`, "sukses");
     } catch (kesalahan) {
       tampilkanToast(`Gagal: ${kesalahan instanceof Error ? kesalahan.message : "galat tidak dikenal."}`, "error");
@@ -74,13 +78,18 @@ export function PanelAkun({ idAdmin }: { idAdmin: UserId }) {
 
   return (
     <>
-      <p className="mb-3 text-xs text-neutral-500">
-        {daftar.data.length} akun, {jumlahAktif} aktif. Akun nonaktif ditolak saat masuk dan sesinya diputus.
-      </p>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs text-neutral-500">
+          {daftar.data.length} akun, {jumlahAktif} aktif. Akun nonaktif ditolak saat masuk dan sesinya diputus.
+        </p>
+        <button type="button" onClick={() => setFormAkun("baru")} className={tombol({ ukuran: "sm" })}>
+          Tambah akun
+        </button>
+      </div>
       <ul className="space-y-3">
         {daftar.data.map((a) => {
           const diriSendiri = a.id_user === idAdmin;
-          const sedangUbah = ubahStatus.isPending && ubahStatus.variables?.idUser === a.id_user;
+          const sedangUbah = ubah.isPending && ubah.variables?.idUser === a.id_user;
           return (
             <li key={a.id_user} className={`${kartu({ padding: "md" })} ${a.aktif ? "" : "opacity-70"}`}>
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -103,9 +112,16 @@ export function PanelAkun({ idAdmin }: { idAdmin: UserId }) {
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button
                     type="button"
-                    onClick={() => ubah(a)}
+                    onClick={() => setFormAkun(a)}
+                    className={tombol({ variant: "sekunder", ukuran: "sm" })}
+                  >
+                    Ubah
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => ubahStatus(a)}
                     disabled={sedangUbah}
-                    className={tombol({ variant: a.aktif ? "bahaya" : "sekunder", ukuran: "sm" })}
+                    className={tombol({ variant: a.aktif ? "bahaya" : "garis", ukuran: "sm" })}
                   >
                     {sedangUbah ? (
                       <>
@@ -131,6 +147,7 @@ export function PanelAkun({ idAdmin }: { idAdmin: UserId }) {
         })}
       </ul>
 
+      {formAkun && <FormAkun akun={formAkun === "baru" ? null : formAkun} onTutup={() => setFormAkun(null)} />}
       {akanDihapus && (
         <Modal judul="Hapus akun?" onTutup={() => setAkanDihapus(null)} lebar="max-w-md">
           <p className="text-sm text-neutral-600">
