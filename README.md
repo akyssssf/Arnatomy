@@ -49,7 +49,7 @@ Route Handler mock dengan jeda buatan.
 | `npm run lint:biome` / `npm run format` | lint + format dengan Biome (Rust) |
 | `npm run lint` | ESLint (aturan Next + React Compiler) |
 | `npm run typecheck` | `tsc --noEmit` (strict) |
-| `npm test` / `npm run test:coverage` | Vitest (63 uji) + laporan coverage lcov untuk Sonar |
+| `npm test` / `npm run test:coverage` | Vitest (84 uji) + laporan coverage lcov untuk Sonar |
 | `npm run build` | build produksi Next.js (Turbopack) |
 
 ### Akun demo
@@ -59,6 +59,24 @@ Route Handler mock dengan jeda buatan.
 | Siswa | `siswa@arnatomy.id` | `siswa123` |
 | Guru | `guru@arnatomy.id` | `guru123` |
 | Administrator | `admin@arnatomy.id` | `admin123` |
+
+Akun siswa/guru baru bisa dibuat di `/daftar` (FR-02); kata sandi disimpan sebagai hash PBKDF2.
+Login yang gagal 5× untuk satu email+IP diblokir 10 menit (HTTP 429).
+
+### Peta halaman
+
+| Rute | Akses | Isi |
+|---|---|---|
+| `/` | publik | landing |
+| `/login`, `/daftar` | tamu (sudah masuk → dialihkan) | masuk (FR-01), registrasi (FR-02) |
+| `/beranda` | masuk | dashboard belajar |
+| `/eksplorasi?organ=<id>` | masuk | penampil 3D; id tak dikenal → `not-found.tsx` (app) |
+| `/asisten` | masuk | asisten AI (FR-08) |
+| `/riwayat` | masuk | riwayat belajar (FR-14) |
+| `/umpan-balik` | masuk | kuesioner SUS (FR-15) |
+| `/admin` | admin | konten label (FR-10), laporan (FR-11), pengguna (FR-13), umpan balik (FR-15) |
+| `/robots.txt`, `/sitemap.xml`, `/manifest.webmanifest`, `/opengraph-image` | publik | Metadata API |
+| `/api/*` | lihat tabel struktur | endpoint tak dikenal → JSON 404 (`api/[...rute]`) |
 
 ## Struktur folder
 
@@ -72,53 +90,71 @@ arnatomy-next/
 │   └── img/             render statis organ (webp transparan)
 ├── src/
 │   ├── proxy.ts         proteksi rute (cookie sesi HMAC -> redirect) + CSP ber-nonce — Next 16: pengganti middleware.ts
-│   ├── __tests__/       unit test Vitest (lib, store, hooks, route handler, proxy)
+│   ├── __tests__/       unit test Vitest (lib, store, hooks, route handler, proxy, sandi, pembatas)
 │   ├── test/            setup Vitest + stub server-only
 │   ├── app/
-│   │   ├── layout.tsx            Root Layout: fon lokal, Metadata API, QueryProvider, skip link, Toaster
+│   │   ├── layout.tsx            Root Layout: fon lokal, Metadata API (metadataBase, Open Graph), skip link, Toaster
 │   │   ├── globals.css           Tailwind v4 (@theme token) + kelas khusus (titik 3D, panel, kaca, motion)
 │   │   ├── page.tsx              Landing publik (RSC)
-│   │   ├── not-found.tsx
+│   │   ├── not-found.tsx · error.tsx · global-error.tsx   404 publik, boundary segmen akar, boundary root layout
+│   │   ├── robots.ts · sitemap.ts · manifest.ts · opengraph-image.tsx · icon.svg · apple-icon.png
 │   │   ├── login/page.tsx        Login (RSC pembungkus) + FormLogin (klien)
+│   │   ├── daftar/page.tsx       Registrasi (RSC pembungkus) + FormDaftar (klien)
 │   │   ├── (app)/                 area setelah login
-│   │   │   ├── layout.tsx        Nested layout #2: NavKaca + Footer, sesi dari cookie
+│   │   │   ├── layout.tsx        Nested layout #2: NavKaca + Footer; periksaSesi() (akun nonaktif -> keluar)
 │   │   │   ├── error.tsx         Error boundary segmen (klien)
-│   │   │   ├── beranda/page.tsx  Dashboard belajar; <Suspense> untuk AktivitasTerakhir
-│   │   │   ├── eksplorasi/page.tsx  ?organ=<id>, generateMetadata, PenampilOrgan (klien)
-│   │   │   ├── asisten/page.tsx  prefetch percakapan -> HydrationBoundary -> ChatAsisten
+│   │   │   ├── not-found.tsx     404 di dalam layout (dipicu notFound(), mis. ?organ= tak dikenal)
+│   │   │   ├── beranda/{page,loading}.tsx   Dashboard belajar; <Suspense> untuk AktivitasTerakhir
+│   │   │   ├── eksplorasi/{page,loading}.tsx  ?organ=<id>, generateMetadata, PenampilOrgan (klien)
+│   │   │   ├── asisten/{page,loading}.tsx   prefetch percakapan -> HydrationBoundary -> ChatAsisten
 │   │   │   ├── riwayat/{page,loading}.tsx   RSC async + skeleton streaming
-│   │   │   └── admin/{page,loading}.tsx     cek peran + prefetch ['konten'],['laporan'] -> TabAdmin
+│   │   │   ├── umpan-balik/page.tsx         kuesioner SUS (FR-15) -> FormSus (klien)
+│   │   │   ├── umpan-balik/loading.tsx
+│   │   │   └── admin/{page,loading}.tsx     cek peran + prefetch ['konten'],['laporan'],['akun'] -> TabAdmin (+RingkasanSusAdmin RSC)
 │   │   └── api/                  Route Handlers (REST mock, body divalidasi Zod, jeda buatan)
-│   │       ├── login, logout
+│   │       ├── login             POST: verifikasi hash PBKDF2, pembatas laju 429, cookie sesi
+│   │       ├── logout            POST (tombol keluar) · GET ?alasan=nonaktif (paksa keluar, redirect /login)
+│   │       ├── daftar            POST registrasi (409 email terpakai) -> langsung masuk
+│   │       ├── akun, akun/[id]   GET daftar (admin), PATCH {aktif}, DELETE (admin, bukan diri sendiri)
+│   │       ├── umpan-balik       GET (admin: semua; lainnya: milik sendiri), POST kuesioner SUS
 │   │       ├── asisten           GET riwayat, POST tanya (simulasiGagal -> 503)
 │   │       ├── laporan, laporan/[id]   POST kirim (simulasiGagal -> 503), PATCH tindak lanjut (admin)
 │   │       ├── konten, konten/[id]     GET semua, PATCH edit (admin)
-│   │       └── riwayat, riwayat/[id]   GET/POST catat, PATCH tutup (durasi dihitung server)
+│   │       ├── riwayat, riwayat/[id]   GET/POST catat, PATCH tutup (durasi dihitung server)
+│   │       └── [...rute]         catch-all: JSON 404 untuk endpoint tak dikenal
 │   ├── components/
 │   │   ├── ui/          Ikon, Badge, Alert, Spinner, JudulHalaman, JudulKata, Marquee, KondisiKosong,
-│   │   │                DaftarFakta, ProgressBar, KartuStatistik (RSC) · dialog/tabs/checkbox (shadcn-style
-│   │   │                di atas Radix), Modal, Toaster (klien)
-│   │   ├── layout/      Footer (RSC) · NavKaca (klien: gulir menyusut, keluar)
-│   │   ├── motion/      Muncul (klien tipis; anak tetap RSC)
+│   │   │                DaftarFakta, ProgressBar, KartuStatistik, Kerangka (RSC) · dialog (+Modal)/tabs/checkbox
+│   │   │                (shadcn-style di atas Radix), Toaster (klien)
+│   │   ├── layout/      Footer, KepalaTamu (RSC) · NavKaca (klien: gulir menyusut, keluar)
+│   │   ├── motion/      MunculSegera (RSC, murni CSS untuk lipatan atas) · Muncul (klien, IntersectionObserver)
 │   │   ├── hero/        Hero3D (klien: kanvas dekoratif, import() Three.js)
 │   │   ├── landing/     HeroLanding, KatalogSistem, KartuSistem, LangkahBelajar, AjakanMasuk (RSC)
 │   │   ├── login/       HeroLogin (RSC) · FormLogin (klien)
+│   │   ├── daftar/      PanduanDaftar, PilihanPeran (RSC) · FormDaftar (klien)
+│   │   ├── umpan-balik/ PernyataanSus, RingkasanSus (RSC) · FormSus (klien)
 │   │   ├── beranda/     KartuLanjutkan, KartuRingkasan, KartuSistemProgres, AktivitasTerakhir, Pintasan (RSC)
 │   │   ├── eksplorasi/  KepalaEksplorasi, PemilihOrgan (RSC) · PenampilOrgan, PanelPenjelasan, FormLaporan (klien)
 │   │   ├── asisten/     ChatAsisten (klien)
 │   │   ├── riwayat/     TabelRiwayat (RSC)
-│   │   ├── admin/       TabAdmin, PanelKonten, PanelLaporan, FormEditKonten (klien)
+│   │   ├── admin/       RingkasanSusAdmin (RSC) · TabAdmin, PanelKonten, PanelLaporan, PanelAkun, FormEditKonten (klien)
 │   │   └── providers/   QueryProvider (klien)
-│   ├── hooks/           kunci-query, useAiConversations, useLaporanKesalahan, useKontenLabel, useRiwayatBelajar
+│   ├── hooks/           kunci-query, useAiConversations, useLaporanKesalahan, useKontenLabel, useRiwayatBelajar,
+│   │                    useAkun, useUmpanBalik
 │   ├── store/           useUIStore.ts (Zustand, client UI state saja)
 │   ├── lib/
 │   │   ├── schemas.ts   skema Zod + z.infer semua entitas & form, branded ID, utility types
 │   │   ├── env.ts       validasi variabel lingkungan (server vs NEXT_PUBLIC_)
 │   │   ├── utils.ts     cn() (clsx + tailwind-merge)
 │   │   ├── data.ts      seed data master (divalidasi Zod saat modul dimuat)
-│   │   ├── db.ts        "basis data" mock di memori server (server-only, globalThis)
+│   │   ├── db.ts        "basis data" mock di memori server (server-only, globalThis): konten, riwayat,
+│   │   │                percakapan, laporan, umpan balik SUS, akun (seed di-hash + hasil registrasi)
+│   │   ├── sandi.ts     hash & verifikasi kata sandi PBKDF2-SHA256 (Web Crypto, waktu konstan)
+│   │   ├── pembatas.ts  pembatas laju percobaan login (5 gagal / 10 menit per email+IP)
+│   │   ├── sus.ts       10 pernyataan SUS, skala Likert, predikat skor
 │   │   ├── mock-api.ts  fungsi fetch klien: timeout, galat terbaca, respons diparse Zod
-│   │   ├── auth.ts      ambilSesi() dari cookie (server-only)
+│   │   ├── auth.ts      ambilSesi() dari cookie; periksaSesi() mencocokkan ke basis data (server-only)
+│   │   ├── sesi-respons.ts respons sukses masuk (JSON + cookie) dipakai login & daftar
 │   │   ├── sesi-codec.ts enkode/dekode cookie bertanda tangan HMAC (dipakai proxy + server)
 │   │   ├── api-util.ts  pembantu Route Handler (bacaBody Zod, wajibSesi, galat)
 │   │   ├── asisten.ts   penyusun jawaban Asisten AI
@@ -129,7 +165,7 @@ arnatomy-next/
 
 ## Server vs Client Component
 
-38 dari 54 berkas `.tsx` (**70%**) adalah Server Component. Batas `"use client"` ditaruh di
+54 dari 77 berkas `.tsx` (**70%**) adalah Server Component (hitung: `grep -L '"use client"'`). Batas `"use client"` ditaruh di
 "daun" hirarki, hanya untuk yang benar-benar butuh browser:
 
 | Client Component | Alasan |
@@ -138,7 +174,8 @@ arnatomy-next/
 | `PanelPenjelasan`, `FormLaporan`, `FormEditKonten`, `FormLogin`, `ChatAsisten` | state form + validasi Zod di klien, `useMutation` |
 | `TabAdmin`, `PanelKonten`, `PanelLaporan` | `useQuery`/`useMutation`, roving tabindex, state tab (Zustand) |
 | `NavKaca` | listener `scroll`, `usePathname`, tombol keluar |
-| `Modal`, `Toaster`, `Muncul`, `QueryProvider`, `error.tsx` | focus trap/`IntersectionObserver`/Zustand/`QueryClient`/boundary wajib klien |
+| `dialog`/`tabs`/`checkbox` (Radix), `Toaster`, `Muncul`, `QueryProvider`, `error.tsx`, `global-error.tsx` | primitif Radix/`IntersectionObserver`/Zustand/`QueryClient`/boundary wajib klien |
+| `FormDaftar`, `FormSus` | hanya galat + submit; pilihan peran, pernyataan SUS, dan ringkasan dioper sebagai RSC (`has-checked:` untuk gaya terpilih) |
 
 Semua `page.tsx`, kedua `layout.tsx`, `loading.tsx`, dan komponen presentasional
 (kartu, tabel, hero, katalog, ikon, badge) adalah Server Component. Bagian server yang harus
@@ -163,10 +200,18 @@ mengirimnya lewat `<HydrationBoundary>`, jadi `useQuery` di klien langsung teris
 
 ## Autentikasi, keamanan sisi klien & proteksi rute
 
-- `POST /api/login` memeriksa akun demo lalu menyetel cookie **httpOnly, SameSite=Lax**
+- **Kata sandi tidak pernah disimpan apa adanya**: akun seed maupun hasil registrasi (`/daftar`,
+  FR-02) disimpan sebagai hash **PBKDF2-SHA256** (garam acak 16 byte, 100.000 iterasi,
+  `src/lib/sandi.ts`, perbandingan waktu konstan). Memenuhi NFR-01 tanpa dependensi native.
+- `POST /api/login` memverifikasi hash lalu menyetel cookie **httpOnly, SameSite=Lax**
   `arnatomy_sesi` berisi JSON pengguna (tanpa password) yang **ditandatangani HMAC-SHA256**
   dengan `SESSION_SECRET` (Web Crypto, `src/lib/sesi-codec.ts`); cookie yang diubah gagal
   verifikasi dan diperlakukan seperti tidak ada. Prototipe, bukan sesi produksi.
+- **Pembatas laju** (`src/lib/pembatas.ts`): 5 kegagalan login per email+IP dalam 10 menit →
+  HTTP 429 + `Retry-After`; login berhasil menghapus hitungan.
+- **Akun nonaktif/dihapus** (FR-13): `periksaSesi()` mencocokkan cookie ke basis data pada
+  layout `(app)` dan `wajibSesi()`; sesi yang masih sah tapi akunnya dinonaktifkan admin
+  dialihkan ke `GET /api/logout?alasan=nonaktif` (cookie dibuang) → `/login?auth_error=nonaktif`.
 - **CSP ber-nonce per permintaan** (`script-src 'nonce-…' 'strict-dynamic'`, `object-src 'none'`,
   `frame-ancestors 'none'`) dipasang `src/proxy.ts` dan diteruskan ke Next lewat header `x-nonce`;
   header `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`,
@@ -176,7 +221,7 @@ mengirimnya lewat `<HydrationBoundary>`, jadi `useQuery` di klien langsung teris
 - `src/proxy.ts` (Next.js 16 mengganti nama `middleware.ts` menjadi `proxy.ts`; API sama:
   `NextRequest`, cookie, `matcher`, `NextResponse.redirect`) berjalan sebelum render:
   rute terproteksi tanpa cookie → `/login?auth_error=1&next=…`; non-admin ke `/admin` →
-  `/beranda?pesan=khusus-admin`; sudah masuk ke `/login` → `/beranda`.
+  `/beranda?pesan=khusus-admin`; sudah masuk ke `/login` atau `/daftar` → `/beranda`.
 - Lapisan kedua di server: `(app)/layout.tsx` dan `admin/page.tsx` memeriksa sesi/peran lagi,
   dan setiap Route Handler memakai `wajibSesi()` (401/403).
 
@@ -184,8 +229,9 @@ mengirimnya lewat `<HydrationBoundary>`, jadi `useQuery` di klien langsung teris
 
 `lib/schemas.ts` adalah satu-satunya sumber tipe: entitas SKPL (`users`, `sistem_organ`,
 `organs`, `layers`, `body_parts`, `part_content`, `learning_history`, `ai_conversations`,
-`laporan_kesalahan`) dan skema form (`LoginFormSchema`, `LaporanFormSchema`,
-`KontenFormSchema`, `PertanyaanFormSchema`). Dipakai di tiga titik:
+`laporan_kesalahan`, `umpan_balik`) dan skema form (`LoginFormSchema`, `DaftarFormSchema`
+dengan `refine` konfirmasi sandi, `LaporanFormSchema`, `KontenFormSchema`, `PertanyaanFormSchema`,
+`UmpanBalikFormSchema`, `AkunPatchSchema`). Dipakai di tiga titik:
 
 1. seed data diparse saat modul dimuat (data salah bentuk gagal saat build);
 2. Route Handler memvalidasi body (`bacaBody`) → 400 dengan pesan Zod;
@@ -195,8 +241,9 @@ mengirimnya lewat `<HydrationBoundary>`, jadi `useQuery` di klien langsung teris
 
 - **Unit test (Vitest, jsdom/node):** `src/__tests__/` — skema Zod, seed data, codec sesi HMAC, env,
   basis data mock, penyusun jawaban, format, varian CVA, `mock-api` (fetch + timeout + validasi),
-  Zustand store, empat hook TanStack Query (query + mutasi + invalidasi), seluruh Route Handler,
-  dan `proxy.ts` (redirect + CSP). Coverage pada kode yang diuji ≈ 97% statements / 99% lines
+  Zustand store, empat hook TanStack Query (query + mutasi + invalidasi), seluruh Route Handler
+  (termasuk registrasi, kelola akun, SUS, 429, catch-all 404), hash sandi, pembatas laju,
+  dan `proxy.ts` (redirect + CSP). Coverage pada kode yang diuji ≈ 94% statements / 95% lines
   (`npm run test:coverage`). Komponen presentasional dan penampil WebGL diverifikasi di browser
   dan dikecualikan dari perhitungan coverage (`sonar.coverage.exclusions`).
 - **Pipeline** `.github/workflows/ci.yml`: Biome → ESLint → `tsc` → Vitest + coverage → `next build`
@@ -238,7 +285,13 @@ tercatat pada paint pertama; TanStack Query hanya dimuat di segmen `(app)`.
 - **Proteksi rute**: buka `/beranda` tanpa masuk, atau `/admin` sebagai siswa.
 - **Model 3D gagal**: ganti `file_model_3d` di `lib/data.ts` ke berkas yang tidak ada →
   halaman eksplorasi turun ke gambar dua dimensi dengan titik yang sama.
-- **Error boundary**: lempar `Error` di salah satu halaman `(app)` → `error.tsx` dengan "Coba lagi".
+- **Error boundary**: lempar `Error` di salah satu halaman `(app)` → `(app)/error.tsx` dengan "Coba lagi";
+  di halaman publik → `app/error.tsx`; bila root layout sendiri gagal → `global-error.tsx`.
+- **404**: `/halaman-ngawur` → `not-found.tsx` publik; `/eksplorasi?organ=99` → `(app)/not-found.tsx`
+  di dalam layout bernavigasi; `/api/ngawur` → JSON `{pesan}` 404.
+- **Akun dinonaktifkan**: sebagai admin, tab Pengguna → "Nonaktifkan" akun yang sedang masuk di
+  peramban lain → permintaan berikutnya dari peramban itu dialihkan ke `/login?auth_error=nonaktif`.
+- **Brute force**: 5× kata sandi salah → percobaan ke-6 dibalas 429 dengan pesan sisa waktu.
 
 ## Aksesibilitas (dipertahankan dari versi vanilla)
 

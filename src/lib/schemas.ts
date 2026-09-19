@@ -19,6 +19,7 @@ export const KontenIdSchema = idPositif().brand<"KontenId">();
 export const RiwayatIdSchema = idPositif().brand<"RiwayatId">();
 export const PercakapanIdSchema = idPositif().brand<"PercakapanId">();
 export const LaporanIdSchema = idPositif().brand<"LaporanId">();
+export const UmpanBalikIdSchema = idPositif().brand<"UmpanBalikId">();
 export type UserId = z.infer<typeof UserIdSchema>;
 export type OrganId = z.infer<typeof OrganIdSchema>;
 export type BagianId = z.infer<typeof BagianIdSchema>;
@@ -26,6 +27,7 @@ export type KontenId = z.infer<typeof KontenIdSchema>;
 export type RiwayatId = z.infer<typeof RiwayatIdSchema>;
 export type PercakapanId = z.infer<typeof PercakapanIdSchema>;
 export type LaporanId = z.infer<typeof LaporanIdSchema>;
+export type UmpanBalikId = z.infer<typeof UmpanBalikIdSchema>;
 
 /* ---------------- Entitas master ---------------- */
 export const PeranSchema = z.enum(["siswa", "guru", "admin"]);
@@ -38,12 +40,19 @@ export const UserSchema = z.object({
   password: z.string().min(1),
   role: PeranSchema,
   asal_sekolah: z.string().nullable(),
+  /* FR-13: admin dapat menonaktifkan akun; akun nonaktif ditolak saat login */
+  aktif: z.boolean().default(true),
 });
 export type User = z.infer<typeof UserSchema>;
 
-/** Data sesi yang disimpan di cookie: tanpa password. */
-export const SesiUserSchema = UserSchema.omit({ password: true });
+/** Data sesi yang disimpan di cookie: tanpa password dan tanpa bendera aktif
+    (status aktif diperiksa ulang ke basis data pada tiap permintaan). */
+export const SesiUserSchema = UserSchema.omit({ password: true, aktif: true });
 export type SesiUser = z.infer<typeof SesiUserSchema>;
+
+/** Baris akun untuk dashboard admin (FR-13): tanpa password. */
+export const AkunSchema = UserSchema.omit({ password: true });
+export type Akun = z.infer<typeof AkunSchema>;
 
 export const StatusSistemSchema = z.enum(["tersedia", "segera"]);
 export const SistemOrganSchema = z.object({
@@ -151,12 +160,61 @@ export const LaporanKesalahanSchema = z.object({
 });
 export type LaporanKesalahan = z.infer<typeof LaporanKesalahanSchema>;
 
+/* FR-15: kuesioner System Usability Scale (10 pernyataan, skala Likert 1-5) */
+export const JAWABAN_SUS = 10;
+export const JawabanSusSchema = z
+  .array(z.number().int().min(1).max(5))
+  .length(JAWABAN_SUS, "Jawab semua 10 pernyataan.");
+export const UmpanBalikSchema = z.object({
+  id_umpan_balik: UmpanBalikIdSchema,
+  id_user: UserIdSchema,
+  jawaban: JawabanSusSchema,
+  skor_sus: z.number().min(0).max(100),
+  komentar: z.string().nullable(),
+  waktu: z.iso.datetime(),
+});
+export type UmpanBalik = z.infer<typeof UmpanBalikSchema>;
+
 /* ---------------- Skema formulir (input pengguna) ---------------- */
 export const LoginFormSchema = z.object({
   email: z.string().trim().min(1, "Email wajib diisi.").pipe(z.email("Format email tidak valid.")),
   password: z.string().min(1, "Kata sandi wajib diisi."),
 });
 export type LoginForm = z.infer<typeof LoginFormSchema>;
+
+/* FR-02: registrasi akun siswa/guru. Aturan sandi: minimal 8 karakter dengan
+   huruf dan angka. Konfirmasi dicek lewat refine agar galat menempel ke field-nya. */
+export const PeranDaftarSchema = z.enum(["siswa", "guru"]);
+export const DaftarFormSchema = z
+  .object({
+    nama: z.string().trim().min(3, "Nama minimal 3 karakter.").max(80, "Nama terlalu panjang."),
+    email: z.string().trim().min(1, "Email wajib diisi.").pipe(z.email("Format email tidak valid.")),
+    password: z
+      .string()
+      .min(8, "Kata sandi minimal 8 karakter.")
+      .regex(/[A-Za-z]/, "Kata sandi harus memuat huruf.")
+      .regex(/\d/, "Kata sandi harus memuat angka."),
+    konfirmasi: z.string().min(1, "Ulangi kata sandi."),
+    role: PeranDaftarSchema,
+    asal_sekolah: z
+      .string()
+      .trim()
+      .min(3, "Nama sekolah minimal 3 karakter.")
+      .max(120, "Nama sekolah terlalu panjang."),
+  })
+  .refine((d) => d.password === d.konfirmasi, { path: ["konfirmasi"], message: "Konfirmasi tidak sama." });
+export type DaftarForm = z.infer<typeof DaftarFormSchema>;
+
+/* FR-13: admin mengubah status aktif akun */
+export const AkunPatchSchema = z.object({ aktif: z.boolean() });
+export type AkunPatch = z.infer<typeof AkunPatchSchema>;
+
+/* FR-15: kiriman kuesioner SUS */
+export const UmpanBalikFormSchema = z.object({
+  jawaban: JawabanSusSchema,
+  komentar: z.string().trim().max(500, "Komentar maksimal 500 karakter.").optional(),
+});
+export type UmpanBalikForm = z.infer<typeof UmpanBalikFormSchema>;
 
 export const LaporanFormSchema = z.object({
   id_konten: z.coerce.number().int().positive("Pilih label yang dilaporkan.").pipe(KontenIdSchema),
@@ -191,6 +249,7 @@ export const OpsiSimulasiSchema = z.object({ simulasiGagal: z.boolean().optional
 export const RespGalatSchema = z.object({ pesan: z.string() });
 export const RespLoginSchema = z.object({ user: SesiUserSchema });
 export const RespOkSchema = z.object({ ok: z.literal(true) });
+export const RespDaftarSchema = z.object({ user: SesiUserSchema });
 
 /* ---------------- Utility Types ----------------
    Tipe turunan dari entitas di atas, bukan definisi ulang, sehingga tetap

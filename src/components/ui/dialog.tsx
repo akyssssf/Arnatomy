@@ -74,6 +74,37 @@ function DialogCloseButton({ className, ...props }: React.ComponentProps<typeof 
   );
 }
 
+/** Preset aplikasi: dialog yang selalu terbuka saat dipasang (judul + tombol
+    tutup + isi); onTutup dipanggil saat Escape, klik overlay, atau tombol tutup. */
+function Modal({
+  judul,
+  onTutup,
+  lebar = "max-w-lg",
+  children,
+}: {
+  judul: string;
+  onTutup: () => void;
+  lebar?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Dialog
+      open
+      onOpenChange={(terbuka) => {
+        if (!terbuka) onTutup();
+      }}
+    >
+      <DialogContent className={lebar} aria-describedby={undefined}>
+        <DialogHeader>
+          <DialogTitle>{judul}</DialogTitle>
+          <DialogCloseButton />
+        </DialogHeader>
+        <DialogBody>{children}</DialogBody>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export {
   Dialog,
   DialogBody,
@@ -86,4 +117,5 @@ export {
   DialogPortal,
   DialogTitle,
   DialogTrigger,
+  Modal,
 };

@@ -6,7 +6,7 @@
    Component (eksplorasi/riwayat) membaca konten terbaru. */
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Modal } from "@/components/ui/Modal";
+import { Modal } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/Spinner";
 import { useKontenLabel } from "@/hooks/useKontenLabel";
 import { bagianById } from "@/lib/data";

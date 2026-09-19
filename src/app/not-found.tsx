@@ -14,9 +14,14 @@ export default function TidakDitemukan() {
       <p className="mt-4 max-w-md text-sm text-neutral-500">
         Alamat yang dibuka tidak ada. Kembali ke halaman depan atau beranda belajar.
       </p>
-      <Link href="/" className={`${tombol({ ukuran: "lg" })} mt-6`}>
-        Ke halaman depan
-      </Link>
+      <div className="mt-6 flex flex-wrap gap-2">
+        <Link href="/" className={tombol({ ukuran: "lg" })}>
+          Ke halaman depan
+        </Link>
+        <Link href="/beranda" className={tombol({ variant: "garis", ukuran: "lg" })}>
+          Beranda belajar
+        </Link>
+      </div>
     </main>
   );
 }

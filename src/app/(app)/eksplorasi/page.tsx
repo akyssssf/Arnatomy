@@ -7,6 +7,7 @@
    "sudah dibuka" pada daftar bagian. */
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { KepalaEksplorasi } from "@/components/eksplorasi/KepalaEksplorasi";
 import { PemilihOrgan } from "@/components/eksplorasi/PemilihOrgan";
 import { PenampilOrgan } from "@/components/eksplorasi/PenampilOrgan";
@@ -15,8 +16,10 @@ import { ambilSesi } from "@/lib/auth";
 import { bagianOrgan, layerOrgan, organById, organs } from "@/lib/data";
 import { riwayatUser, semuaKonten } from "@/lib/db";
 
+/* Tanpa ?organ= -> organ pertama; ?organ= yang tidak terdaftar -> null (404) */
 function organDariQuery(nilai: string | string[] | undefined) {
-  return organById(Number(nilai)) ?? organs[0];
+  if (nilai === undefined || nilai === "") return organs[0] ?? null;
+  return organById(Number(nilai));
 }
 
 export async function generateMetadata(props: PageProps<"/eksplorasi">): Promise<Metadata> {
@@ -33,7 +36,7 @@ export default async function HalamanEksplorasi(props: PageProps<"/eksplorasi">)
   const [sesi, query] = await Promise.all([ambilSesi(), props.searchParams]);
   if (!sesi) return null;
   const organ = organDariQuery(query.organ);
-  if (!organ) throw new Error("data organ tidak tersedia.");
+  if (!organ) notFound();
 
   const bagian = bagianOrgan(organ.id_organ);
   /* Organ dalam selalu tampil, jadi hanya selubung luar yang jadi toggle */

@@ -3,7 +3,13 @@ import { z } from "zod";
 import { KontenIdSchema, type SesiUser } from "@/lib/schemas";
 
 const ambilSesi = vi.fn<() => Promise<SesiUser | null>>();
-vi.mock("@/lib/auth", () => ({ ambilSesi: () => ambilSesi() }));
+vi.mock("@/lib/auth", () => ({
+  ambilSesi: () => ambilSesi(),
+  periksaSesi: async () => {
+    const sesi = await ambilSesi();
+    return sesi ? { status: "ok", sesi } : { status: "tanpa-sesi" };
+  },
+}));
 
 const siswa: SesiUser = {
   id_user: 1,

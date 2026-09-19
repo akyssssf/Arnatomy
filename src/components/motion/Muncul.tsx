@@ -1,13 +1,10 @@
 "use client";
 
-/* Pembungkus reveal tipis. Dua mode:
-   - `segera` (konten lipatan atas / kandidat LCP): animasi murni CSS
-     (.muncul-segera + animation-delay) sehingga teks terlihat tanpa
-     menunggu hidrasi JavaScript — penting untuk LCP di jaringan lambat.
-   - bawaan (di bawah lipatan): baru dimunculkan saat masuk viewport lewat
-     IntersectionObserver; setelah selesai, kelas dan jeda dilepas agar
-     efek hover tidak tertunda.
-   Anak yang dioper sebagai children tetap Server Component. */
+/* Pembungkus reveal tipis untuk konten di bawah lipatan: baru dimunculkan
+   saat masuk viewport lewat IntersectionObserver; setelah selesai, kelas dan
+   jeda dilepas agar efek hover tidak tertunda. Anak yang dioper sebagai
+   children tetap Server Component. Konten lipatan atas memakai
+   <MunculSegera> (RSC, murni CSS). */
 import { useEffect, useRef } from "react";
 
 export function Muncul({
@@ -15,19 +12,17 @@ export function Muncul({
   jeda = 0,
   kelas = "",
   sebagai: Tag = "div",
-  segera = false,
 }: {
   children: React.ReactNode;
   jeda?: number;
   kelas?: string;
   sebagai?: "div" | "article" | "section" | "li";
-  segera?: boolean;
 }) {
   const ref = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const el = ref.current;
-    if (!el || segera) return;
+    if (!el) return;
     if (!("IntersectionObserver" in window)) {
       el.classList.remove("muncul");
       return;
@@ -47,12 +42,11 @@ export function Muncul({
     );
     pengamat.observe(el);
     return () => pengamat.disconnect();
-  }, [jeda, segera]);
+  }, [jeda]);
 
-  const gaya = segera ? { animationDelay: `${jeda}ms` } : { transitionDelay: `${jeda}ms` };
   return (
     // @ts-expect-error ref generik HTMLElement untuk tag dinamis
-    <Tag ref={ref} className={`${segera ? "muncul-segera" : "muncul"} ${kelas}`} style={gaya}>
+    <Tag ref={ref} className={`muncul ${kelas}`} style={{ transitionDelay: `${jeda}ms` }}>
       {children}
     </Tag>
   );

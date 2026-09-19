@@ -47,9 +47,16 @@ describe("proxy (route guard + CSP)", () => {
     expect(admin.status).toBe(200);
   });
 
-  it("sudah masuk lalu membuka /login dialihkan sesuai peran", async () => {
+  it("sudah masuk lalu membuka /login atau /daftar dialihkan sesuai peran", async () => {
     expect((await proxy(await permintaan("/login", { role: "siswa" }))).headers.get("location")).toMatch(/\/beranda$/);
     expect((await proxy(await permintaan("/login", { role: "admin" }))).headers.get("location")).toMatch(/\/admin$/);
+    expect((await proxy(await permintaan("/daftar", { role: "siswa" }))).headers.get("location")).toMatch(/\/beranda$/);
+    expect((await proxy(await permintaan("/daftar"))).status).toBe(200);
+  });
+
+  it("/umpan-balik ikut terproteksi", async () => {
+    expect((await proxy(await permintaan("/umpan-balik"))).headers.get("location")).toMatch(/\/login\?/);
+    expect((await proxy(await permintaan("/umpan-balik", { role: "siswa" }))).status).toBe(200);
   });
 
   it("permintaan yang lolos membawa CSP ber-nonce dan header x-nonce untuk Next", async () => {

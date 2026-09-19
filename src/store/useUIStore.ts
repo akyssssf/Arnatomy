@@ -8,7 +8,7 @@ import { create } from "zustand";
 import type { NamaLayer } from "@/lib/schemas";
 import type { TipeAlert } from "@/lib/variants";
 
-export type TabAdmin = "konten" | "laporan";
+export type TabAdmin = "konten" | "laporan" | "akun" | "umpan-balik";
 export interface Toast {
   id: number;
   pesan: string;

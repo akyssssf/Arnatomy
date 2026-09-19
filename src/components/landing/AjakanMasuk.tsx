@@ -19,10 +19,15 @@ export function AjakanMasuk({ gambar }: { gambar: string }) {
               Tersedia akun uji coba untuk siswa, guru, dan administrator. Riwayat belajar tercatat otomatis selama
               sesi.
             </p>
-            <Link href="/login" className={`${tombol({ ukuran: "lg" })} mt-6`}>
-              Masuk sekarang
-              <Ikon nama="panah" />
-            </Link>
+            <div className="mt-6 flex flex-wrap gap-2">
+              <Link href="/login" className={tombol({ ukuran: "lg" })}>
+                Masuk sekarang
+                <Ikon nama="panah" />
+              </Link>
+              <Link href="/daftar" className={tombol({ variant: "garis", ukuran: "lg" })}>
+                Buat akun
+              </Link>
+            </div>
           </div>
           <Image
             src={gambar}

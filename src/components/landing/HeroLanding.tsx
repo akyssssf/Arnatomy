@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Hero3D } from "@/components/hero/Hero3D";
-import { Muncul } from "@/components/motion/Muncul";
+import { MunculSegera } from "@/components/motion/MunculSegera";
 import { Ikon } from "@/components/ui/Ikon";
 import { JudulKata } from "@/components/ui/JudulKata";
 import { Marquee } from "@/components/ui/Marquee";
@@ -36,7 +36,7 @@ export function HeroLanding({
             ]}
           />
         </h1>
-        <Muncul segera jeda={300} kelas="flex items-end justify-between gap-6 lg:mb-3">
+        <MunculSegera jeda={300} kelas="flex items-end justify-between gap-6 lg:mb-3">
           <p className="max-w-xs text-sm leading-relaxed text-neutral-500">
             Putar organ, ketuk bagiannya, baca labelnya, lalu tanyakan yang belum jelas ke asisten AI. Dibuat untuk
             siswa SMP dan SMA.
@@ -45,10 +45,10 @@ export function HeroLanding({
             {sudahMasuk ? "Ke beranda" : "Masuk"}
             <Ikon nama="panah" />
           </Link>
-        </Muncul>
+        </MunculSegera>
       </div>
 
-      <Muncul segera jeda={200} kelas="relative mt-10 overflow-hidden rounded-3xl bg-abu">
+      <MunculSegera jeda={200} kelas="relative mt-10 overflow-hidden rounded-3xl bg-abu">
         <div className="relative aspect-[4/3] w-full sm:aspect-[16/9] lg:aspect-[21/9]">
           <span className="piringan-organ" aria-hidden="true" />
           <Hero3D urlModel={organ.file_model_3d} jarak={1.95} kecepatanPutar={0.7} />
@@ -77,14 +77,14 @@ export function HeroLanding({
             </p>
           </div>
         </div>
-      </Muncul>
+      </MunculSegera>
 
-      <Muncul segera jeda={450} kelas="mt-8">
+      <MunculSegera jeda={450} kelas="mt-8">
         <Marquee
           daftar={["Sistem Peredaran Darah", "Sistem Pernapasan", "Model Organ 3D", "Label Interaktif", "Asisten AI"]}
           label="Fitur"
         />
-      </Muncul>
+      </MunculSegera>
     </section>
   );
 }

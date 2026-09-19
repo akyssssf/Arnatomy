@@ -6,14 +6,15 @@
    1. Proteksi rute berbasis cookie sesi (ditandatangani HMAC):
       - rute terproteksi tanpa sesi  -> /login?auth_error=1&next=<rute>
       - /admin oleh peran non-admin  -> /beranda?pesan=khusus-admin
-      - /login saat sudah masuk      -> /beranda | /admin
+      - /login & /daftar saat sudah masuk -> /beranda | /admin
    2. Content Security Policy per permintaan dengan nonce acak, dikirim lewat
       header `x-nonce` agar skrip inline Next.js ikut diberi nonce (mitigasi XSS).
    ========================================================================== */
 import { type NextRequest, NextResponse } from "next/server";
 import { dekodeSesi, NAMA_COOKIE } from "@/lib/sesi-codec";
 
-const RUTE_TERPROTEKSI = ["/beranda", "/eksplorasi", "/asisten", "/riwayat", "/admin"];
+const RUTE_TERPROTEKSI = ["/beranda", "/eksplorasi", "/asisten", "/riwayat", "/umpan-balik", "/admin"];
+const RUTE_TAMU = ["/login", "/daftar"];
 
 function buatCsp(nonce: string): string {
   const dev = process.env.NODE_ENV !== "production";
@@ -55,7 +56,7 @@ export async function proxy(request: NextRequest) {
     tujuan.searchParams.set("pesan", "khusus-admin");
     return NextResponse.redirect(tujuan);
   }
-  if (pathname === "/login" && sesi) {
+  if (RUTE_TAMU.includes(pathname) && sesi) {
     return NextResponse.redirect(new URL(sesi.role === "admin" ? "/admin" : "/beranda", request.url));
   }
 

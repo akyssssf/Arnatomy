@@ -7,4 +7,6 @@ export const KUNCI = {
   laporan: ["laporan"] as const,
   konten: ["konten"] as const,
   riwayat: ["riwayat"] as const,
+  akun: ["akun"] as const,
+  umpanBalik: ["umpan-balik"] as const,
 };

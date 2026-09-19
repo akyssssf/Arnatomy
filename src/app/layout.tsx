@@ -3,6 +3,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Toaster } from "@/components/ui/Toaster";
+import { envPublic } from "@/lib/env";
 import "./globals.css";
 
 /* Fon variabel di-host sendiri (next/font/local): tanpa permintaan ke Google
@@ -24,11 +25,26 @@ const interTight = localFont({
   preload: false,
 });
 
+const DESKRIPSI = "Belajar anatomi lewat model organ 3D interaktif untuk siswa SMP dan SMA.";
+
 export const metadata: Metadata = {
+  /* metadataBase: URL relatif di openGraph/alternates diubah jadi absolut */
+  metadataBase: new URL(envPublic.NEXT_PUBLIC_SITE_URL),
   title: { default: "ARnatomy", template: "%s | ARnatomy" },
-  description: "Belajar anatomi lewat model organ 3D interaktif untuk siswa SMP dan SMA.",
+  description: DESKRIPSI,
   keywords: ["anatomi", "AR", "jantung", "paru-paru", "pembelajaran", "SMP", "SMA"],
   authors: [{ name: "Tim ARnatomy, D3 Teknik Informatika SV UNS" }],
+  applicationName: "ARnatomy",
+  openGraph: {
+    type: "website",
+    locale: "id_ID",
+    siteName: "ARnatomy",
+    title: "ARnatomy",
+    description: DESKRIPSI,
+    /* Gambar dari app/opengraph-image.tsx ditautkan otomatis oleh Next */
+  },
+  twitter: { card: "summary_large_image" },
+  alternates: { canonical: "/" },
 };
 
 export const viewport: Viewport = { themeColor: "#e6e8eb", width: "device-width", initialScale: 1 };

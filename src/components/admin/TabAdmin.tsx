@@ -6,20 +6,25 @@
    dari server state (TanStack Query). */
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLaporanKesalahan } from "@/hooks/useLaporanKesalahan";
+import type { UserId } from "@/lib/schemas";
 import { type TabAdmin as JenisTab, useUIStore } from "@/store/useUIStore";
+import { PanelAkun } from "./PanelAkun";
 import { PanelKonten } from "./PanelKonten";
 import { PanelLaporan } from "./PanelLaporan";
 
 const TAB: { id: JenisTab; label: string }[] = [
   { id: "konten", label: "Konten Label" },
   { id: "laporan", label: "Laporan Kesalahan" },
+  { id: "akun", label: "Pengguna" },
+  { id: "umpan-balik", label: "Umpan Balik" },
 ];
 
 function adalahTab(nilai: string): nilai is JenisTab {
   return TAB.some((t) => t.id === nilai);
 }
 
-export function TabAdmin() {
+/* panelUmpanBalik: Server Component (RingkasanSusAdmin) yang dioper sebagai node */
+export function TabAdmin({ idAdmin, panelUmpanBalik }: { idAdmin: UserId; panelUmpanBalik: React.ReactNode }) {
   const tabAktif = useUIStore((s) => s.tabAdminAktif);
   const setTabAdmin = useUIStore((s) => s.setTabAdmin);
   const { daftar: laporan } = useLaporanKesalahan({ aktif: true });
@@ -45,6 +50,12 @@ export function TabAdmin() {
       </TabsContent>
       <TabsContent value="laporan" id="panel-laporan">
         <PanelLaporan />
+      </TabsContent>
+      <TabsContent value="akun" id="panel-akun">
+        <PanelAkun idAdmin={idAdmin} />
+      </TabsContent>
+      <TabsContent value="umpan-balik" id="panel-umpan-balik">
+        {panelUmpanBalik}
       </TabsContent>
     </Tabs>
   );

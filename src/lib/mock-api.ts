@@ -10,7 +10,11 @@ import { z } from "zod";
 import {
   type AiConversation,
   AiConversationSchema,
+  type Akun,
+  type AkunPatch,
+  AkunSchema,
   type CatatRiwayatInput,
+  type DaftarForm,
   type KontenForm,
   type KontenId,
   type LaporanForm,
@@ -23,11 +27,16 @@ import {
   type PartContent,
   PartContentSchema,
   type PertanyaanForm,
+  RespDaftarSchema,
   RespGalatSchema,
   RespLoginSchema,
   RespOkSchema,
   type RiwayatId,
   type SesiUser,
+  type UmpanBalik,
+  type UmpanBalikForm,
+  UmpanBalikSchema,
+  type UserId,
 } from "./schemas";
 
 const BATAS_WAKTU_MS = 8000;
@@ -74,7 +83,7 @@ async function ambilJson<T>(skema: z.ZodType<T>, url: string, init?: RequestInit
   }
 }
 
-const kirim = (metode: "POST" | "PATCH", muatan: unknown): RequestInit => ({
+const kirim = (metode: "POST" | "PATCH" | "DELETE", muatan: unknown): RequestInit => ({
   method: metode,
   body: JSON.stringify(muatan),
 });
@@ -86,6 +95,28 @@ export async function masuk(input: LoginForm): Promise<SesiUser> {
 }
 export async function keluar(): Promise<void> {
   await ambilJson(RespOkSchema, "/api/logout", { method: "POST" });
+}
+
+/* ---------------- Registrasi (FR-02) ---------------- */
+export async function daftar(input: DaftarForm): Promise<SesiUser> {
+  const { user } = await ambilJson(RespDaftarSchema, "/api/daftar", kirim("POST", input));
+  return user;
+}
+
+/* ---------------- Kelola akun (FR-13, khusus admin) ---------------- */
+export function ambilAkun(): Promise<Akun[]> {
+  return ambilJson(z.array(AkunSchema), "/api/akun");
+}
+export function ubahStatusAkun(idUser: UserId, input: AkunPatch): Promise<Akun> {
+  return ambilJson(AkunSchema, `/api/akun/${idUser}`, kirim("PATCH", input));
+}
+export async function hapusAkun(idUser: UserId): Promise<void> {
+  await ambilJson(RespOkSchema, `/api/akun/${idUser}`, { method: "DELETE" });
+}
+
+/* ---------------- Umpan balik SUS (FR-15) ---------------- */
+export function kirimUmpanBalik(input: UmpanBalikForm): Promise<UmpanBalik> {
+  return ambilJson(UmpanBalikSchema, "/api/umpan-balik", kirim("POST", input));
 }
 
 /* ---------------- Asisten AI (FR-08) ---------------- */

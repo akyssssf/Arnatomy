@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { Hero3D } from "@/components/hero/Hero3D";
-import { Muncul } from "@/components/motion/Muncul";
+import { MunculSegera } from "@/components/motion/MunculSegera";
 import { JudulKata } from "@/components/ui/JudulKata";
 import type { Organ } from "@/lib/schemas";
 
@@ -30,7 +30,7 @@ export function HeroLogin({
             ]}
           />
         </h1>
-        <Muncul segera jeda={350} kelas="mt-8 flex flex-wrap items-center gap-5">
+        <MunculSegera jeda={350} kelas="mt-8 flex flex-wrap items-center gap-5">
           <a
             href="#form-login"
             className="inline-flex items-center gap-2 rounded-full bg-biru px-6 py-3 text-sm font-medium text-white transition hover:bg-biru-gelap"
@@ -40,10 +40,10 @@ export function HeroLogin({
           <p className="max-w-xs text-sm leading-relaxed text-neutral-500">
             Putar model jantung, buka label tiap bagian, lalu tanyakan yang belum jelas ke asisten AI.
           </p>
-        </Muncul>
+        </MunculSegera>
       </div>
 
-      <Muncul segera jeda={200} kelas="relative aspect-square overflow-hidden rounded-3xl bg-abu">
+      <MunculSegera jeda={200} kelas="relative aspect-square overflow-hidden rounded-3xl bg-abu">
         <span className="piringan-organ" aria-hidden="true" />
         <Hero3D urlModel={organ.file_model_3d} jarak={1.85} kecepatanPutar={0.8} />
         <Image
@@ -64,7 +64,7 @@ export function HeroLogin({
           </p>
           <p className="mt-1 text-xs text-neutral-500">{jumlahLabel} label dasar dan dimmed</p>
         </div>
-      </Muncul>
+      </MunculSegera>
     </div>
   );
 }

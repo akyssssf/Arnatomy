@@ -2,12 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
   BagianIdSchema,
   BodyPartSchema,
+  DaftarFormSchema,
   KontenFormSchema,
   LaporanFormSchema,
   LearningHistorySchema,
   LoginFormSchema,
   PertanyaanFormSchema,
   SesiUserSchema,
+  UmpanBalikFormSchema,
   UserIdSchema,
   UserSchema,
 } from "@/lib/schemas";
@@ -111,5 +113,36 @@ describe("skema formulir", () => {
     ).toBe(true);
     expect(PertanyaanFormSchema.safeParse({ pertanyaan: "   ", id_bagian: null }).success).toBe(false);
     expect(PertanyaanFormSchema.safeParse({ pertanyaan: "x".repeat(501), id_bagian: 1 }).success).toBe(false);
+  });
+});
+
+describe("skema formulir tambahan (FR-02, FR-15)", () => {
+  const dasar = {
+    nama: " Dina ",
+    email: "dina@sekolah.sch.id",
+    password: "rahasia123",
+    konfirmasi: "rahasia123",
+    role: "siswa",
+    asal_sekolah: "SMPN 3",
+  };
+
+  it("DaftarFormSchema: trim nama, tolak sandi tanpa angka, konfirmasi beda menempel ke field konfirmasi", () => {
+    expect(DaftarFormSchema.parse(dasar).nama).toBe("Dina");
+    const lemah = DaftarFormSchema.safeParse({ ...dasar, password: "hanyahuruf", konfirmasi: "hanyahuruf" });
+    expect(lemah.success).toBe(false);
+    if (!lemah.success) expect(lemah.error.issues[0]?.message).toMatch(/angka/);
+    const beda = DaftarFormSchema.safeParse({ ...dasar, konfirmasi: "rahasia124" });
+    expect(beda.success).toBe(false);
+    if (!beda.success) expect(beda.error.issues[0]?.path).toEqual(["konfirmasi"]);
+    expect(DaftarFormSchema.safeParse({ ...dasar, role: "admin" }).success).toBe(false);
+  });
+
+  it("UmpanBalikFormSchema: tepat 10 jawaban 1-5, komentar opsional maks 500", () => {
+    expect(UmpanBalikFormSchema.safeParse({ jawaban: Array(10).fill(3) }).success).toBe(true);
+    expect(UmpanBalikFormSchema.safeParse({ jawaban: Array(9).fill(3) }).success).toBe(false);
+    expect(UmpanBalikFormSchema.safeParse({ jawaban: [...Array(9).fill(3), 6] }).success).toBe(false);
+    expect(UmpanBalikFormSchema.safeParse({ jawaban: Array(10).fill(3), komentar: "x".repeat(501) }).success).toBe(
+      false,
+    );
   });
 });

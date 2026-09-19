@@ -1,20 +1,22 @@
-/* Dashboard Administrator (FR-10 & FR-11). Server Component: memeriksa
-   peran (lapisan kedua setelah proxy.ts), lalu MEM-PREFETCH query
-   ['konten'] dan ['laporan'] di server dan mengirimnya lewat
+/* Dashboard Administrator (FR-10, FR-11, FR-13, FR-15). Server Component:
+   memeriksa peran (lapisan kedua setelah proxy.ts), lalu MEM-PREFETCH query
+   ['konten'], ['laporan'], ['akun'] di server (tab Umpan Balik dirender
+   sebagai RSC dari basis data) dan mengirimnya lewat
    HydrationBoundary sehingga useQuery di klien langsung terisi tanpa
    loading tambahan. loading.tsx tampil selama prefetch berjalan. */
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { RingkasanSusAdmin } from "@/components/admin/RingkasanSusAdmin";
 import { TabAdmin } from "@/components/admin/TabAdmin";
 import { JudulHalaman } from "@/components/ui/JudulHalaman";
 import { KUNCI } from "@/hooks/kunci-query";
 import { ambilSesi } from "@/lib/auth";
-import { jeda, semuaKonten, semuaLaporan } from "@/lib/db";
+import { jeda, semuaAkun, semuaKonten, semuaLaporan, semuaUmpanBalik } from "@/lib/db";
 
 export const metadata: Metadata = {
   title: "Dashboard Admin",
-  description: "Kelola konten label anatomi dan tindak lanjuti laporan kesalahan dari pengguna.",
+  description: "Kelola konten label, laporan kesalahan, akun pengguna, dan hasil kuesioner SUS.",
 };
 
 export default async function HalamanAdmin() {
@@ -23,21 +25,26 @@ export default async function HalamanAdmin() {
 
   const queryClient = new QueryClient();
   await jeda(500);
+  const akun = await semuaAkun();
   await Promise.all([
     queryClient.prefetchQuery({ queryKey: KUNCI.konten, queryFn: () => semuaKonten() }),
     queryClient.prefetchQuery({ queryKey: KUNCI.laporan, queryFn: () => semuaLaporan() }),
+    queryClient.prefetchQuery({ queryKey: KUNCI.akun, queryFn: () => akun }),
   ]);
 
   return (
     <section aria-labelledby="judul-admin" className="halaman-masuk">
       <JudulHalaman
         judul="Dashboard Admin"
-        deskripsi="Kelola konten label anatomi dan tindak lanjuti laporan kesalahan dari User."
+        deskripsi="Kelola konten label, tindak lanjuti laporan kesalahan, atur akun pengguna, dan pantau skor SUS."
         id="judul-admin"
         kicker="Administrator"
       />
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <TabAdmin />
+        <TabAdmin
+          idAdmin={sesi.id_user}
+          panelUmpanBalik={<RingkasanSusAdmin daftar={semuaUmpanBalik()} akun={akun} />}
+        />
       </HydrationBoundary>
     </section>
   );

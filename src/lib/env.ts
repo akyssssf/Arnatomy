@@ -19,11 +19,15 @@ const EnvServerSchema = z.object({
 
 const EnvPublicSchema = z.object({
   NEXT_PUBLIC_APP_NAME: z.string().min(1).default("ARnatomy"),
+  /* Asal situs untuk metadataBase, sitemap, robots, dan gambar Open Graph */
+  NEXT_PUBLIC_SITE_URL: z.url().default("http://localhost:3000"),
 });
 
-/* Nilai NEXT_PUBLIC_* harus dirujuk secara literal supaya diganti saat build */
+/* Nilai NEXT_PUBLIC_* harus dirujuk secara literal supaya diganti saat build.
+   String kosong diperlakukan seperti tidak diatur agar nilai bawaan berlaku. */
 export const envPublic = EnvPublicSchema.parse({
-  NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
+  NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME || undefined,
+  NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || undefined,
 });
 
 let cacheServer: z.infer<typeof EnvServerSchema> | null = null;

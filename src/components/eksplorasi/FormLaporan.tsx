@@ -5,7 +5,7 @@
    dengan loading state + role="alert" saat gagal; bendera simulasiGagal
    (Zustand) ikut dikirim agar jalur error bisa didemokan. */
 import { useState } from "react";
-import { Modal } from "@/components/ui/Modal";
+import { Modal } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/Spinner";
 import { useLaporanKesalahan } from "@/hooks/useLaporanKesalahan";
 import { GalatApi } from "@/lib/mock-api";

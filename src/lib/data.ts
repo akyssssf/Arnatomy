@@ -9,8 +9,9 @@ import { z } from "zod";
 import type { BodyPart, Layer, Organ } from "./schemas";
 import { BodyPartSchema, LayerSchema, OrganSchema, PartContentSchema, SistemOrganSchema, UserSchema } from "./schemas";
 
-/* Akun demo (password sengaja plain text: prototipe front-end, bukan auth produksi.
-   Pada sistem nyata NFR-01 mewajibkan hashing di sisi server). */
+/* Akun demo. Kolom password di sini hanya sumber untuk di-hash (PBKDF2) saat
+   basis data mock pertama diakses (lib/db.ts); yang disimpan dan dibandingkan
+   saat login adalah hash-nya (NFR-01). */
 export const users = z.array(UserSchema).parse([
   {
     id_user: 1,

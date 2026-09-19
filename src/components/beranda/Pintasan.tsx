@@ -2,11 +2,18 @@ import Link from "next/link";
 import { Ikon, type NamaIkon } from "@/components/ui/Ikon";
 import type { Peran } from "@/lib/schemas";
 
-type Rute = "/asisten" | "/riwayat" | "/admin";
+type Rute = "/asisten" | "/riwayat" | "/umpan-balik" | "/admin";
 const DAFTAR: { rute: Rute; ikon: NamaIkon; judul: string; teks: string; hanyaAdmin?: boolean }[] = [
   { rute: "/asisten", ikon: "chat", judul: "Asisten AI", teks: "Tanya fungsi, letak, atau gangguan" },
   { rute: "/riwayat", ikon: "riwayat", judul: "Riwayat belajar", teks: "Rekam bagian yang sudah dibuka" },
-  { rute: "/admin", ikon: "perisai", judul: "Dashboard Admin", teks: "Kelola konten dan laporan", hanyaAdmin: true },
+  { rute: "/umpan-balik", ikon: "kirim", judul: "Umpan balik", teks: "Kuesioner SUS setelah mencoba" },
+  {
+    rute: "/admin",
+    ikon: "perisai",
+    judul: "Dashboard Admin",
+    teks: "Konten, laporan, akun, umpan balik",
+    hanyaAdmin: true,
+  },
 ];
 
 /* Server Component: pintasan ke halaman lain sesuai peran */

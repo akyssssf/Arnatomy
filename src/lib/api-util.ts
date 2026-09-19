@@ -5,7 +5,7 @@
 import "server-only";
 import { NextResponse } from "next/server";
 import type { z } from "zod";
-import { ambilSesi } from "./auth";
+import { periksaSesi } from "./auth";
 import type { Peran, SesiUser } from "./schemas";
 
 export function galat(pesan: string, status: number) {
@@ -35,8 +35,14 @@ export async function bacaBody<T>(
 export async function wajibSesi(
   peran?: Peran[],
 ): Promise<{ ok: true; sesi: SesiUser } | { ok: false; respons: NextResponse }> {
-  const sesi = await ambilSesi();
-  if (!sesi) return { ok: false, respons: galat("sesi tidak ditemukan, silakan masuk kembali.", 401) };
+  const hasil = await periksaSesi();
+  if (hasil.status === "tanpa-sesi") {
+    return { ok: false, respons: galat("sesi tidak ditemukan, silakan masuk kembali.", 401) };
+  }
+  if (hasil.status === "nonaktif") {
+    return { ok: false, respons: galat("akun ini sudah dinonaktifkan atau dihapus.", 401) };
+  }
+  const { sesi } = hasil;
   if (peran && !peran.includes(sesi.role)) {
     return { ok: false, respons: galat(`aksi ini hanya untuk peran ${peran.join("/")}.`, 403) };
   }
