@@ -2,7 +2,7 @@
    (data statis) dan konteks awal dari ?bagian=, mem-prefetch riwayat
    percakapan ke cache TanStack Query, lalu menyerahkan interaksi ke
    ChatAsisten (Client Component). */
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { ChatAsisten } from "@/components/asisten/ChatAsisten";
 import { JudulHalaman } from "@/components/ui/JudulHalaman";
@@ -26,8 +26,12 @@ export default async function HalamanAsisten(props: PageProps<"/asisten">) {
 
   return (
     <section aria-labelledby="judul-asisten" className="halaman-masuk mx-auto max-w-4xl">
-      <JudulHalaman judul="Asisten AI" id="judul-asisten" kicker="Tanya jawab"
-        deskripsi="Jawaban disusun menurut bagian tubuh yang dipilih sebagai konteks, dengan bahasa untuk jenjang SMP dan SMA." />
+      <JudulHalaman
+        judul="Asisten AI"
+        id="judul-asisten"
+        kicker="Tanya jawab"
+        deskripsi="Jawaban disusun menurut bagian tubuh yang dipilih sebagai konteks, dengan bahasa untuk jenjang SMP dan SMA."
+      />
       <HydrationBoundary state={dehydrate(queryClient)}>
         <ChatAsisten organs={organs} bagian={body_parts} idBagianAwal={idBagianAwal} />
       </HydrationBoundary>

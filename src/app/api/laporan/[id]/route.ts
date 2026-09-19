@@ -2,12 +2,13 @@
 import { NextResponse } from "next/server";
 import { galat, idDariParam, wajibSesi } from "@/lib/api-util";
 import { jeda, tindakLanjutiLaporan } from "@/lib/db";
+import { LaporanIdSchema } from "@/lib/schemas";
 
 export async function PATCH(_request: Request, konteks: RouteContext<"/api/laporan/[id]">) {
   const auth = await wajibSesi(["admin"]);
   if (!auth.ok) return auth.respons;
   const { id } = await konteks.params;
-  const idLaporan = idDariParam(id);
+  const idLaporan = idDariParam(id, LaporanIdSchema);
   if (!idLaporan) return galat("id laporan tidak valid.", 400);
 
   await jeda(400);

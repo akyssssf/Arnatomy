@@ -9,7 +9,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ambilRiwayat, catatRiwayat, tutupRiwayat } from "@/lib/mock-api";
-import type { CatatRiwayatInput } from "@/lib/schemas";
+import type { CatatRiwayatInput, RiwayatId } from "@/lib/schemas";
 import { KUNCI } from "./kunci-query";
 
 export function useRiwayatBelajar(opsi: { aktif?: boolean } = {}) {
@@ -29,7 +29,7 @@ export function useRiwayatBelajar(opsi: { aktif?: boolean } = {}) {
   });
 
   const tutup = useMutation({
-    mutationFn: (idRiwayat: number) => tutupRiwayat(idRiwayat),
+    mutationFn: (idRiwayat: RiwayatId) => tutupRiwayat(idRiwayat),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: KUNCI.riwayat }),
   });
 

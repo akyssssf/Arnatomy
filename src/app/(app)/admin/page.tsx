@@ -3,7 +3,7 @@
    ['konten'] dan ['laporan'] di server dan mengirimnya lewat
    HydrationBoundary sehingga useQuery di klien langsung terisi tanpa
    loading tambahan. loading.tsx tampil selama prefetch berjalan. */
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { TabAdmin } from "@/components/admin/TabAdmin";
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 
 export default async function HalamanAdmin() {
   const sesi = await ambilSesi();
-  if (!sesi || sesi.role !== "admin") redirect("/beranda?pesan=khusus-admin");
+  if (sesi?.role !== "admin") redirect("/beranda?pesan=khusus-admin");
 
   const queryClient = new QueryClient();
   await jeda(500);
@@ -30,8 +30,12 @@ export default async function HalamanAdmin() {
 
   return (
     <section aria-labelledby="judul-admin" className="halaman-masuk">
-      <JudulHalaman judul="Dashboard Admin" deskripsi="Kelola konten label anatomi dan tindak lanjuti laporan kesalahan dari User."
-        id="judul-admin" kicker="Administrator" />
+      <JudulHalaman
+        judul="Dashboard Admin"
+        deskripsi="Kelola konten label anatomi dan tindak lanjuti laporan kesalahan dari User."
+        id="judul-admin"
+        kicker="Administrator"
+      />
       <HydrationBoundary state={dehydrate(queryClient)}>
         <TabAdmin />
       </HydrationBoundary>

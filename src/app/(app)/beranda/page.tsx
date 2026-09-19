@@ -39,12 +39,16 @@ export default async function HalamanBeranda(props: PageProps<"/beranda">) {
   const organLanjut = organById(bagianTerakhir?.id_organ) ?? organs[0];
   if (!organLanjut) throw new Error("data organ awal tidak lengkap.");
   const namaDepan = sesi.nama.split(" ")[0] ?? sesi.nama;
-  const jam = Number(new Intl.DateTimeFormat("id-ID", { hour: "numeric", hour12: false, timeZone: "Asia/Jakarta" }).format(new Date()));
+  const jam = Number(
+    new Intl.DateTimeFormat("id-ID", { hour: "numeric", hour12: false, timeZone: "Asia/Jakarta" }).format(new Date()),
+  );
 
   return (
     <section aria-labelledby="judul-beranda" className="halaman-masuk">
       {pesanKhusus && (
-        <Alert tipe="info" kelas="mt-4">Dashboard Admin hanya untuk peran administrator. Kamu diarahkan ke beranda.</Alert>
+        <Alert tipe="info" kelas="mt-4">
+          Dashboard Admin hanya untuk peran administrator. Kamu diarahkan ke beranda.
+        </Alert>
       )}
       <div className="flex flex-wrap items-end justify-between gap-4 pt-4">
         <div>
@@ -53,16 +57,28 @@ export default async function HalamanBeranda(props: PageProps<"/beranda">) {
             <JudulKata baris={[[`${sapaan(jam)},`], [namaDepan]]} />
           </h1>
         </div>
-        <p className="mikro">{sesi.role}{sesi.asal_sekolah ? ` · ${sesi.asal_sekolah}` : ""}</p>
+        <p className="mikro">
+          {sesi.role}
+          {sesi.asal_sekolah ? ` · ${sesi.asal_sekolah}` : ""}
+        </p>
       </div>
 
       <div className="mt-8 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
         <Muncul>
-          <KartuLanjutkan organ={organLanjut} bagianTerakhir={bagianTerakhir} progres={progresOrgan(organLanjut.id_organ, idDibuka)} />
+          <KartuLanjutkan
+            organ={organLanjut}
+            bagianTerakhir={bagianTerakhir}
+            progres={progresOrgan(organLanjut.id_organ, idDibuka)}
+          />
         </Muncul>
         <Muncul jeda={80}>
-          <KartuRingkasan persen={persenTotal} dibuka={idDibuka.size} total={body_parts.length}
-            dimmed={riwayat.filter((r) => r.jenis_konten === "dimmed").length} tanya={percakapanUser(sesi.id_user).length} />
+          <KartuRingkasan
+            persen={persenTotal}
+            dibuka={idDibuka.size}
+            total={body_parts.length}
+            dimmed={riwayat.filter((r) => r.jenis_konten === "dimmed").length}
+            tanya={percakapanUser(sesi.id_user).length}
+          />
         </Muncul>
       </div>
 

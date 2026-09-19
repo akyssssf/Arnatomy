@@ -14,7 +14,8 @@ export function galat(pesan: string, status: number) {
 
 /** Membaca body JSON lalu memvalidasinya; mengembalikan data atau respons 400. */
 export async function bacaBody<T>(
-  request: Request, skema: z.ZodType<T>,
+  request: Request,
+  skema: z.ZodType<T>,
 ): Promise<{ ok: true; data: T } | { ok: false; respons: NextResponse }> {
   let mentah: unknown;
   try {
@@ -37,12 +38,13 @@ export async function wajibSesi(
   const sesi = await ambilSesi();
   if (!sesi) return { ok: false, respons: galat("sesi tidak ditemukan, silakan masuk kembali.", 401) };
   if (peran && !peran.includes(sesi.role)) {
-    return { ok: false, respons: galat("aksi ini hanya untuk peran " + peran.join("/") + ".", 403) };
+    return { ok: false, respons: galat(`aksi ini hanya untuk peran ${peran.join("/")}.`, 403) };
   }
   return { ok: true, sesi };
 }
 
-export function idDariParam(nilai: string): number | null {
-  const angka = Number(nilai);
-  return Number.isInteger(angka) && angka > 0 ? angka : null;
+/** Mengubah segmen URL menjadi id bermerek lewat skema; null bila tidak valid. */
+export function idDariParam<S extends z.ZodTypeAny>(nilai: string, skema: S): z.output<S> | null {
+  const hasil = skema.safeParse(Number(nilai));
+  return hasil.success ? hasil.data : null;
 }

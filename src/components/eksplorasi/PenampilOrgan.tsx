@@ -22,17 +22,14 @@ import { Ikon, type NamaIkon } from "@/components/ui/Ikon";
 import { Spinner } from "@/components/ui/Spinner";
 import { useRiwayatBelajar } from "@/hooks/useRiwayatBelajar";
 import { koordinat2d, koordinat3d } from "@/lib/data";
-import type { BodyPart, Layer, NamaLayer, Organ, PartContent } from "@/lib/schemas";
+import type { BagianId, BodyPart, Layer, NamaLayer, Organ, PartContent, RiwayatId } from "@/lib/schemas";
 import { toggleLayer as kelasToggle, tombol } from "@/lib/variants";
 import { useUIStore } from "@/store/useUIStore";
 import type { Penampil } from "@/three/viewer3d";
 import { FormLaporan } from "./FormLaporan";
 import { PanelBagian, PanelDaftar } from "./PanelPenjelasan";
 
-type StatusPenampil =
-  | { mode: "memuat"; teks: string }
-  | { mode: "siap" }
-  | { mode: "cadangan"; alasan: string };
+type StatusPenampil = { mode: "memuat"; teks: string } | { mode: "siap" } | { mode: "cadangan"; alasan: string };
 
 const ALAT: { aksi: "reset" | "zoom-in" | "zoom-out" | "putar"; label: string; ikon: NamaIkon }[] = [
   { aksi: "reset", label: "Atur ulang tampilan", ikon: "ulang" },
@@ -41,10 +38,21 @@ const ALAT: { aksi: "reset" | "zoom-in" | "zoom-out" | "putar"; label: string; i
   { aksi: "putar", label: "Putar otomatis", ikon: "putar" },
 ];
 
-export function PenampilOrgan({ organ, bagian, layers, konten, judul, pemilihOrgan }: {
-  organ: Organ; bagian: BodyPart[]; layers: Layer[]; konten: PartContent[];
+export function PenampilOrgan({
+  organ,
+  bagian,
+  layers,
+  konten,
+  judul,
+  pemilihOrgan,
+}: {
+  organ: Organ;
+  bagian: BodyPart[];
+  layers: Layer[];
+  konten: PartContent[];
   /* Potongan Server Component yang dioper sebagai node (tetap dirender di server) */
-  judul: React.ReactNode; pemilihOrgan: React.ReactNode;
+  judul: React.ReactNode;
+  pemilihOrgan: React.ReactNode;
 }) {
   /* --- Client UI state (Zustand, selector presisi) --- */
   const layerAktif = useUIStore((s) => s.layerAktif);
@@ -74,12 +82,16 @@ export function PenampilOrgan({ organ, bagian, layers, konten, judul, pemilihOrg
   const pemicuTerakhir = useRef<HTMLElement | null>(null);
   const titikTekan = useRef<{ x: number; y: number } | null>(null);
   /* Entri riwayat yang sedang berjalan (id datang setelah mutasi selesai) */
-  const riwayatBerjalan = useRef<Promise<number | null> | null>(null);
+  const riwayatBerjalan = useRef<Promise<RiwayatId | null> | null>(null);
 
   const mode3d = status.mode === "siap";
   const bagianAktif = bagian.find((b) => b.id_bagian === bagianAktifId) ?? null;
-  const kontenDasar = bagianAktif ? konten.find((k) => k.id_bagian === bagianAktif.id_bagian && k.jenis_konten === "dasar") ?? null : null;
-  const kontenDimmed = bagianAktif ? konten.find((k) => k.id_bagian === bagianAktif.id_bagian && k.jenis_konten === "dimmed") ?? null : null;
+  const kontenDasar = bagianAktif
+    ? (konten.find((k) => k.id_bagian === bagianAktif.id_bagian && k.jenis_konten === "dasar") ?? null)
+    : null;
+  const kontenDimmed = bagianAktif
+    ? (konten.find((k) => k.id_bagian === bagianAktif.id_bagian && k.jenis_konten === "dimmed") ?? null)
+    : null;
 
   /* ---------- Inisialisasi penampil 3D (sekali per organ) ---------- */
   useEffect(() => {
@@ -87,11 +99,13 @@ export function PenampilOrgan({ organ, bagian, layers, konten, judul, pemilihOrg
     if (!el) return;
     let dibatalkan = false;
 
-    const titik = bagian.map((b) => {
-      const k = koordinat3d(b);
-      const elemen = elTitik.current.get(b.id_bagian);
-      return elemen ? { id: b.id_bagian, el: elemen, x: k.x, y: k.y, z: k.z, mesh: b.mesh_3d } : null;
-    }).filter((t) => t !== null);
+    const titik = bagian
+      .map((b) => {
+        const k = koordinat3d(b);
+        const elemen = elTitik.current.get(b.id_bagian);
+        return elemen ? { id: b.id_bagian, el: elemen, x: k.x, y: k.y, z: k.z, mesh: b.mesh_3d } : null;
+      })
+      .filter((t) => t !== null);
 
     (async () => {
       try {
@@ -99,14 +113,25 @@ export function PenampilOrgan({ organ, bagian, layers, konten, judul, pemilihOrg
         const { buatPenampil } = await import("@/three/viewer3d");
         if (dibatalkan) return;
         const instans = await buatPenampil({
-          wadah: el, urlModel: organ.file_model_3d, titik,
-          saatProgres: (persen) => { if (!dibatalkan) setStatus({ mode: "memuat", teks: `Memuat model 3D ${persen}%` }); },
+          wadah: el,
+          urlModel: organ.file_model_3d,
+          titik,
+          saatProgres: (persen) => {
+            if (!dibatalkan) setStatus({ mode: "memuat", teks: `Memuat model 3D ${persen}%` });
+          },
         });
-        if (dibatalkan) { instans.bersihkan(); return; }
+        if (dibatalkan) {
+          instans.bersihkan();
+          return;
+        }
         penampil.current = instans;
         setStatus({ mode: "siap" });
       } catch (kesalahan) {
-        if (!dibatalkan) setStatus({ mode: "cadangan", alasan: kesalahan instanceof Error ? kesalahan.message : "galat tidak dikenal." });
+        if (!dibatalkan)
+          setStatus({
+            mode: "cadangan",
+            alasan: kesalahan instanceof Error ? kesalahan.message : "galat tidak dikenal.",
+          });
       }
     })();
 
@@ -118,7 +143,13 @@ export function PenampilOrgan({ organ, bagian, layers, konten, judul, pemilihOrg
   }, [organ.file_model_3d, bagian]);
 
   /* Saat komponen dilepas (pindah halaman/organ), panel & pilihan direset */
-  useEffect(() => () => { tutupPanelStore(); setPutarOtomatis(false); }, [tutupPanelStore, setPutarOtomatis]);
+  useEffect(
+    () => () => {
+      tutupPanelStore();
+      setPutarOtomatis(false);
+    },
+    [tutupPanelStore, setPutarOtomatis],
+  );
 
   /* ---------- FR-05: terapkan layer dari store ke scene ---------- */
   useEffect(() => {
@@ -133,7 +164,10 @@ export function PenampilOrgan({ organ, bagian, layers, konten, judul, pemilihOrg
   /* ---------- Panel: geser model & fokus judul saat isi berubah ---------- */
   useEffect(() => {
     if (!mode3d || !penampil.current) return;
-    if (!panelTerbuka) { penampil.current.geserTampilan(0, 0); return; }
+    if (!panelTerbuka) {
+      penampil.current.geserTampilan(0, 0);
+      return;
+    }
     const kotak = panelRef.current?.getBoundingClientRect();
     if (!kotak) return;
     /* Layar lebar: model ke kiri sejauh setengah lebar panel; layar sempit:
@@ -142,6 +176,7 @@ export function PenampilOrgan({ organ, bagian, layers, konten, judul, pemilihOrg
     else penampil.current.geserTampilan(0, Math.round(kotak.height / 2 + 8));
   }, [panelTerbuka, mode3d]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: fokus dipindah ulang setiap bagian aktif berganti
   useEffect(() => {
     if (!panelTerbuka) return;
     document.getElementById("judul-panel")?.focus({ preventScroll: true });
@@ -153,12 +188,18 @@ export function PenampilOrgan({ organ, bagian, layers, konten, judul, pemilihOrg
     const berjalan = riwayatBerjalan.current;
     riwayatBerjalan.current = null;
     if (!berjalan) return;
-    void berjalan.then((idRiwayat) => { if (idRiwayat) tutup.mutate(idRiwayat); });
+    void berjalan.then((idRiwayat) => {
+      if (idRiwayat) tutup.mutate(idRiwayat);
+    });
   }
-  function mulaiRiwayat(idBagian: number, jenis: "dasar" | "dimmed") {
-    const janji = catat.mutateAsync({ id_bagian: idBagian, jenis_konten: jenis })
+  function mulaiRiwayat(idBagian: BagianId, jenis: "dasar" | "dimmed") {
+    const janji = catat
+      .mutateAsync({ id_bagian: idBagian, jenis_konten: jenis })
       .then((entri) => entri.id_riwayat)
-      .catch(() => { tampilkanToast("Riwayat belajar gagal dicatat.", "error"); return null; });
+      .catch(() => {
+        tampilkanToast("Riwayat belajar gagal dicatat.", "error");
+        return null;
+      });
     if (jenis === "dasar") riwayatBerjalan.current = janji;
   }
 
@@ -166,7 +207,10 @@ export function PenampilOrgan({ organ, bagian, layers, konten, judul, pemilihOrg
   function bukaDaftar(pemicu?: HTMLElement) {
     tutupRiwayatBerjalan();
     setBagianAktif(null);
-    if (mode3d) { penampil.current?.lepasFokus(); penampil.current?.sorotTitik(null); }
+    if (mode3d) {
+      penampil.current?.lepasFokus();
+      penampil.current?.sorotTitik(null);
+    }
     if (pemicu) pemicuTerakhir.current = pemicu;
     bukaPanelStore();
   }
@@ -174,14 +218,17 @@ export function PenampilOrgan({ organ, bagian, layers, konten, judul, pemilihOrg
   function tutupPanel() {
     if (!panelTerbuka) return;
     tutupRiwayatBerjalan();
-    if (mode3d) { penampil.current?.lepasFokus(); penampil.current?.sorotTitik(null); }
+    if (mode3d) {
+      penampil.current?.lepasFokus();
+      penampil.current?.sorotTitik(null);
+    }
     tutupPanelStore();
     const pemicu = pemicuTerakhir.current;
     pemicuTerakhir.current = null;
     if (pemicu && document.contains(pemicu)) pemicu.focus({ preventScroll: true });
   }
 
-  function pilihBagian(idBagian: number, pemicu?: HTMLElement) {
+  function pilihBagian(idBagian: BagianId, pemicu?: HTMLElement) {
     if (!konten.some((k) => k.id_bagian === idBagian && k.jenis_konten === "dasar")) return;
     tutupRiwayatBerjalan();
     mulaiRiwayat(idBagian, "dasar"); // riwayat tercatat begitu label dasar dibuka
@@ -206,8 +253,14 @@ export function PenampilOrgan({ organ, bagian, layers, konten, judul, pemilihOrg
 
   /* ---------- FR-04: alat kamera ---------- */
   function jalankanAlat(aksi: (typeof ALAT)[number]["aksi"]) {
-    if (!mode3d || !penampil.current) { tampilkanToast("Kendali 3D tidak tersedia pada gambar cadangan.", "info"); return; }
-    if (aksi === "reset") { penampil.current.reset(); setPutarOtomatis(false); }
+    if (!mode3d || !penampil.current) {
+      tampilkanToast("Kendali 3D tidak tersedia pada gambar cadangan.", "info");
+      return;
+    }
+    if (aksi === "reset") {
+      penampil.current.reset();
+      setPutarOtomatis(false);
+    }
     if (aksi === "zoom-in") penampil.current.ubahJarak(0.82);
     if (aksi === "zoom-out") penampil.current.ubahJarak(1.22);
     if (aksi === "putar") setPutarOtomatis(!putarOtomatis);
@@ -224,11 +277,19 @@ export function PenampilOrgan({ organ, bagian, layers, konten, judul, pemilihOrg
   const daftarTitik = bagian.map((b, i) => {
     const posisi2d = koordinat2d(b);
     return (
-      <button key={b.id_bagian} type="button" className="titik-3d"
-        ref={(el) => { if (el) elTitik.current.set(b.id_bagian, el); else elTitik.current.delete(b.id_bagian); }}
-        aria-label={`Buka label ${b.nama_bagian_internal}`} aria-pressed={bagianAktifId === b.id_bagian}
+      <button
+        key={b.id_bagian}
+        type="button"
+        className="titik-3d"
+        ref={(el) => {
+          if (el) elTitik.current.set(b.id_bagian, el);
+          else elTitik.current.delete(b.id_bagian);
+        }}
+        aria-label={`Buka label ${b.nama_bagian_internal}`}
+        aria-pressed={bagianAktifId === b.id_bagian}
         style={status.mode === "cadangan" ? { left: `${posisi2d.x}%`, top: `${posisi2d.y}%` } : undefined}
-        onClick={(e) => pilihBagian(b.id_bagian, e.currentTarget)}>
+        onClick={(e) => pilihBagian(b.id_bagian, e.currentTarget)}
+      >
         <span className="nomor-titik">{i + 1}</span>
         <span className="nama-titik">{b.nama_bagian_internal}</span>
       </button>
@@ -241,10 +302,15 @@ export function PenampilOrgan({ organ, bagian, layers, konten, judul, pemilihOrg
         {judul}
         <div className="flex flex-wrap items-center gap-2">
           {pemilihOrgan}
-          <button type="button" aria-controls="panel-samping" aria-expanded={panelTerbuka}
+          <button
+            type="button"
+            aria-controls="panel-samping"
+            aria-expanded={panelTerbuka}
             onClick={(e) => (panelTerbuka && !bagianAktif ? tutupPanel() : bukaDaftar(e.currentTarget))}
-            className={tombol({ variant: "garis", ukuran: "md" })}>
-            <Ikon nama="lapisan" />Daftar bagian
+            className={tombol({ variant: "garis", ukuran: "md" })}
+          >
+            <Ikon nama="lapisan" />
+            Daftar bagian
           </button>
         </div>
       </div>
@@ -255,43 +321,69 @@ export function PenampilOrgan({ organ, bagian, layers, konten, judul, pemilihOrg
             <span className="piringan-organ" aria-hidden="true" style={{ width: "min(64%, 34rem)" }} />
 
             {/* Kanvas 3D; klik singkat (bukan seretan) menutup panel */}
-            <div ref={wadah3d} className="absolute inset-0"
-              onPointerDown={(e) => { titikTekan.current = { x: e.clientX, y: e.clientY }; }}
+            <div
+              ref={wadah3d}
+              className="absolute inset-0"
+              onPointerDown={(e) => {
+                titikTekan.current = { x: e.clientX, y: e.clientY };
+              }}
               onPointerUp={(e) => {
                 const awal = titikTekan.current;
                 titikTekan.current = null;
                 if (awal && Math.hypot(e.clientX - awal.x, e.clientY - awal.y) < 6) tutupPanel();
-              }}>
+              }}
+            >
               {status.mode === "cadangan" && (
                 <div className="flex h-full w-full items-center justify-center p-6">
                   <div className="relative h-full" style={{ aspectRatio: "1 / 1" }}>
-                    <Image src={organ.gambar} alt={organ.nama_organ} width={640} height={640} className="h-full w-full object-contain" />
+                    <Image
+                      src={organ.gambar}
+                      alt={organ.nama_organ}
+                      width={640}
+                      height={640}
+                      className="h-full w-full object-contain"
+                    />
                     <div className="titik-2d pointer-events-none absolute inset-0">{daftarTitik}</div>
                   </div>
                 </div>
               )}
             </div>
             {status.mode !== "cadangan" && (
-              <div className="pointer-events-none absolute inset-0" hidden={status.mode === "memuat"}>{daftarTitik}</div>
+              <div className="pointer-events-none absolute inset-0" hidden={status.mode === "memuat"}>
+                {daftarTitik}
+              </div>
             )}
 
             {status.mode === "memuat" && (
-              <div role="status" aria-live="polite"
-                className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-abu/85 text-sm font-medium text-neutral-500">
-                <Spinner kelas="h-6 w-6" /><span>{status.teks}</span>
+              <div
+                role="status"
+                aria-live="polite"
+                className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-abu/85 text-sm font-medium text-neutral-500"
+              >
+                <Spinner kelas="h-6 w-6" />
+                <span>{status.teks}</span>
               </div>
             )}
             {status.mode === "cadangan" && (
-              <p role="status" className="kaca absolute inset-x-4 top-16 z-10 rounded-2xl px-4 py-3 text-xs text-neutral-700 sm:left-auto sm:right-4 sm:max-w-xs">
+              <p
+                role="status"
+                className="kaca absolute inset-x-4 top-16 z-10 rounded-2xl px-4 py-3 text-xs text-neutral-700 sm:left-auto sm:right-4 sm:max-w-xs"
+              >
                 Model 3D tidak dapat ditampilkan ({status.alasan}) Gambar dua dimensi dipakai sebagai gantinya.
               </p>
             )}
 
             <div className="absolute left-4 top-4 flex flex-col gap-2">
               {ALAT.map((a) => (
-                <button key={a.aksi} type="button" onClick={() => jalankanAlat(a.aksi)} aria-label={a.label} title={a.label}
+                <button
+                  key={a.aksi}
+                  type="button"
+                  onClick={() => jalankanAlat(a.aksi)}
+                  aria-label={a.label}
+                  title={a.label}
                   aria-pressed={a.aksi === "putar" ? putarOtomatis : undefined}
-                  className="kaca grid h-11 w-11 place-items-center rounded-full text-neutral-700 transition hover:text-biru aria-pressed:bg-neutral-900 aria-pressed:text-white">
+                  className="kaca grid h-11 w-11 place-items-center rounded-full text-neutral-700 transition hover:text-biru aria-pressed:bg-neutral-900 aria-pressed:text-white"
+                >
                   <Ikon nama={a.ikon} kelas="h-[18px] w-[18px]" />
                 </button>
               ))}
@@ -302,40 +394,69 @@ export function PenampilOrgan({ organ, bagian, layers, konten, judul, pemilihOrg
             </p>
 
             {/* FR-05: bilah layer; organ dalam selalu tampil */}
-            <section aria-labelledby="judul-layer"
-              className="kaca absolute bottom-3 left-1/2 z-10 flex max-w-[calc(100%-1.5rem)] -translate-x-1/2 items-center gap-1 rounded-full p-1 sm:bottom-4 sm:gap-1.5 sm:p-1.5">
-              <h2 id="judul-layer" className="mikro ml-2 mr-1 flex items-center gap-1.5"><Ikon nama="lapisan" /><span className="hidden sm:inline">Layer</span></h2>
+            <section
+              aria-labelledby="judul-layer"
+              className="kaca absolute bottom-3 left-1/2 z-10 flex max-w-[calc(100%-1.5rem)] -translate-x-1/2 items-center gap-1 rounded-full p-1 sm:bottom-4 sm:gap-1.5 sm:p-1.5"
+            >
+              <h2 id="judul-layer" className="mikro ml-2 mr-1 flex items-center gap-1.5">
+                <Ikon nama="lapisan" />
+                <span className="hidden sm:inline">Layer</span>
+              </h2>
               {layers.map((l) => (
-                <button key={l.id_layer} type="button" onClick={() => saatToggleLayer(l)} aria-pressed={layerAktif[l.nama_layer]}
-                  className={kelasToggle({ aktif: layerAktif[l.nama_layer] })}>
+                <button
+                  key={l.id_layer}
+                  type="button"
+                  onClick={() => saatToggleLayer(l)}
+                  aria-pressed={layerAktif[l.nama_layer]}
+                  className={kelasToggle({ aktif: layerAktif[l.nama_layer] })}
+                >
                   {l.label}
                 </button>
               ))}
-              <p className="sr-only" role="status" aria-live="polite">{statusLayer}</p>
+              <p className="sr-only" role="status" aria-live="polite">
+                {statusLayer}
+              </p>
             </section>
 
             {/* Panel penjelasan, meluncur masuk di dalam penampil */}
-            <aside id="panel-samping" ref={panelRef} role="dialog" aria-modal="false" aria-labelledby="judul-panel"
-              aria-hidden={!panelTerbuka} className={`panel-samping kaca kaca-tebal flex flex-col rounded-3xl ${panelTerbuka ? "terbuka" : ""}`}>
+            <aside
+              id="panel-samping"
+              ref={panelRef}
+              role="dialog"
+              aria-modal="false"
+              aria-labelledby="judul-panel"
+              aria-hidden={!panelTerbuka}
+              className={`panel-samping kaca kaca-tebal flex flex-col rounded-3xl ${panelTerbuka ? "terbuka" : ""}`}
+            >
               <div className="flex items-center justify-between px-5 pt-4">
                 <span className="h-1.5 w-10 rounded-full bg-neutral-300 md:hidden" aria-hidden="true" />
                 <span className="mikro hidden md:inline">Penjelasan</span>
-                <button type="button" onClick={tutupPanel} aria-label="Tutup panel" tabIndex={panelTerbuka ? 0 : -1}
-                  className="grid h-9 w-9 place-items-center rounded-full bg-white text-neutral-500 transition hover:text-neutral-900">
+                <button
+                  type="button"
+                  onClick={tutupPanel}
+                  aria-label="Tutup panel"
+                  tabIndex={panelTerbuka ? 0 : -1}
+                  className="grid h-9 w-9 place-items-center rounded-full bg-white text-neutral-500 transition hover:text-neutral-900"
+                >
                   <Ikon nama="silang" />
                 </button>
               </div>
               <div className="flex-1 overflow-y-auto px-5 pb-6 pt-3">
-                {panelTerbuka && (bagianAktif && kontenDasar ? (
-                  <PanelBagian key={bagianAktif.id_bagian} bagian={bagianAktif}
-                    induk={bagian.find((x) => x.id_bagian === bagianAktif.parent_bagian_id) ?? null}
-                    dasar={kontenDasar} dimmed={kontenDimmed}
-                    onKeDaftar={() => bukaDaftar()}
-                    onBukaDimmed={() => mulaiRiwayat(bagianAktif.id_bagian, "dimmed")}
-                    onLapor={() => setLaporUntuk(bagianAktif)} />
-                ) : (
-                  <PanelDaftar organ={organ} bagian={bagian} sudahDibuka={sudahDibuka} onPilih={pilihBagian} />
-                ))}
+                {panelTerbuka &&
+                  (bagianAktif && kontenDasar ? (
+                    <PanelBagian
+                      key={bagianAktif.id_bagian}
+                      bagian={bagianAktif}
+                      induk={bagian.find((x) => x.id_bagian === bagianAktif.parent_bagian_id) ?? null}
+                      dasar={kontenDasar}
+                      dimmed={kontenDimmed}
+                      onKeDaftar={() => bukaDaftar()}
+                      onBukaDimmed={() => mulaiRiwayat(bagianAktif.id_bagian, "dimmed")}
+                      onLapor={() => setLaporUntuk(bagianAktif)}
+                    />
+                  ) : (
+                    <PanelDaftar organ={organ} bagian={bagian} sudahDibuka={sudahDibuka} onPilih={pilihBagian} />
+                  ))}
               </div>
             </aside>
           </div>
@@ -347,9 +468,11 @@ export function PenampilOrgan({ organ, bagian, layers, konten, judul, pemilihOrg
       </figure>
 
       {laporUntuk && (
-        <FormLaporan bagian={laporUntuk}
+        <FormLaporan
+          bagian={laporUntuk}
           konten={konten.filter((k) => k.id_bagian === laporUntuk.id_bagian)}
-          onTutup={() => setLaporUntuk(null)} />
+          onTutup={() => setLaporUntuk(null)}
+        />
       )}
     </>
   );

@@ -79,8 +79,11 @@ export function FormLogin({ pesanAwal, tujuanAwal }: { pesanAwal: string | null;
       <ul className="nav-miring flex items-center" aria-label="Isi cepat akun uji coba">
         {AKUN_DEMO.map((a) => (
           <li key={a.email}>
-            <button type="button" onClick={() => isiAkun(a)}
-              className="text-[11px] font-medium uppercase tracking-[0.08em] text-neutral-500 transition hover:text-biru">
+            <button
+              type="button"
+              onClick={() => isiAkun(a)}
+              className="text-[11px] font-medium uppercase tracking-[0.08em] text-neutral-500 transition hover:text-biru"
+            >
               {a.peran}
             </button>
           </li>
@@ -88,37 +91,76 @@ export function FormLogin({ pesanAwal, tujuanAwal }: { pesanAwal: string | null;
       </ul>
 
       {galatUmum && (
-        <div role="alert" aria-live="assertive" className={alert({ tipe: "error" })}>{galatUmum}</div>
+        <div role="alert" aria-live="assertive" className={alert({ tipe: "error" })}>
+          {galatUmum}
+        </div>
       )}
 
       <form onSubmit={saatSubmit} noValidate className="space-y-4">
         <div>
-          <label htmlFor="input-email" className="mikro mb-2 block">Email</label>
-          <input id="input-email" name="email" type="email" autoComplete="username" placeholder="nama@sekolah.sch.id"
-            value={email} onChange={(e) => setEmail(e.target.value)}
-            aria-invalid={Boolean(galat.email)} aria-describedby="galat-email"
-            className={input({ keadaan: galat.email ? "salah" : "normal" })} />
-          <p id="galat-email" className="mt-1 text-xs text-rose-600" hidden={!galat.email}>{galat.email}</p>
+          <label htmlFor="input-email" className="mikro mb-2 block">
+            Email
+          </label>
+          <input
+            id="input-email"
+            name="email"
+            type="email"
+            autoComplete="username"
+            placeholder="nama@sekolah.sch.id"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            aria-invalid={Boolean(galat.email)}
+            aria-describedby="galat-email"
+            className={input({ keadaan: galat.email ? "salah" : "normal" })}
+          />
+          <p id="galat-email" className="mt-1 text-xs text-rose-600" hidden={!galat.email}>
+            {galat.email}
+          </p>
         </div>
         <div>
-          <label htmlFor="input-password" className="mikro mb-2 block">Kata sandi</label>
+          <label htmlFor="input-password" className="mikro mb-2 block">
+            Kata sandi
+          </label>
           <div className="relative">
-            <input id="input-password" name="password" type={lihatSandi ? "text" : "password"} autoComplete="current-password"
-              placeholder="Kata sandi" value={password} onChange={(e) => setPassword(e.target.value)}
-              aria-invalid={Boolean(galat.password)} aria-describedby="galat-password"
-              className={`${input({ keadaan: galat.password ? "salah" : "normal" })} pr-11`} />
-            <button type="button" onClick={() => setLihatSandi((v) => !v)} aria-pressed={lihatSandi}
+            <input
+              id="input-password"
+              name="password"
+              type={lihatSandi ? "text" : "password"}
+              autoComplete="current-password"
+              placeholder="Kata sandi"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              aria-invalid={Boolean(galat.password)}
+              aria-describedby="galat-password"
+              className={`${input({ keadaan: galat.password ? "salah" : "normal" })} pr-11`}
+            />
+            <button
+              type="button"
+              onClick={() => setLihatSandi((v) => !v)}
+              aria-pressed={lihatSandi}
               aria-label={lihatSandi ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
-              className="absolute right-1.5 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-neutral-400 transition hover:bg-white hover:text-neutral-900">
+              className="absolute right-1.5 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-neutral-400 transition hover:bg-white hover:text-neutral-900"
+            >
               <Ikon nama={lihatSandi ? "silang" : "mata"} />
             </button>
           </div>
-          <p id="galat-password" className="mt-1 text-xs text-rose-600" hidden={!galat.password}>{galat.password}</p>
+          <p id="galat-password" className="mt-1 text-xs text-rose-600" hidden={!galat.password}>
+            {galat.password}
+          </p>
         </div>
         <div className="flex items-center justify-between gap-3 pt-1">
           <p className="text-[11px] text-neutral-400">Prototipe: kata sandi tidak dienkripsi.</p>
           <button type="submit" disabled={sedangMasuk} className={tombol({ ukuran: "md" })}>
-            {sedangMasuk ? <><Spinner /> Memeriksa</> : <>Masuk<Ikon nama="panah" /></>}
+            {sedangMasuk ? (
+              <>
+                <Spinner /> Memeriksa
+              </>
+            ) : (
+              <>
+                Masuk
+                <Ikon nama="panah" />
+              </>
+            )}
           </button>
         </div>
       </form>

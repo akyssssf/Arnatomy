@@ -2,8 +2,14 @@ import { kartu } from "@/lib/variants";
 import { Ikon } from "./Ikon";
 
 /* Server Component: empty state seragam */
-export function KondisiKosong({ judul, deskripsi, aksi }: {
-  judul: string; deskripsi: string; aksi?: React.ReactNode;
+export function KondisiKosong({
+  judul,
+  deskripsi,
+  aksi,
+}: {
+  judul: string;
+  deskripsi: string;
+  aksi?: React.ReactNode;
 }) {
   return (
     <div className={`${kartu({ padding: "lg" })} flex flex-col items-start gap-4 sm:flex-row sm:items-center`}>

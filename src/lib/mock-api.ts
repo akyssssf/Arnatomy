@@ -8,18 +8,36 @@
    ========================================================================== */
 import { z } from "zod";
 import {
-  AiConversationSchema, LaporanKesalahanSchema, LearningHistorySchema, PartContentSchema,
-  RespGalatSchema, RespLoginSchema, RespOkSchema,
-  type AiConversation, type CatatRiwayatInput, type KontenForm, type LaporanForm,
-  type LaporanKesalahan, type LearningHistory, type LoginForm, type PartContent,
-  type PertanyaanForm, type SesiUser,
+  type AiConversation,
+  AiConversationSchema,
+  type CatatRiwayatInput,
+  type KontenForm,
+  type KontenId,
+  type LaporanForm,
+  type LaporanId,
+  type LaporanKesalahan,
+  LaporanKesalahanSchema,
+  type LearningHistory,
+  LearningHistorySchema,
+  type LoginForm,
+  type PartContent,
+  PartContentSchema,
+  type PertanyaanForm,
+  RespGalatSchema,
+  RespLoginSchema,
+  RespOkSchema,
+  type RiwayatId,
+  type SesiUser,
 } from "./schemas";
 
 const BATAS_WAKTU_MS = 8000;
 
 /** Galat API dengan kode status, supaya UI bisa membedakan 401/403/503. */
 export class GalatApi extends Error {
-  constructor(pesan: string, public readonly status: number) {
+  constructor(
+    pesan: string,
+    public readonly status: number,
+  ) {
     super(pesan);
     this.name = "GalatApi";
   }
@@ -37,7 +55,10 @@ async function ambilJson<T>(skema: z.ZodType<T>, url: string, init?: RequestInit
     const mentah: unknown = await respons.json().catch(() => null);
     if (!respons.ok) {
       const galat = RespGalatSchema.safeParse(mentah);
-      throw new GalatApi(galat.success ? galat.data.pesan : `server membalas status ${respons.status}.`, respons.status);
+      throw new GalatApi(
+        galat.success ? galat.data.pesan : `server membalas status ${respons.status}.`,
+        respons.status,
+      );
     }
     /* Validasi runtime: data yang tidak sesuai skema tidak pernah masuk cache */
     return skema.parse(mentah);
@@ -54,7 +75,8 @@ async function ambilJson<T>(skema: z.ZodType<T>, url: string, init?: RequestInit
 }
 
 const kirim = (metode: "POST" | "PATCH", muatan: unknown): RequestInit => ({
-  method: metode, body: JSON.stringify(muatan),
+  method: metode,
+  body: JSON.stringify(muatan),
 });
 
 /* ---------------- Autentikasi (FR-01) ---------------- */
@@ -81,15 +103,19 @@ export function ambilLaporan(): Promise<LaporanKesalahan[]> {
 export function kirimLaporan(input: LaporanForm & { simulasiGagal: boolean }): Promise<LaporanKesalahan> {
   return ambilJson(LaporanKesalahanSchema, "/api/laporan", kirim("POST", input));
 }
-export function tindakLanjutiLaporan(idLaporan: number): Promise<LaporanKesalahan> {
-  return ambilJson(LaporanKesalahanSchema, `/api/laporan/${idLaporan}`, kirim("PATCH", { status_tindak_lanjut: "ditindaklanjuti" }));
+export function tindakLanjutiLaporan(idLaporan: LaporanId): Promise<LaporanKesalahan> {
+  return ambilJson(
+    LaporanKesalahanSchema,
+    `/api/laporan/${idLaporan}`,
+    kirim("PATCH", { status_tindak_lanjut: "ditindaklanjuti" }),
+  );
 }
 
 /* ---------------- Konten label (FR-10) ---------------- */
 export function ambilKonten(): Promise<PartContent[]> {
   return ambilJson(z.array(PartContentSchema), "/api/konten");
 }
-export function perbaruiKonten(idKonten: number, input: KontenForm): Promise<PartContent> {
+export function perbaruiKonten(idKonten: KontenId, input: KontenForm): Promise<PartContent> {
   return ambilJson(PartContentSchema, `/api/konten/${idKonten}`, kirim("PATCH", input));
 }
 
@@ -100,6 +126,6 @@ export function ambilRiwayat(): Promise<LearningHistory[]> {
 export function catatRiwayat(input: CatatRiwayatInput): Promise<LearningHistory> {
   return ambilJson(LearningHistorySchema, "/api/riwayat", kirim("POST", input));
 }
-export function tutupRiwayat(idRiwayat: number): Promise<LearningHistory> {
+export function tutupRiwayat(idRiwayat: RiwayatId): Promise<LearningHistory> {
   return ambilJson(LearningHistorySchema, `/api/riwayat/${idRiwayat}`, { method: "PATCH" });
 }

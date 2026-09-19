@@ -1,10 +1,10 @@
 /* POST /api/login — cek kredensial akun demo, set cookie sesi httpOnly (FR-01) */
 import { NextResponse } from "next/server";
-import { users } from "@/lib/data";
 import { bacaBody, galat } from "@/lib/api-util";
+import { users } from "@/lib/data";
 import { jeda } from "@/lib/db";
 import { LoginFormSchema, SesiUserSchema } from "@/lib/schemas";
-import { NAMA_COOKIE, UMUR_COOKIE_DETIK, enkodeSesi } from "@/lib/sesi-codec";
+import { enkodeSesi, NAMA_COOKIE, UMUR_COOKIE_DETIK } from "@/lib/sesi-codec";
 
 export async function POST(request: Request) {
   const body = await bacaBody(request, LoginFormSchema);
@@ -18,7 +18,7 @@ export async function POST(request: Request) {
 
   const user = SesiUserSchema.parse(akun); // password ikut terbuang oleh omit
   const respons = NextResponse.json({ user });
-  respons.cookies.set(NAMA_COOKIE, enkodeSesi(user), {
+  respons.cookies.set(NAMA_COOKIE, await enkodeSesi(user), {
     httpOnly: true,
     sameSite: "lax",
     path: "/",

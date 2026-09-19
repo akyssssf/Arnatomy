@@ -12,7 +12,8 @@ import { organs, sistem_organ } from "@/lib/data";
 
 export const metadata: Metadata = {
   title: "ARnatomy — Belajar anatomi lewat model 3D",
-  description: "Katalog sistem organ ARnatomy: putar organ, ketuk bagiannya, baca labelnya, lalu tanyakan ke asisten AI.",
+  description:
+    "Katalog sistem organ ARnatomy: putar organ, ketuk bagiannya, baca labelnya, lalu tanyakan ke asisten AI.",
 };
 
 export default async function HalamanLanding() {
@@ -25,8 +26,12 @@ export default async function HalamanLanding() {
     <>
       <NavKaca user={sesi} />
       <main id="konten-utama" tabIndex={-1} className="halaman-masuk mx-auto w-full max-w-6xl px-4 pb-16 pt-20 sm:px-6">
-        <HeroLanding organ={organ} sudahMasuk={sesi !== null}
-          jumlahTersedia={sistem_organ.filter((s) => s.status === "tersedia").length} jumlahSistem={sistem_organ.length} />
+        <HeroLanding
+          organ={organ}
+          sudahMasuk={sesi !== null}
+          jumlahTersedia={sistem_organ.filter((s) => s.status === "tersedia").length}
+          jumlahSistem={sistem_organ.length}
+        />
         <KatalogSistem sistem={sistem_organ} />
         <LangkahBelajar />
         <AjakanMasuk gambar={paru.gambar} />

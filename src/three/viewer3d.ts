@@ -12,7 +12,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
-import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { type GLTF, GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 export interface TitikMasukan {
   id: number;
@@ -72,7 +72,26 @@ const OPASITAS_HANTU = 0.3;
 
 /** Mengubah pola "VH_M_right_*_segment" menjadi RegExp yang cocok utuh. */
 function polaKeRegExp(pola: string): RegExp {
-  return new RegExp("^" + pola.split("*").map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join(".*") + "$");
+  return new RegExp(
+    "^" +
+      pola
+        .split("*")
+        .map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+        .join(".*") +
+      "$",
+  );
+}
+
+/* Menyerahkan main thread sejenak di antara tahap berat (task chunking) agar
+   interaksi pengguna tetap responsif (INP <= 200 ms). scheduler.yield() bila
+   tersedia, selain itu setTimeout 0. */
+interface SchedulerYield {
+  yield?: () => Promise<void>;
+}
+function serahkanKeUtama(): Promise<void> {
+  const scheduler = (globalThis as { scheduler?: SchedulerYield }).scheduler;
+  if (scheduler?.yield) return scheduler.yield();
+  return new Promise((selesai) => setTimeout(selesai, 0));
 }
 
 function muatModel(loader: GLTFLoader, url: string, saatProgres?: (persen: number) => void): Promise<GLTF> {
@@ -93,8 +112,13 @@ function muatModel(loader: GLTFLoader, url: string, saatProgres?: (persen: numbe
 function buatLapisan(): Record<Exclude<NamaLapisan, "organ_dalam">, THREE.Object3D> {
   function selubung(radius: number, panjang: number, warna: number, opasitas: number) {
     const bahan = new THREE.MeshStandardMaterial({
-      color: warna, transparent: true, opacity: opasitas, roughness: 0.85, metalness: 0,
-      side: THREE.DoubleSide, depthWrite: false,
+      color: warna,
+      transparent: true,
+      opacity: opasitas,
+      roughness: 0.85,
+      metalness: 0,
+      side: THREE.DoubleSide,
+      depthWrite: false,
     });
     return new THREE.Mesh(new THREE.CapsuleGeometry(radius, panjang, 6, 32), bahan);
   }
@@ -102,7 +126,13 @@ function buatLapisan(): Record<Exclude<NamaLapisan, "organ_dalam">, THREE.Object
   const otot = selubung(0.58, 0.46, 0xb2495a, 0.15);
 
   const tulang = new THREE.Group();
-  const bahanTulang = new THREE.MeshStandardMaterial({ color: 0xdde5f0, transparent: true, opacity: 0.6, roughness: 0.6, metalness: 0 });
+  const bahanTulang = new THREE.MeshStandardMaterial({
+    color: 0xdde5f0,
+    transparent: true,
+    opacity: 0.6,
+    roughness: 0.6,
+    metalness: 0,
+  });
   for (let i = 0; i < 5; i += 1) {
     const y = 0.42 - i * 0.2;
     const radius = 0.44 + Math.sin(((i + 1) / 6) * Math.PI) * 0.1;
@@ -198,6 +228,7 @@ export async function buatPenampil(opsi: OpsiPenampil): Promise<Penampil> {
     throw kesalahan;
   }
   const organ = gltf.scene;
+  await serahkanKeUtama(); // pemuatan & dekode model selesai: beri jalan ke input pengguna
 
   /* Sorotan area: bagian terpilih ditandai di shader dengan mewarnai fragmen
      di sekitar titik terpilih (tint biru + cincin tipis). Uniform dibagi ke
@@ -208,30 +239,39 @@ export async function buatPenampil(opsi: OpsiPenampil): Promise<Penampil> {
     uKuat: { value: 0 },
     uWarna: { value: new THREE.Color(0x1a6dff) },
   };
-  organ.traverse((obj) => {
-    if (!(obj instanceof THREE.Mesh)) return;
-    const daftarBahan: THREE.Material[] = Array.isArray(obj.material) ? obj.material : [obj.material];
-    for (const bahan of daftarBahan) {
-      bahan.onBeforeCompile = (shader) => {
-        Object.assign(shader.uniforms, uniformSorot);
-        shader.vertexShader = shader.vertexShader
-          .replace("#include <common>", "#include <common>\nvarying vec3 vPosSorot;")
-          .replace("#include <project_vertex>", "#include <project_vertex>\nvPosSorot = (modelMatrix * vec4(transformed, 1.0)).xyz;");
-        shader.fragmentShader = shader.fragmentShader
-          .replace("#include <common>", "#include <common>\nvarying vec3 vPosSorot;\nuniform vec3 uSorot;\nuniform float uRadius;\nuniform float uKuat;\nuniform vec3 uWarna;")
-          .replace(
-            "#include <dithering_fragment>",
-            "#include <dithering_fragment>\n{\n" +
-              "  float jarakSorot = distance(vPosSorot, uSorot);\n" +
-              "  float isi = 1.0 - smoothstep(uRadius * 0.35, uRadius, jarakSorot);\n" +
-              "  float cincin = smoothstep(uRadius * 0.88, uRadius * 0.96, jarakSorot) * (1.0 - smoothstep(uRadius * 0.98, uRadius * 1.05, jarakSorot));\n" +
-              "  gl_FragColor.rgb = mix(gl_FragColor.rgb, uWarna, isi * uKuat * 0.38);\n" +
-              "  gl_FragColor.rgb += uWarna * cincin * uKuat * 0.55;\n}",
-          );
-      };
-      bahan.needsUpdate = true;
-    }
-  });
+  /* Mode dekoratif (hero) tidak butuh sorotan: lewati penyuntikan shader agar
+     program GPU bawaan dipakai apa adanya (kompilasi lebih cepat). */
+  if (!dekoratif)
+    organ.traverse((obj) => {
+      if (!(obj instanceof THREE.Mesh)) return;
+      const daftarBahan: THREE.Material[] = Array.isArray(obj.material) ? obj.material : [obj.material];
+      for (const bahan of daftarBahan) {
+        bahan.onBeforeCompile = (shader) => {
+          Object.assign(shader.uniforms, uniformSorot);
+          shader.vertexShader = shader.vertexShader
+            .replace("#include <common>", "#include <common>\nvarying vec3 vPosSorot;")
+            .replace(
+              "#include <project_vertex>",
+              "#include <project_vertex>\nvPosSorot = (modelMatrix * vec4(transformed, 1.0)).xyz;",
+            );
+          shader.fragmentShader = shader.fragmentShader
+            .replace(
+              "#include <common>",
+              "#include <common>\nvarying vec3 vPosSorot;\nuniform vec3 uSorot;\nuniform float uRadius;\nuniform float uKuat;\nuniform vec3 uWarna;",
+            )
+            .replace(
+              "#include <dithering_fragment>",
+              "#include <dithering_fragment>\n{\n" +
+                "  float jarakSorot = distance(vPosSorot, uSorot);\n" +
+                "  float isi = 1.0 - smoothstep(uRadius * 0.35, uRadius, jarakSorot);\n" +
+                "  float cincin = smoothstep(uRadius * 0.88, uRadius * 0.96, jarakSorot) * (1.0 - smoothstep(uRadius * 0.98, uRadius * 1.05, jarakSorot));\n" +
+                "  gl_FragColor.rgb = mix(gl_FragColor.rgb, uWarna, isi * uKuat * 0.38);\n" +
+                "  gl_FragColor.rgb += uWarna * cincin * uKuat * 0.55;\n}",
+            );
+        };
+        bahan.needsUpdate = true;
+      }
+    });
   let kuatTujuan = 0;
 
   /* Sorotan per-mesh: mesh terpilih tetap berwarna asli, mesh lain kehilangan
@@ -256,7 +296,9 @@ export async function buatPenampil(opsi: OpsiPenampil): Promise<Penampil> {
   /* Daftar mesh bernama (model HRA memberi nama anatomi tiap node) dan
      material aslinya, untuk sorotan per-mesh dan pemulihan. */
   const semuaMesh: THREE.Mesh[] = [];
-  organ.traverse((obj) => { if (obj instanceof THREE.Mesh) semuaMesh.push(obj); });
+  organ.traverse((obj) => {
+    if (obj instanceof THREE.Mesh) semuaMesh.push(obj);
+  });
   const bahanAsli = new Map<THREE.Mesh, THREE.Material | THREE.Material[]>();
   for (const m of semuaMesh) bahanAsli.set(m, m.material);
   function cariMesh(pola: string[] | undefined): THREE.Mesh[] {
@@ -278,6 +320,7 @@ export async function buatPenampil(opsi: OpsiPenampil): Promise<Penampil> {
   /* Matriks dunia harus diperbarui dulu; tanpa ini raycast mengenai posisi
      objek sebelum diskalakan dan tidak mengenai apa pun. */
   panggung.updateMatrixWorld(true);
+  await serahkanKeUtama(); // sebelum raycast penempatan titik (tugas berat berikutnya)
   const raycaster = new THREE.Raycaster();
 
   /* posisi_koordinat_3d dipakai sebagai titik bidik: sinar dari posisi kamera
@@ -310,7 +353,15 @@ export async function buatPenampil(opsi: OpsiPenampil): Promise<Penampil> {
       sasaran = new THREE.Vector3(t.x * ukuranNormal.x, t.y * ukuranNormal.y, t.z * ukuranNormal.z);
     }
     const posisi = tempelkanKePermukaan(sasaran, mesh);
-    return { id: t.id, el: t.el, posisi, normal: posisi.clone().normalize(), tertutup: false, tersembunyi: false, mesh };
+    return {
+      id: t.id,
+      el: t.el,
+      posisi,
+      normal: posisi.clone().normalize(),
+      tertutup: false,
+      tersembunyi: false,
+      mesh,
+    };
   });
 
   /** Material turunan per mesh (klon dari aslinya) agar bisa diubah tanpa menyentuh material bersama. */
@@ -320,7 +371,9 @@ export async function buatPenampil(opsi: OpsiPenampil): Promise<Penampil> {
     const asli = bahanAsli.get(m);
     const sumber = Array.isArray(asli) ? asli : asli ? [asli] : [];
     daftar = sumber.map((b) => {
-      const klon = (b instanceof THREE.MeshStandardMaterial ? b.clone() : new THREE.MeshStandardMaterial()) as THREE.MeshStandardMaterial;
+      const klon = (
+        b instanceof THREE.MeshStandardMaterial ? b.clone() : new THREE.MeshStandardMaterial()
+      ) as THREE.MeshStandardMaterial;
       klon.transparent = true;
       klon.vertexColors = false; // warna per-vertex diabaikan agar bisa di-abu-abukan
       klon.onBeforeCompile = () => {};
@@ -338,7 +391,10 @@ export async function buatPenampil(opsi: OpsiPenampil): Promise<Penampil> {
   /** Menerapkan derajat transisi (0 = tampilan asli, 1 = sorotan penuh). */
   function terapkanSorotMesh(t: number) {
     if (t <= 0) {
-      for (const m of semuaMesh) { const asli = bahanAsli.get(m); if (asli) m.material = asli; }
+      for (const m of semuaMesh) {
+        const asli = bahanAsli.get(m);
+        if (asli) m.material = asli;
+      }
       return;
     }
     const terpilih = new Set(meshTerpilih);
@@ -384,7 +440,9 @@ export async function buatPenampil(opsi: OpsiPenampil): Promise<Penampil> {
     }
   }
 
-  const mintaGambar = () => { perluGambar = true; };
+  const mintaGambar = () => {
+    perluGambar = true;
+  };
   controls.addEventListener("change", mintaGambar);
 
   function perbaruiTitik() {
@@ -466,11 +524,14 @@ export async function buatPenampil(opsi: OpsiPenampil): Promise<Penampil> {
   pengamat.observe(wadah);
 
   /* Penampil dihentikan total ketika tergulir keluar layar */
-  const pengamatTampak = new IntersectionObserver((entri) => {
-    const tampak = Boolean(entri[0]?.isIntersecting);
-    renderer.setAnimationLoop(tampak ? gambar : null);
-    if (tampak) mintaGambar();
-  }, { threshold: 0 });
+  const pengamatTampak = new IntersectionObserver(
+    (entri) => {
+      const tampak = Boolean(entri[0]?.isIntersecting);
+      renderer.setAnimationLoop(tampak ? gambar : null);
+      if (tampak) mintaGambar();
+    },
+    { threshold: 0 },
+  );
   pengamatTampak.observe(wadah);
 
   function ubahJarak(faktor: number) {
@@ -488,8 +549,14 @@ export async function buatPenampil(opsi: OpsiPenampil): Promise<Penampil> {
   }
   renderer.domElement.addEventListener("wheel", saatRoda, { passive: false });
 
-  const arahkanKamera = (posisi: THREE.Vector3) => { targetKamera = posisi; perluGambar = true; };
-  const arahkanOrbit = (titikPusat: THREE.Vector3) => { targetOrbit = titikPusat; perluGambar = true; };
+  const arahkanKamera = (posisi: THREE.Vector3) => {
+    targetKamera = posisi;
+    perluGambar = true;
+  };
+  const arahkanOrbit = (titikPusat: THREE.Vector3) => {
+    targetOrbit = titikPusat;
+    perluGambar = true;
+  };
 
   /* Selubung lebih besar dari organ: kamera mundur otomatis agar semua masuk bingkai */
   function sesuaikanJarak() {

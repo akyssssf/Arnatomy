@@ -5,7 +5,7 @@
    yang memegang kanvas Three.js). Metadata dinamis lewat generateMetadata.
    Riwayat belajar di-prefetch ke cache TanStack Query untuk penanda
    "sudah dibuka" pada daftar bagian. */
-import { HydrationBoundary, QueryClient, dehydrate } from "@tanstack/react-query";
+import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { KepalaEksplorasi } from "@/components/eksplorasi/KepalaEksplorasi";
 import { PemilihOrgan } from "@/components/eksplorasi/PemilihOrgan";
@@ -23,7 +23,9 @@ export async function generateMetadata(props: PageProps<"/eksplorasi">): Promise
   const organ = organDariQuery((await props.searchParams).organ);
   return {
     title: organ ? `Eksplorasi ${organ.nama_organ}` : "Eksplorasi",
-    description: organ ? `Model 3D ${organ.nama_organ} (${organ.sistem_organ}): putar, perbesar, dan buka label tiap bagian.` : undefined,
+    description: organ
+      ? `Model 3D ${organ.nama_organ} (${organ.sistem_organ}): putar, perbesar, dan buka label tiap bagian.`
+      : undefined,
   };
 }
 
@@ -47,9 +49,15 @@ export default async function HalamanEksplorasi(props: PageProps<"/eksplorasi">)
       <HydrationBoundary state={dehydrate(queryClient)}>
         {/* key = id organ: penampil dibangun ulang saat organ berganti.
             Judul dan pemilih organ tetap Server Component, dioper sebagai node. */}
-        <PenampilOrgan key={organ.id_organ} organ={organ} bagian={bagian} layers={layers} konten={konten}
+        <PenampilOrgan
+          key={organ.id_organ}
+          organ={organ}
+          bagian={bagian}
+          layers={layers}
+          konten={konten}
           judul={<KepalaEksplorasi organ={organ} />}
-          pemilihOrgan={<PemilihOrgan organs={organs} aktifId={organ.id_organ} />} />
+          pemilihOrgan={<PemilihOrgan organs={organs} aktifId={organ.id_organ} />}
+        />
       </HydrationBoundary>
     </section>
   );

@@ -22,5 +22,7 @@ export async function POST(request: Request) {
   if (body.data.simulasiGagal) return galat("simulasi kegagalan pengiriman laporan ke server.", 503);
   if (!kontenById(body.data.id_konten)) return galat("konten yang dilaporkan tidak ditemukan.", 404);
 
-  return NextResponse.json(tambahLaporan(auth.sesi.id_user, body.data.id_konten, body.data.deskripsi_laporan), { status: 201 });
+  return NextResponse.json(tambahLaporan(auth.sesi.id_user, body.data.id_konten, body.data.deskripsi_laporan), {
+    status: 201,
+  });
 }

@@ -19,5 +19,7 @@ export async function POST(request: Request) {
   const body = await bacaBody(request, CatatRiwayatSchema);
   if (!body.ok) return body.respons;
   if (!bagianById(body.data.id_bagian)) return galat("bagian tubuh tidak ditemukan.", 404);
-  return NextResponse.json(catatRiwayat(auth.sesi.id_user, body.data.id_bagian, body.data.jenis_konten), { status: 201 });
+  return NextResponse.json(catatRiwayat(auth.sesi.id_user, body.data.id_bagian, body.data.jenis_konten), {
+    status: 201,
+  });
 }

@@ -7,7 +7,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ambilKonten, perbaruiKonten } from "@/lib/mock-api";
-import type { KontenForm } from "@/lib/schemas";
+import type { KontenForm, KontenId } from "@/lib/schemas";
 import { KUNCI } from "./kunci-query";
 
 export function useKontenLabel() {
@@ -21,7 +21,7 @@ export function useKontenLabel() {
   });
 
   const perbarui = useMutation({
-    mutationFn: ({ idKonten, input }: { idKonten: number; input: KontenForm }) => perbaruiKonten(idKonten, input),
+    mutationFn: ({ idKonten, input }: { idKonten: KontenId; input: KontenForm }) => perbaruiKonten(idKonten, input),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: KUNCI.konten }),
   });
 

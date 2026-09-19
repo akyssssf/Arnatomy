@@ -54,31 +54,70 @@ export function FormEditKonten({ konten, onTutup }: { konten: PartContent; onTut
   return (
     <Modal judul="Edit konten label" onTutup={onTutup}>
       <form onSubmit={saatSubmit} noValidate className="space-y-3">
-        <p className="mikro">{bagian?.nama_bagian_internal} &middot; {konten.jenis_konten}</p>
-        {galatUmum && <div role="alert" aria-live="assertive" className={alert({ tipe: "error" })}>{galatUmum}</div>}
+        <p className="mikro">
+          {bagian?.nama_bagian_internal} &middot; {konten.jenis_konten}
+        </p>
+        {galatUmum && (
+          <div role="alert" aria-live="assertive" className={alert({ tipe: "error" })}>
+            {galatUmum}
+          </div>
+        )}
         <div>
-          <label htmlFor="edit-judul" className="mikro mb-2 block">Judul tampil</label>
-          <input id="edit-judul" type="text" value={judul} onChange={(e) => setJudul(e.target.value)}
-            aria-invalid={Boolean(galat.judul_tampil)} aria-describedby="galat-judul"
-            className={input({ keadaan: galat.judul_tampil ? "salah" : "normal" })} />
-          <p id="galat-judul" className="mt-1 text-xs text-rose-600" hidden={!galat.judul_tampil}>{galat.judul_tampil}</p>
+          <label htmlFor="edit-judul" className="mikro mb-2 block">
+            Judul tampil
+          </label>
+          <input
+            id="edit-judul"
+            type="text"
+            value={judul}
+            onChange={(e) => setJudul(e.target.value)}
+            aria-invalid={Boolean(galat.judul_tampil)}
+            aria-describedby="galat-judul"
+            className={input({ keadaan: galat.judul_tampil ? "salah" : "normal" })}
+          />
+          <p id="galat-judul" className="mt-1 text-xs text-rose-600" hidden={!galat.judul_tampil}>
+            {galat.judul_tampil}
+          </p>
         </div>
         <div>
-          <label htmlFor="edit-deskripsi" className="mikro mb-2 block">Deskripsi</label>
-          <textarea id="edit-deskripsi" rows={6} value={deskripsi} onChange={(e) => setDeskripsi(e.target.value)}
-            aria-invalid={Boolean(galat.deskripsi)} aria-describedby="galat-konten"
-            className={input({ keadaan: galat.deskripsi ? "salah" : "normal" })} />
-          <p id="galat-konten" className="mt-1 text-xs text-rose-600" hidden={!galat.deskripsi}>{galat.deskripsi}</p>
+          <label htmlFor="edit-deskripsi" className="mikro mb-2 block">
+            Deskripsi
+          </label>
+          <textarea
+            id="edit-deskripsi"
+            rows={6}
+            value={deskripsi}
+            onChange={(e) => setDeskripsi(e.target.value)}
+            aria-invalid={Boolean(galat.deskripsi)}
+            aria-describedby="galat-konten"
+            className={input({ keadaan: galat.deskripsi ? "salah" : "normal" })}
+          />
+          <p id="galat-konten" className="mt-1 text-xs text-rose-600" hidden={!galat.deskripsi}>
+            {galat.deskripsi}
+          </p>
         </div>
         <div>
-          <label htmlFor="edit-status" className="mikro mb-2 block">Status validasi</label>
-          <select id="edit-status" value={status} onChange={(e) => setStatus(e.target.value as StatusValidasi)} className={input()}>
+          <label htmlFor="edit-status" className="mikro mb-2 block">
+            Status validasi
+          </label>
+          <select
+            id="edit-status"
+            value={status}
+            onChange={(e) => setStatus(e.target.value as StatusValidasi)}
+            className={input()}
+          >
             <option value="draft">draft</option>
             <option value="tervalidasi">tervalidasi</option>
           </select>
         </div>
         <button type="submit" disabled={perbarui.isPending} className={tombol({ lebar: "penuh" })}>
-          {perbarui.isPending ? <><Spinner /> Menyimpan</> : "Simpan perubahan"}
+          {perbarui.isPending ? (
+            <>
+              <Spinner /> Menyimpan
+            </>
+          ) : (
+            "Simpan perubahan"
+          )}
         </button>
       </form>
     </Modal>

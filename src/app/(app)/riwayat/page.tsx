@@ -23,13 +23,26 @@ export default async function HalamanRiwayat() {
   await jeda(600); // latensi buatan supaya loading.tsx terlihat
   const rekap = ringkasanRiwayat(sesi.id_user);
 
-  const tombolMulai = <Link href="/eksplorasi" className={tombol({ ukuran: "sm" })}>Buka halaman Eksplorasi</Link>;
+  const tombolMulai = (
+    <Link href="/eksplorasi" className={tombol({ ukuran: "sm" })}>
+      Buka halaman Eksplorasi
+    </Link>
+  );
 
   if (!rekap.length) {
     return (
       <section aria-labelledby="judul-riwayat" className="halaman-masuk">
-        <JudulHalaman judul="Riwayat Belajar" deskripsi="Bagian tubuh yang telah dibuka pada sesi ini." id="judul-riwayat" kicker="Rekam jejak" />
-        <KondisiKosong judul="Belum ada riwayat" deskripsi="Riwayat terisi otomatis setiap kali label dibuka pada halaman Eksplorasi." aksi={tombolMulai} />
+        <JudulHalaman
+          judul="Riwayat Belajar"
+          deskripsi="Bagian tubuh yang telah dibuka pada sesi ini."
+          id="judul-riwayat"
+          kicker="Rekam jejak"
+        />
+        <KondisiKosong
+          judul="Belum ada riwayat"
+          deskripsi="Riwayat terisi otomatis setiap kali label dibuka pada halaman Eksplorasi."
+          aksi={tombolMulai}
+        />
       </section>
     );
   }
@@ -44,7 +57,12 @@ export default async function HalamanRiwayat() {
 
   return (
     <section aria-labelledby="judul-riwayat" className="halaman-masuk">
-      <JudulHalaman judul="Riwayat Belajar" deskripsi="Bagian tubuh yang telah dibuka pada sesi ini." id="judul-riwayat" kicker="Rekam jejak" />
+      <JudulHalaman
+        judul="Riwayat Belajar"
+        deskripsi="Bagian tubuh yang telah dibuka pada sesi ini."
+        id="judul-riwayat"
+        kicker="Rekam jejak"
+      />
       <KartuStatistik daftar={statistik} />
       <TabelRiwayat rekap={rekap} konten={semuaKonten()} />
       <p className="mt-3 px-1 text-xs text-neutral-400">

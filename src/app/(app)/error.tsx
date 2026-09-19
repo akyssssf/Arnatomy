@@ -12,7 +12,11 @@ export default function GalatAplikasi({ error, reset }: { error: Error & { diges
   }, [error]);
 
   return (
-    <section role="alert" aria-live="assertive" className={`${kartu({ padding: "lg" })} mt-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center`}>
+    <section
+      role="alert"
+      aria-live="assertive"
+      className={`${kartu({ padding: "lg" })} mt-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center`}
+    >
       <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-rose-50 text-rose-700">
         <Ikon nama="peringatan" kelas="h-5 w-5" />
       </span>
@@ -20,7 +24,9 @@ export default function GalatAplikasi({ error, reset }: { error: Error & { diges
         <h2 className="text-base font-semibold">Terjadi kesalahan saat memuat halaman</h2>
         <p className="mt-0.5 max-w-lg text-sm text-neutral-500">{error.message || "Galat tidak dikenal."}</p>
       </div>
-      <button type="button" onClick={reset} className={tombol({ variant: "sekunder", ukuran: "sm" })}>Coba lagi</button>
+      <button type="button" onClick={reset} className={tombol({ variant: "sekunder", ukuran: "sm" })}>
+        Coba lagi
+      </button>
     </section>
   );
 }

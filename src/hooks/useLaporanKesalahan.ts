@@ -7,7 +7,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ambilLaporan, kirimLaporan, tindakLanjutiLaporan } from "@/lib/mock-api";
-import type { LaporanForm } from "@/lib/schemas";
+import type { LaporanForm, LaporanId } from "@/lib/schemas";
 import { KUNCI } from "./kunci-query";
 
 export function useLaporanKesalahan(opsi: { aktif?: boolean } = {}) {
@@ -27,7 +27,7 @@ export function useLaporanKesalahan(opsi: { aktif?: boolean } = {}) {
   });
 
   const tindakLanjuti = useMutation({
-    mutationFn: (idLaporan: number) => tindakLanjutiLaporan(idLaporan),
+    mutationFn: (idLaporan: LaporanId) => tindakLanjutiLaporan(idLaporan),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: KUNCI.laporan }),
   });
 

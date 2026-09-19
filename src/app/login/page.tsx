@@ -29,10 +29,18 @@ export default async function HalamanLogin(props: PageProps<"/login">) {
           <p className="mikro">SKPL v1.0</p>
         </div>
 
-        <HeroLogin organ={organ} jumlahOrgan={organs.length} jumlahBagian={body_parts.length} jumlahLabel={part_content_awal.length} />
+        <HeroLogin
+          organ={organ}
+          jumlahOrgan={organs.length}
+          jumlahBagian={body_parts.length}
+          jumlahLabel={part_content_awal.length}
+        />
 
         <Muncul kelas="mt-10">
-          <Marquee daftar={["Sistem Peredaran Darah", "Model Organ 3D", "Label Interaktif", "Asisten AI", "Riwayat Belajar"]} label="Fitur" />
+          <Marquee
+            daftar={["Sistem Peredaran Darah", "Model Organ 3D", "Label Interaktif", "Asisten AI", "Riwayat Belajar"]}
+            label="Fitur"
+          />
         </Muncul>
 
         <div id="form-login" className="mt-8 grid scroll-mt-24 gap-4 lg:grid-cols-[1fr_1.15fr]">
@@ -42,8 +50,8 @@ export default async function HalamanLogin(props: PageProps<"/login">) {
               <h2 className="titik-biru mt-3 text-3xl font-semibold">Gunakan akun terdaftar</h2>
             </div>
             <p className="mt-8 text-xs leading-relaxed text-neutral-500">
-              Tekan Siswa, Guru, atau Administrator untuk mengisi form otomatis. Sesi disimpan di cookie httpOnly;
-              data belajar hidup di memori server selama sesi dan dibuang saat keluar.
+              Tekan Siswa, Guru, atau Administrator untuk mengisi form otomatis. Sesi disimpan di cookie httpOnly; data
+              belajar hidup di memori server selama sesi dan dibuang saat keluar.
             </p>
           </Muncul>
           <Muncul kelas={kartu({ padding: "lg" })}>

@@ -9,7 +9,11 @@ import type { NamaLayer } from "@/lib/schemas";
 import type { TipeAlert } from "@/lib/variants";
 
 export type TabAdmin = "konten" | "laporan";
-export interface Toast { id: number; pesan: string; tipe: TipeAlert }
+export interface Toast {
+  id: number;
+  pesan: string;
+  tipe: TipeAlert;
+}
 
 interface UIState {
   /* --- Halaman eksplorasi (FR-04, FR-05, FR-06) --- */

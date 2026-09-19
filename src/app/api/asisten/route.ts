@@ -25,5 +25,8 @@ export async function POST(request: Request) {
 
   const bagian = bagianById(body.data.id_bagian);
   const jawaban = susunJawaban(body.data.pertanyaan, bagian);
-  return NextResponse.json(tambahPercakapan(auth.sesi.id_user, bagian?.id_bagian ?? null, body.data.pertanyaan, jawaban), { status: 201 });
+  return NextResponse.json(
+    tambahPercakapan(auth.sesi.id_user, bagian?.id_bagian ?? null, body.data.pertanyaan, jawaban),
+    { status: 201 },
+  );
 }

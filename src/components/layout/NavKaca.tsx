@@ -6,7 +6,6 @@
    (tautan rute + tombol keluar). */
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { Ikon, type NamaIkon } from "@/components/ui/Ikon";
 import { keluar } from "@/lib/mock-api";
@@ -29,12 +28,11 @@ const MENU_PUBLIK: { gulir: string; label: string; ikon: NamaIkon }[] = [
 
 const KELAS_BUTIR = "nav-butir flex h-10 items-center gap-2 rounded-full text-[13px] font-medium transition";
 const KELAS_AKTIF = "bg-white text-neutral-900";
-const KELAS_PASIF = "text-white/75 hover:bg-white/12 hover:text-white";
+const KELAS_PASIF = "text-white/85 hover:bg-white/12 hover:text-white";
 
 export function NavKaca({ user }: { user: SesiUser | null }) {
   const pathname = usePathname();
   const router = useRouter();
-  const queryClient = useQueryClient();
   const tampilkanToast = useUIStore((s) => s.tampilkanToast);
   const [ringkas, setRingkas] = useState(false);
   /* Varian publik: bagian landing yang sedang terlihat (untuk penanda aktif) */
@@ -71,7 +69,6 @@ export function NavKaca({ user }: { user: SesiUser | null }) {
     setSedangKeluar(true);
     try {
       await keluar();
-      queryClient.clear();
       tampilkanToast("Sesi diakhiri.", "info");
       router.push("/");
       router.refresh();
@@ -84,17 +81,27 @@ export function NavKaca({ user }: { user: SesiUser | null }) {
   function gulirKe(tujuan: string) {
     setBagianAktif(tujuan);
     terkunci.current = true;
-    setTimeout(() => { terkunci.current = false; }, 900);
-    if (tujuan === "atas") { window.scrollTo({ top: 0, behavior: "smooth" }); return; }
+    setTimeout(() => {
+      terkunci.current = false;
+    }, 900);
+    if (tujuan === "atas") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     document.getElementById(`bagian-${tujuan}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   return (
     <div className="pointer-events-none fixed inset-x-0 top-4 z-40 flex justify-center px-4">
-      <nav aria-label="Navigasi utama"
-        className={`nav-kaca kaca-gelap pointer-events-auto flex items-center gap-1 rounded-full p-1.5 ${ringkas ? "nav-ringkas" : ""}`}>
-        <Link href={user ? "/beranda" : "/"} aria-label="ARnatomy"
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white text-biru">
+      <nav
+        aria-label="Navigasi utama"
+        className={`nav-kaca kaca-gelap pointer-events-auto flex items-center gap-1 rounded-full p-1.5 ${ringkas ? "nav-ringkas" : ""}`}
+      >
+        <Link
+          href={user ? "/beranda" : "/"}
+          aria-label="ARnatomy"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white text-biru"
+        >
           <Ikon nama="jantung" kelas="h-5 w-5" />
         </Link>
         <ul className="flex items-center gap-0.5">
@@ -103,8 +110,12 @@ export function NavKaca({ user }: { user: SesiUser | null }) {
                 const aktif = pathname.startsWith(m.rute);
                 return (
                   <li key={m.rute}>
-                    <Link href={m.rute} title={m.label} aria-current={aktif ? "page" : undefined}
-                      className={`${KELAS_BUTIR} ${aktif ? KELAS_AKTIF : KELAS_PASIF}`}>
+                    <Link
+                      href={m.rute}
+                      title={m.label}
+                      aria-current={aktif ? "page" : undefined}
+                      className={`${KELAS_BUTIR} ${aktif ? KELAS_AKTIF : KELAS_PASIF}`}
+                    >
                       <Ikon nama={m.ikon} kelas="h-[18px] w-[18px] shrink-0" />
                       <span className="nav-label">{m.label}</span>
                     </Link>
@@ -113,9 +124,13 @@ export function NavKaca({ user }: { user: SesiUser | null }) {
               })
             : MENU_PUBLIK.map((m) => (
                 <li key={m.gulir}>
-                  <button type="button" title={m.label} onClick={() => gulirKe(m.gulir)}
+                  <button
+                    type="button"
+                    title={m.label}
+                    onClick={() => gulirKe(m.gulir)}
                     aria-current={bagianAktif === m.gulir ? "true" : undefined}
-                    className={`${KELAS_BUTIR} ${bagianAktif === m.gulir ? KELAS_AKTIF : KELAS_PASIF}`}>
+                    className={`${KELAS_BUTIR} ${bagianAktif === m.gulir ? KELAS_AKTIF : KELAS_PASIF}`}
+                  >
                     <Ikon nama={m.ikon} kelas="h-[18px] w-[18px] shrink-0" />
                     <span className="nav-label">{m.label}</span>
                   </button>
@@ -124,13 +139,21 @@ export function NavKaca({ user }: { user: SesiUser | null }) {
         </ul>
         <span className="mx-1 h-6 w-px bg-white/15" aria-hidden="true" />
         {user ? (
-          <button type="button" onClick={saatKeluar} disabled={sedangKeluar} title="Keluar" aria-label="Keluar dari sesi"
-            className="grid h-10 w-10 place-items-center rounded-full text-white/75 transition hover:bg-white/12 hover:text-white disabled:opacity-50">
+          <button
+            type="button"
+            onClick={saatKeluar}
+            disabled={sedangKeluar}
+            title="Keluar"
+            aria-label="Keluar dari sesi"
+            className="grid h-10 w-10 place-items-center rounded-full text-white/85 transition hover:bg-white/12 hover:text-white disabled:opacity-50"
+          >
             <Ikon nama="keluar" kelas="h-[18px] w-[18px]" />
           </button>
         ) : (
-          <Link href="/login"
-            className="nav-butir flex h-10 items-center gap-2 rounded-full bg-biru text-[13px] font-semibold text-white transition hover:bg-biru-gelap">
+          <Link
+            href="/login"
+            className="nav-butir flex h-10 items-center gap-2 rounded-full bg-biru text-[13px] font-semibold text-white transition hover:bg-biru-gelap"
+          >
             <span className="nav-label">Masuk</span>
             <Ikon nama="panah" kelas="h-[18px] w-[18px] shrink-0" />
           </Link>

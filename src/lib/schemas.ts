@@ -7,12 +7,32 @@
    ========================================================================== */
 import { z } from "zod";
 
+/* ---------------- Branded ID ----------------
+   Setiap jenis id diberi "merek" (brand) sehingga id_user tidak bisa
+   tertukar dengan id_bagian pada level tipe, walau keduanya number di runtime.
+   Nilai bermerek hanya lahir dari parse skema (atau dari data yang sudah diparse). */
+const idPositif = () => z.number().int().positive();
+export const UserIdSchema = idPositif().brand<"UserId">();
+export const OrganIdSchema = idPositif().brand<"OrganId">();
+export const BagianIdSchema = idPositif().brand<"BagianId">();
+export const KontenIdSchema = idPositif().brand<"KontenId">();
+export const RiwayatIdSchema = idPositif().brand<"RiwayatId">();
+export const PercakapanIdSchema = idPositif().brand<"PercakapanId">();
+export const LaporanIdSchema = idPositif().brand<"LaporanId">();
+export type UserId = z.infer<typeof UserIdSchema>;
+export type OrganId = z.infer<typeof OrganIdSchema>;
+export type BagianId = z.infer<typeof BagianIdSchema>;
+export type KontenId = z.infer<typeof KontenIdSchema>;
+export type RiwayatId = z.infer<typeof RiwayatIdSchema>;
+export type PercakapanId = z.infer<typeof PercakapanIdSchema>;
+export type LaporanId = z.infer<typeof LaporanIdSchema>;
+
 /* ---------------- Entitas master ---------------- */
 export const PeranSchema = z.enum(["siswa", "guru", "admin"]);
 export type Peran = z.infer<typeof PeranSchema>;
 
 export const UserSchema = z.object({
-  id_user: z.number().int().positive(),
+  id_user: UserIdSchema,
   nama: z.string().min(1),
   email: z.email(),
   password: z.string().min(1),
@@ -29,7 +49,7 @@ export const StatusSistemSchema = z.enum(["tersedia", "segera"]);
 export const SistemOrganSchema = z.object({
   id_sistem: z.number().int().positive(),
   nama: z.string().min(1),
-  id_organ: z.number().int().positive().nullable(),
+  id_organ: OrganIdSchema.nullable(),
   status: StatusSistemSchema,
   organ: z.string().min(1),
   gambar: z.string().startsWith("/"),
@@ -40,7 +60,7 @@ export const FaktaSchema = z.object({ label: z.string().min(1), nilai: z.string(
 export type Fakta = z.infer<typeof FaktaSchema>;
 
 export const OrganSchema = z.object({
-  id_organ: z.number().int().positive(),
+  id_organ: OrganIdSchema,
   nama_organ: z.string().min(1),
   sistem_organ: z.string().min(1),
   julukan: z.string().min(1),
@@ -56,7 +76,7 @@ export type NamaLayer = z.infer<typeof NamaLayerSchema>;
 
 export const LayerSchema = z.object({
   id_layer: z.number().int().positive(),
-  id_organ: z.number().int().positive(),
+  id_organ: OrganIdSchema,
   nama_layer: NamaLayerSchema,
   label: z.string().min(1),
   urutan_tampil: z.number().int().min(1),
@@ -68,10 +88,10 @@ const POLA_KOORDINAT_3D = /^-?\d+(\.\d+)?,-?\d+(\.\d+)?,-?\d+(\.\d+)?$/;
 const POLA_KOORDINAT_2D = /^\d+(\.\d+)?,\d+(\.\d+)?$/;
 
 export const BodyPartSchema = z.object({
-  id_bagian: z.number().int().positive(),
-  id_organ: z.number().int().positive(),
+  id_bagian: BagianIdSchema,
+  id_organ: OrganIdSchema,
   nama_bagian_internal: z.string().min(1),
-  parent_bagian_id: z.number().int().positive().nullable(),
+  parent_bagian_id: BagianIdSchema.nullable(),
   posisi_koordinat_3d: z.string().regex(POLA_KOORDINAT_3D, "format harus x,y,z"),
   posisi_2d: z.string().regex(POLA_KOORDINAT_2D, "format harus x,y (persen)"),
   /* Pola nama node pada berkas .glb (boleh memakai *) yang membentuk bagian ini.
@@ -88,8 +108,8 @@ export const StatusValidasiSchema = z.enum(["draft", "tervalidasi"]);
 export type StatusValidasi = z.infer<typeof StatusValidasiSchema>;
 
 export const PartContentSchema = z.object({
-  id_konten: z.number().int().positive(),
-  id_bagian: z.number().int().positive(),
+  id_konten: KontenIdSchema,
+  id_bagian: BagianIdSchema,
   jenis_konten: JenisKontenSchema,
   judul_tampil: z.string().min(3),
   deskripsi: z.string().min(20),
@@ -101,9 +121,9 @@ export type PartContent = z.infer<typeof PartContentSchema>;
 /* ---------------- Entitas transaksional (server state) ----------------
    Waktu dikirim sebagai string ISO 8601 karena melewati JSON. */
 export const LearningHistorySchema = z.object({
-  id_riwayat: z.number().int().positive(),
-  id_user: z.number().int().positive(),
-  id_bagian: z.number().int().positive(),
+  id_riwayat: RiwayatIdSchema,
+  id_user: UserIdSchema,
+  id_bagian: BagianIdSchema,
   jenis_konten: JenisKontenSchema,
   waktu_akses: z.iso.datetime(),
   durasi: z.number().int().min(0).nullable(),
@@ -111,9 +131,9 @@ export const LearningHistorySchema = z.object({
 export type LearningHistory = z.infer<typeof LearningHistorySchema>;
 
 export const AiConversationSchema = z.object({
-  id_percakapan: z.number().int().positive(),
-  id_user: z.number().int().positive(),
-  id_bagian: z.number().int().positive().nullable(),
+  id_percakapan: PercakapanIdSchema,
+  id_user: UserIdSchema,
+  id_bagian: BagianIdSchema.nullable(),
   pertanyaan: z.string().min(1),
   jawaban: z.string().min(1),
   waktu: z.iso.datetime(),
@@ -122,9 +142,9 @@ export type AiConversation = z.infer<typeof AiConversationSchema>;
 
 export const StatusTindakLanjutSchema = z.enum(["baru", "ditindaklanjuti"]);
 export const LaporanKesalahanSchema = z.object({
-  id_laporan: z.number().int().positive(),
-  id_user: z.number().int().positive(),
-  id_konten: z.number().int().positive(),
+  id_laporan: LaporanIdSchema,
+  id_user: UserIdSchema,
+  id_konten: KontenIdSchema,
   deskripsi_laporan: z.string().min(10),
   status_tindak_lanjut: StatusTindakLanjutSchema,
   waktu: z.iso.datetime(),
@@ -139,7 +159,7 @@ export const LoginFormSchema = z.object({
 export type LoginForm = z.infer<typeof LoginFormSchema>;
 
 export const LaporanFormSchema = z.object({
-  id_konten: z.coerce.number().int().positive("Pilih label yang dilaporkan."),
+  id_konten: z.coerce.number().int().positive("Pilih label yang dilaporkan.").pipe(KontenIdSchema),
   deskripsi_laporan: z.string().trim().min(10, "Uraian minimal 10 karakter."),
 });
 export type LaporanForm = z.infer<typeof LaporanFormSchema>;
@@ -153,12 +173,12 @@ export type KontenForm = z.infer<typeof KontenFormSchema>;
 
 export const PertanyaanFormSchema = z.object({
   pertanyaan: z.string().trim().min(1, "Tulis pertanyaan terlebih dahulu.").max(500, "Pertanyaan terlalu panjang."),
-  id_bagian: z.number().int().positive().nullable(),
+  id_bagian: BagianIdSchema.nullable(),
 });
 export type PertanyaanForm = z.infer<typeof PertanyaanFormSchema>;
 
 export const CatatRiwayatSchema = z.object({
-  id_bagian: z.number().int().positive(),
+  id_bagian: BagianIdSchema,
   jenis_konten: JenisKontenSchema,
 });
 export type CatatRiwayatInput = z.infer<typeof CatatRiwayatSchema>;
@@ -171,3 +191,13 @@ export const OpsiSimulasiSchema = z.object({ simulasiGagal: z.boolean().optional
 export const RespGalatSchema = z.object({ pesan: z.string() });
 export const RespLoginSchema = z.object({ user: SesiUserSchema });
 export const RespOkSchema = z.object({ ok: z.literal(true) });
+
+/* ---------------- Utility Types ----------------
+   Tipe turunan dari entitas di atas, bukan definisi ulang, sehingga tetap
+   sinkron bila skema berubah. */
+/** Ringkasan organ untuk pemilih/kartu: hanya kolom yang ditampilkan. */
+export type OrganRingkas = Pick<Organ, "id_organ" | "nama_organ" | "gambar">;
+/** Perubahan konten oleh admin: sebagian kolom, semuanya opsional. */
+export type KontenPatch = Partial<Pick<PartContent, "judul_tampil" | "deskripsi" | "status_validasi">>;
+/** Data pengguna yang aman dibagikan ke klien (tanpa password) — padanan TS dari SesiUserSchema. */
+export type UserAman = Omit<User, "password">;

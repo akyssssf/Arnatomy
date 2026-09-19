@@ -14,8 +14,21 @@
    ========================================================================== */
 import "server-only";
 import { part_content_awal } from "./data";
-import type {
-  AiConversation, JenisKonten, KontenForm, LaporanKesalahan, LearningHistory, PartContent,
+import {
+  type AiConversation,
+  type BagianId,
+  type JenisKonten,
+  type KontenId,
+  type KontenPatch,
+  type LaporanId,
+  LaporanIdSchema,
+  type LaporanKesalahan,
+  type LearningHistory,
+  type PartContent,
+  PercakapanIdSchema,
+  type RiwayatId,
+  RiwayatIdSchema,
+  type UserId,
 } from "./schemas";
 
 interface Toko {
@@ -43,10 +56,11 @@ function toko(): Toko {
   return g[kunciGlobal];
 }
 
-function idBaru(): number {
+/** Id berikutnya, langsung "dimerek" lewat skema yang diminta. */
+function idBaru<T>(skema: { parse: (nilai: unknown) => T }): T {
   const t = toko();
   t.urutanId += 1;
-  return t.urutanId;
+  return skema.parse(t.urutanId);
 }
 
 /** Jeda buatan agar loading state terlihat (meniru latensi jaringan). */
@@ -58,13 +72,13 @@ export function jeda(ms: number): Promise<void> {
 export function semuaKonten(): PartContent[] {
   return toko().part_content.map((k) => ({ ...k }));
 }
-export function kontenById(idKonten: number): PartContent | null {
+export function kontenById(idKonten: KontenId): PartContent | null {
   return toko().part_content.find((k) => k.id_konten === idKonten) ?? null;
 }
-export function kontenBagian(idBagian: number, jenis: JenisKonten): PartContent | null {
+export function kontenBagian(idBagian: BagianId, jenis: JenisKonten): PartContent | null {
   return toko().part_content.find((k) => k.id_bagian === idBagian && k.jenis_konten === jenis) ?? null;
 }
-export function perbaruiKonten(idKonten: number, perubahan: KontenForm): PartContent | null {
+export function perbaruiKonten(idKonten: KontenId, perubahan: KontenPatch): PartContent | null {
   const konten = toko().part_content.find((k) => k.id_konten === idKonten);
   if (!konten) return null;
   Object.assign(konten, perubahan);
@@ -72,12 +86,14 @@ export function perbaruiKonten(idKonten: number, perubahan: KontenForm): PartCon
 }
 
 /* ---------------- learning_history (FR-14) ---------------- */
-export function riwayatUser(idUser: number): LearningHistory[] {
-  return toko().learning_history.filter((r) => r.id_user === idUser).map((r) => ({ ...r }));
+export function riwayatUser(idUser: UserId): LearningHistory[] {
+  return toko()
+    .learning_history.filter((r) => r.id_user === idUser)
+    .map((r) => ({ ...r }));
 }
-export function catatRiwayat(idUser: number, idBagian: number, jenis: JenisKonten): LearningHistory {
+export function catatRiwayat(idUser: UserId, idBagian: BagianId, jenis: JenisKonten): LearningHistory {
   const entri: LearningHistory = {
-    id_riwayat: idBaru(),
+    id_riwayat: idBaru(RiwayatIdSchema),
     id_user: idUser,
     id_bagian: idBagian,
     jenis_konten: jenis,
@@ -88,7 +104,7 @@ export function catatRiwayat(idUser: number, idBagian: number, jenis: JenisKonte
   return { ...entri };
 }
 /** Durasi dihitung di server dari waktu_akses sampai saat entri ditutup. */
-export function tutupRiwayat(idUser: number, idRiwayat: number): LearningHistory | null {
+export function tutupRiwayat(idUser: UserId, idRiwayat: RiwayatId): LearningHistory | null {
   const entri = toko().learning_history.find((r) => r.id_riwayat === idRiwayat && r.id_user === idUser);
   if (!entri) return null;
   if (entri.durasi === null) {
@@ -99,17 +115,21 @@ export function tutupRiwayat(idUser: number, idRiwayat: number): LearningHistory
 
 /** Rekap per bagian tubuh untuk halaman Riwayat & Beranda. */
 export interface RekapRiwayat {
-  id_bagian: number;
+  id_bagian: BagianId;
   jumlah: number;
   dimmedDibuka: boolean;
   terakhir: string;
   totalDurasi: number;
 }
-export function ringkasanRiwayat(idUser: number): RekapRiwayat[] {
+export function ringkasanRiwayat(idUser: UserId): RekapRiwayat[] {
   const peta = new Map<number, RekapRiwayat>();
   for (const r of riwayatUser(idUser)) {
     const baris = peta.get(r.id_bagian) ?? {
-      id_bagian: r.id_bagian, jumlah: 0, dimmedDibuka: false, terakhir: r.waktu_akses, totalDurasi: 0,
+      id_bagian: r.id_bagian,
+      jumlah: 0,
+      dimmedDibuka: false,
+      terakhir: r.waktu_akses,
+      totalDurasi: 0,
     };
     baris.jumlah += 1;
     if (r.jenis_konten === "dimmed") baris.dimmedDibuka = true;
@@ -121,14 +141,23 @@ export function ringkasanRiwayat(idUser: number): RekapRiwayat[] {
 }
 
 /* ---------------- ai_conversations (FR-08) ---------------- */
-export function percakapanUser(idUser: number): AiConversation[] {
-  return toko().ai_conversations.filter((p) => p.id_user === idUser).map((p) => ({ ...p }));
+export function percakapanUser(idUser: UserId): AiConversation[] {
+  return toko()
+    .ai_conversations.filter((p) => p.id_user === idUser)
+    .map((p) => ({ ...p }));
 }
 export function tambahPercakapan(
-  idUser: number, idBagian: number | null, pertanyaan: string, jawaban: string,
+  idUser: UserId,
+  idBagian: BagianId | null,
+  pertanyaan: string,
+  jawaban: string,
 ): AiConversation {
   const entri: AiConversation = {
-    id_percakapan: idBaru(), id_user: idUser, id_bagian: idBagian, pertanyaan, jawaban,
+    id_percakapan: idBaru(PercakapanIdSchema),
+    id_user: idUser,
+    id_bagian: idBagian,
+    pertanyaan,
+    jawaban,
     waktu: new Date().toISOString(),
   };
   toko().ai_conversations.push(entri);
@@ -139,15 +168,19 @@ export function tambahPercakapan(
 export function semuaLaporan(): LaporanKesalahan[] {
   return toko().laporan_kesalahan.map((l) => ({ ...l }));
 }
-export function tambahLaporan(idUser: number, idKonten: number, deskripsi: string): LaporanKesalahan {
+export function tambahLaporan(idUser: UserId, idKonten: KontenId, deskripsi: string): LaporanKesalahan {
   const entri: LaporanKesalahan = {
-    id_laporan: idBaru(), id_user: idUser, id_konten: idKonten, deskripsi_laporan: deskripsi,
-    status_tindak_lanjut: "baru", waktu: new Date().toISOString(),
+    id_laporan: idBaru(LaporanIdSchema),
+    id_user: idUser,
+    id_konten: idKonten,
+    deskripsi_laporan: deskripsi,
+    status_tindak_lanjut: "baru",
+    waktu: new Date().toISOString(),
   };
   toko().laporan_kesalahan.unshift(entri);
   return { ...entri };
 }
-export function tindakLanjutiLaporan(idLaporan: number): LaporanKesalahan | null {
+export function tindakLanjutiLaporan(idLaporan: LaporanId): LaporanKesalahan | null {
   const laporan = toko().laporan_kesalahan.find((l) => l.id_laporan === idLaporan);
   if (!laporan) return null;
   laporan.status_tindak_lanjut = "ditindaklanjuti";
@@ -156,7 +189,7 @@ export function tindakLanjutiLaporan(idLaporan: number): LaporanKesalahan | null
 
 /* ---------------- Sesi ---------------- */
 /** Saat keluar, data belajar pribadi pengguna dibuang (seperti versi lama). */
-export function bersihkanDataUser(idUser: number): void {
+export function bersihkanDataUser(idUser: UserId): void {
   const t = toko();
   t.learning_history = t.learning_history.filter((r) => r.id_user !== idUser);
   t.ai_conversations = t.ai_conversations.filter((p) => p.id_user !== idUser);
