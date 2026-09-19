@@ -17,6 +17,7 @@ import "server-only";
 import { statSync } from "node:fs";
 import { join } from "node:path";
 import { organs, part_content_awal, users } from "./data";
+import { daftarkanToko, jadwalkanSimpan } from "./persist";
 import { cekSandi, hashSandi } from "./sandi";
 import {
   type AiConversation,
@@ -96,6 +97,69 @@ function toko(): Toko {
   return t;
 }
 
+/** Dipanggil setelah setiap mutasi: snapshot dijadwalkan bila persistensi aktif. */
+function berubah(): void {
+  jadwalkanSimpan();
+}
+
+/* ---------------- Serialisasi untuk lib/persist.ts ----------------
+   Uint8Array model unggahan menjadi base64 (hanya adapter berkas). */
+interface Snapshot {
+  part_content: PartContent[];
+  learning_history: LearningHistory[];
+  ai_conversations: AiConversation[];
+  laporan_kesalahan: LaporanKesalahan[];
+  umpan_balik: UmpanBalik[];
+  akun: AkunTersimpan[] | null;
+  aset_model: [number, { nama_berkas: string; versi: number; waktu: string; bytes_b64: string | null }][];
+  urutanId: number;
+}
+daftarkanToko({
+  serialisasi(denganBytes) {
+    const t = toko();
+    const snap: Snapshot = {
+      part_content: t.part_content,
+      learning_history: t.learning_history,
+      ai_conversations: t.ai_conversations,
+      laporan_kesalahan: t.laporan_kesalahan,
+      umpan_balik: t.umpan_balik,
+      akun: t.akun,
+      aset_model: [...t.aset_model.entries()].map(([id, a]) => [
+        id,
+        {
+          nama_berkas: a.nama_berkas,
+          versi: a.versi,
+          waktu: a.waktu,
+          bytes_b64: denganBytes ? Buffer.from(a.bytes).toString("base64") : null,
+        },
+      ]),
+      urutanId: t.urutanId,
+    };
+    return snap;
+  },
+  pulihkan(mentah) {
+    const snap = mentah as Partial<Snapshot>;
+    const t = toko();
+    if (Array.isArray(snap.part_content)) t.part_content = snap.part_content;
+    if (Array.isArray(snap.learning_history)) t.learning_history = snap.learning_history;
+    if (Array.isArray(snap.ai_conversations)) t.ai_conversations = snap.ai_conversations;
+    if (Array.isArray(snap.laporan_kesalahan)) t.laporan_kesalahan = snap.laporan_kesalahan;
+    if (Array.isArray(snap.umpan_balik)) t.umpan_balik = snap.umpan_balik;
+    if (Array.isArray(snap.akun)) {
+      t.akun = snap.akun;
+      t.akunSiap = Promise.resolve(snap.akun);
+    }
+    if (Array.isArray(snap.aset_model)) {
+      t.aset_model = new Map(
+        snap.aset_model.flatMap(([id, a]) =>
+          a.bytes_b64 ? [[id, { ...a, bytes: new Uint8Array(Buffer.from(a.bytes_b64, "base64")) }] as const] : [],
+        ),
+      );
+    }
+    if (typeof snap.urutanId === "number") t.urutanId = Math.max(t.urutanId, snap.urutanId);
+  },
+});
+
 /** Id berikutnya, langsung "dimerek" lewat skema yang diminta. */
 function idBaru<T>(skema: { parse: (nilai: unknown) => T }): T {
   const t = toko();
@@ -122,6 +186,7 @@ export function perbaruiKonten(idKonten: KontenId, perubahan: KontenPatch): Part
   const konten = toko().part_content.find((k) => k.id_konten === idKonten);
   if (!konten) return null;
   Object.assign(konten, perubahan);
+  berubah();
   return { ...konten };
 }
 
@@ -141,6 +206,7 @@ export function catatRiwayat(idUser: UserId, idBagian: BagianId, jenis: JenisKon
     durasi: null,
   };
   toko().learning_history.push(entri);
+  berubah();
   return { ...entri };
 }
 /** Durasi dihitung di server dari waktu_akses sampai saat entri ditutup. */
@@ -149,6 +215,7 @@ export function tutupRiwayat(idUser: UserId, idRiwayat: RiwayatId): LearningHist
   if (!entri) return null;
   if (entri.durasi === null) {
     entri.durasi = Math.max(1, Math.round((Date.now() - new Date(entri.waktu_akses).getTime()) / 1000));
+    berubah();
   }
   return { ...entri };
 }
@@ -201,6 +268,7 @@ export function tambahPercakapan(
     waktu: new Date().toISOString(),
   };
   toko().ai_conversations.push(entri);
+  berubah();
   return { ...entri };
 }
 
@@ -218,12 +286,14 @@ export function tambahLaporan(idUser: UserId, idKonten: KontenId, deskripsi: str
     waktu: new Date().toISOString(),
   };
   toko().laporan_kesalahan.unshift(entri);
+  berubah();
   return { ...entri };
 }
 export function tindakLanjutiLaporan(idLaporan: LaporanId): LaporanKesalahan | null {
   const laporan = toko().laporan_kesalahan.find((l) => l.id_laporan === idLaporan);
   if (!laporan) return null;
   laporan.status_tindak_lanjut = "ditindaklanjuti";
+  berubah();
   return { ...laporan };
 }
 
@@ -254,6 +324,7 @@ export function tambahUmpanBalik(idUser: UserId, jawaban: number[], komentar: st
   const t = toko();
   t.umpan_balik = t.umpan_balik.filter((u) => u.id_user !== idUser);
   t.umpan_balik.unshift(entri);
+  berubah();
   return { ...entri, jawaban: [...entri.jawaban] };
 }
 
@@ -324,6 +395,7 @@ export async function daftarkanAkun(input: DaftarForm): Promise<SesiUser | null>
     sandi_hash: await hashSandi(input.password),
   };
   semua.push(akun);
+  berubah();
   return keSesi(akun);
 }
 
@@ -332,6 +404,7 @@ export async function setAkunAktif(idUser: UserId, aktif: boolean): Promise<Akun
   const akun = (await daftarAkun()).find((a) => a.id_user === idUser);
   if (!akun) return null;
   akun.aktif = aktif;
+  berubah();
   return keAkun(akun);
 }
 /** FR-13: admin menambah akun (peran apa pun); null bila email sudah terpakai. */
@@ -348,6 +421,7 @@ export async function tambahAkunAdmin(input: AkunBuat): Promise<Akun | null> {
     sandi_hash: await hashSandi(input.password),
   };
   semua.push(akun);
+  berubah();
   return keAkun(akun);
 }
 export type HasilPerbarui = { status: "ok"; akun: Akun } | { status: "tidak-ada" } | { status: "email-ganda" };
@@ -366,6 +440,7 @@ export async function perbaruiAkun(idUser: UserId, perubahan: AkunPatch): Promis
   if (perubahan.asal_sekolah !== undefined) akun.asal_sekolah = perubahan.asal_sekolah;
   if (perubahan.aktif !== undefined) akun.aktif = perubahan.aktif;
   if (perubahan.password) akun.sandi_hash = await hashSandi(perubahan.password);
+  berubah();
   return { status: "ok", akun: keAkun(akun) };
 }
 /** FR-13: hapus akun beserta data belajarnya. */
@@ -377,6 +452,7 @@ export async function hapusAkun(idUser: UserId): Promise<boolean> {
   semua.splice(indeks, 1);
   bersihkanDataUser(idUser);
   t.umpan_balik = t.umpan_balik.filter((u) => u.id_user !== idUser);
+  berubah();
   return true;
 }
 
@@ -429,11 +505,14 @@ export function simpanAset(idOrgan: OrganId, namaBerkas: string, bytes: Uint8Arr
   const t = toko();
   const versi = (t.aset_model.get(idOrgan)?.versi ?? 0) + 1;
   t.aset_model.set(idOrgan, { nama_berkas: namaBerkas, bytes, versi, waktu: new Date().toISOString() });
+  berubah();
   return asetOrgan(idOrgan);
 }
 /** Menghapus unggahan sehingga organ kembali ke model bawaan; false bila tidak ada unggahan. */
 export function hapusAset(idOrgan: OrganId): boolean {
-  return toko().aset_model.delete(idOrgan);
+  const dihapus = toko().aset_model.delete(idOrgan);
+  if (dihapus) berubah();
+  return dihapus;
 }
 export function bytesAset(idOrgan: OrganId, versi: number): Uint8Array | null {
   const u = toko().aset_model.get(idOrgan);
@@ -446,4 +525,5 @@ export function bersihkanDataUser(idUser: UserId): void {
   const t = toko();
   t.learning_history = t.learning_history.filter((r) => r.id_user !== idUser);
   t.ai_conversations = t.ai_conversations.filter((p) => p.id_user !== idUser);
+  berubah();
 }

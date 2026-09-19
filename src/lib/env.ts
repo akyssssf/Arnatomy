@@ -15,6 +15,14 @@ const EnvServerSchema = z.object({
     .min(32, "SESSION_SECRET minimal 32 karakter (lihat .env.example).")
     .default("arnatomy-dev-secret-jangan-dipakai-di-produksi-0123456789"),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  /* Opsional: bila diisi, Asisten AI (FR-08) memakai LLM lewat BFF; tanpa
+     kunci, jawaban disusun dari basis pengetahuan lokal. Tidak pernah ke klien. */
+  ANTHROPIC_API_KEY: z.string().min(1).optional(),
+  AI_MODEL: z.string().min(1).default("claude-haiku-4-5-20251001"),
+  /* Opsional: persistensi snapshot basis data mock (lihat lib/persist.ts) */
+  DATA_DIR: z.string().min(1).optional(),
+  KV_REST_API_URL: z.url().optional(),
+  KV_REST_API_TOKEN: z.string().min(1).optional(),
 });
 
 const EnvPublicSchema = z.object({
@@ -40,7 +48,15 @@ export function envServer(): z.infer<typeof EnvServerSchema> {
   if (process.env.NODE_ENV === "production" && !rahasia) {
     throw new Error("SESSION_SECRET wajib diatur di lingkungan produksi.");
   }
-  const hasil = EnvServerSchema.parse({ SESSION_SECRET: rahasia, NODE_ENV: process.env.NODE_ENV || undefined });
+  const hasil = EnvServerSchema.parse({
+    SESSION_SECRET: rahasia,
+    NODE_ENV: process.env.NODE_ENV || undefined,
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || undefined,
+    AI_MODEL: process.env.AI_MODEL || undefined,
+    DATA_DIR: process.env.DATA_DIR || undefined,
+    KV_REST_API_URL: process.env.KV_REST_API_URL || undefined,
+    KV_REST_API_TOKEN: process.env.KV_REST_API_TOKEN || undefined,
+  });
   cacheServer = hasil;
   return hasil;
 }

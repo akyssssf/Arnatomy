@@ -6,7 +6,8 @@
    keyboard. Data organ/bagian/layer/konten diterima sebagai props dari
    Server Component (eksplorasi/page.tsx).
 
-   Mencakup FR-03 (model 3D), FR-04 (rotasi & zoom), FR-05 (toggle layer,
+   Mencakup FR-03 (model 3D + mode AR: WebXR immersive-ar bila didukung,
+   selain itu umpan kamera belakang di balik kanvas), FR-04 (rotasi & zoom), FR-05 (toggle layer,
    aria-pressed + aria-live), FR-06/FR-07 (label dasar & dimmed di panel),
    FR-09 (laporan), FR-14 (riwayat tercatat otomatis lewat mutasi).
 
@@ -25,18 +26,23 @@ import { koordinat2d, koordinat3d } from "@/lib/data";
 import type { BagianId, BodyPart, Layer, NamaLayer, Organ, PartContent, RiwayatId } from "@/lib/schemas";
 import { toggleLayer as kelasToggle, tombol } from "@/lib/variants";
 import { useUIStore } from "@/store/useUIStore";
-import type { Penampil } from "@/three/viewer3d";
+import { dukungWebXR, type Penampil } from "@/three/viewer3d";
 import { FormLaporan } from "./FormLaporan";
 import { PanelBagian, PanelDaftar } from "./PanelPenjelasan";
 
 type StatusPenampil = { mode: "memuat"; teks: string } | { mode: "siap" } | { mode: "cadangan"; alasan: string };
 
-const ALAT: { aksi: "reset" | "zoom-in" | "zoom-out" | "putar"; label: string; ikon: NamaIkon }[] = [
+const ALAT: { aksi: "reset" | "zoom-in" | "zoom-out" | "putar" | "ar"; label: string; ikon: NamaIkon }[] = [
   { aksi: "reset", label: "Atur ulang tampilan", ikon: "ulang" },
   { aksi: "zoom-in", label: "Perbesar", ikon: "perbesar" },
   { aksi: "zoom-out", label: "Perkecil", ikon: "perkecil" },
   { aksi: "putar", label: "Putar otomatis", ikon: "putar" },
+  { aksi: "ar", label: "Mode AR (kamera)", ikon: "kamera" },
 ];
+
+/* FR-03: mode AR. "xr" = sesi WebXR immersive-ar (ARCore/ARKit lewat peramban);
+   "kamera" = umpan kamera belakang di balik kanvas 3D (peramban tanpa WebXR). */
+type ModeAR = "mati" | "xr" | "kamera";
 
 export function PenampilOrgan({
   organ,
@@ -76,6 +82,9 @@ export function PenampilOrgan({
   const [status, setStatus] = useState<StatusPenampil>({ mode: "memuat", teks: "Menyiapkan penampil 3D" });
   const [statusLayer, setStatusLayer] = useState("");
   const [laporUntuk, setLaporUntuk] = useState<BodyPart | null>(null);
+  const [modeAR, setModeAR] = useState<ModeAR>("mati");
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const aliranKamera = useRef<MediaStream | null>(null);
 
   const wadah3d = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLElement>(null);
@@ -253,10 +262,76 @@ export function PenampilOrgan({
     return () => document.removeEventListener("keydown", saatTombol);
   });
 
+  /* ---------- FR-03: mode AR ---------- */
+  function hentikanKamera() {
+    for (const jalur of aliranKamera.current?.getTracks() ?? []) jalur.stop();
+    aliranKamera.current = null;
+    if (videoRef.current) videoRef.current.srcObject = null;
+  }
+  async function keluarAR() {
+    if (modeAR === "xr") await penampil.current?.hentikanAR();
+    hentikanKamera();
+    setModeAR("mati");
+  }
+  async function masukAR() {
+    const instans = penampil.current;
+    if (!instans) return;
+    if (await dukungWebXR()) {
+      try {
+        /* sesi bisa diakhiri dari gestur sistem: state ikut kembali ke "mati" */
+        await instans.mulaiAR(() => setModeAR("mati"));
+        setModeAR("xr");
+        tampilkanToast("Mode AR aktif. Arahkan kamera ke permukaan datar.", "info");
+        return;
+      } catch (kesalahan) {
+        tampilkanToast(
+          `WebXR gagal (${kesalahan instanceof Error ? kesalahan.message : "galat"}); memakai kamera biasa.`,
+          "info",
+        );
+      }
+    }
+    try {
+      const aliran = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+        audio: false,
+      });
+      aliranKamera.current = aliran;
+      setModeAR("kamera");
+      /* video dipasang setelah render berikutnya menampilkan elemennya */
+      requestAnimationFrame(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = aliran;
+          void videoRef.current.play().catch(() => undefined);
+        }
+      });
+      setPutarOtomatis(false);
+      tampilkanToast("Mode AR kamera: seret untuk memutar model di atas tampilan kamera.", "info");
+    } catch (kesalahan) {
+      const ditolak = kesalahan instanceof DOMException && kesalahan.name === "NotAllowedError";
+      tampilkanToast(
+        ditolak
+          ? "Izin kamera ditolak. Mode AR memerlukan akses kamera."
+          : "Kamera tidak tersedia di perangkat ini; mode AR tetap disimulasikan dengan model 3D.",
+        "error",
+      );
+    }
+  }
+  /* Kamera dilepas saat komponen dibongkar (pindah organ/halaman) */
+  useEffect(() => hentikanKamera, []);
+
   /* ---------- FR-04: alat kamera ---------- */
   function jalankanAlat(aksi: (typeof ALAT)[number]["aksi"]) {
     if (!mode3d || !penampil.current) {
-      tampilkanToast("Kendali 3D tidak tersedia pada gambar cadangan.", "info");
+      tampilkanToast(
+        aksi === "ar"
+          ? "Mode AR memerlukan model 3D; gambar cadangan tidak mendukungnya."
+          : "Kendali 3D tidak tersedia pada gambar cadangan.",
+        "info",
+      );
+      return;
+    }
+    if (aksi === "ar") {
+      void (modeAR === "mati" ? masukAR() : keluarAR());
       return;
     }
     if (aksi === "reset") {
@@ -318,9 +393,21 @@ export function PenampilOrgan({
       </div>
 
       <figure className="m-0 mt-5">
-        <div className="relative overflow-hidden rounded-3xl bg-abu">
+        <div className={`relative overflow-hidden rounded-3xl ${modeAR === "kamera" ? "bg-black" : "bg-abu"}`}>
           <div className="relative h-[min(78vh,52rem)] min-h-[26rem] w-full">
-            <span className="piringan-organ" aria-hidden="true" style={{ width: "min(64%, 34rem)" }} />
+            {modeAR === "kamera" ? (
+              /* Umpan kamera belakang di balik kanvas 3D (kanvas WebGL bersifat alpha) */
+              <video
+                ref={videoRef}
+                autoPlay
+                muted
+                playsInline
+                aria-label="Tampilan kamera perangkat"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            ) : (
+              <span className="piringan-organ" aria-hidden="true" style={{ width: "min(64%, 34rem)" }} />
+            )}
 
             {/* Kanvas 3D; klik singkat (bukan seretan) menutup panel */}
             <div
@@ -391,9 +478,25 @@ export function PenampilOrgan({
               ))}
             </div>
 
-            <p className="mikro kaca pointer-events-none absolute right-4 top-4 hidden rounded-full px-3 py-1.5 sm:block">
-              Seret untuk memutar &middot; Ctrl + gulir untuk zoom
-            </p>
+            {modeAR === "mati" ? (
+              <p className="mikro kaca pointer-events-none absolute right-4 top-4 hidden rounded-full px-3 py-1.5 sm:block">
+                Seret untuk memutar &middot; Ctrl + gulir untuk zoom
+              </p>
+            ) : (
+              <div
+                role="status"
+                className="kaca absolute right-4 top-4 z-10 flex items-center gap-2 rounded-full py-1 pl-3 pr-1"
+              >
+                <span className="mikro">{modeAR === "xr" ? "Mode AR (WebXR)" : "Mode AR (kamera)"}</span>
+                <button
+                  type="button"
+                  onClick={() => void keluarAR()}
+                  className={tombol({ variant: "sekunder", ukuran: "sm" })}
+                >
+                  Keluar AR
+                </button>
+              </div>
+            )}
 
             {/* FR-05: bilah layer; organ dalam selalu tampil */}
             <section

@@ -52,7 +52,21 @@ export interface Penampil {
   sorotTitik: (idTitik: number | null) => void;
   /** Geser tampilan (px) agar model tidak tertutup panel; 0,0 = kembali. */
   geserTampilan: (px: number, py: number) => void;
+  /** FR-03: sesi WebXR immersive-ar (ARCore/ARKit lewat peramban); menolak bila tidak didukung. */
+  mulaiAR: (saatSelesai?: () => void) => Promise<void>;
+  hentikanAR: () => Promise<void>;
   bersihkan: () => void;
+}
+
+/** Benar bila peramban mendukung WebXR immersive-ar (Chrome Android/ARCore, Quest, dll.). */
+export async function dukungWebXR(): Promise<boolean> {
+  const xr = (navigator as Navigator & { xr?: { isSessionSupported: (m: string) => Promise<boolean> } }).xr;
+  if (!xr) return false;
+  try {
+    return await xr.isSessionSupported("immersive-ar");
+  } catch {
+    return false;
+  }
 }
 
 const POSISI_KAMERA_AWAL = new THREE.Vector3(0, 0.12, 1.85);
@@ -504,6 +518,11 @@ export async function buatPenampil(opsi: OpsiPenampil): Promise<Penampil> {
       terapkanGeser();
       perluGambar = true;
     }
+    if (renderer.xr.isPresenting) {
+      /* Dalam sesi XR kamera dikelola perangkat: gambar setiap frame, titik HTML tidak diposisikan */
+      renderer.render(scene, camera);
+      return;
+    }
     const kameraBergerak = controls.update();
     if (!perluGambar && !kameraBergerak && !controls.autoRotate) return;
     perluGambar = false;
@@ -511,6 +530,52 @@ export async function buatPenampil(opsi: OpsiPenampil): Promise<Penampil> {
     perbaruiTitik();
   }
   renderer.setAnimationLoop(gambar);
+
+  /* ---------- FR-03: WebXR immersive-ar ----------
+     Model ditempatkan ~1,2 m di depan pengguna pada ruang referensi "local";
+     kendali orbit dimatikan selama sesi dan transformasi panggung dipulihkan
+     saat sesi berakhir (tombol keluar atau gestur sistem). */
+  let sesiXR: XRSession | null = null;
+  const transformAwal = { posisi: panggung.position.clone(), skala: panggung.scale.clone() };
+  function pulihkanSetelahXR() {
+    sesiXR = null;
+    renderer.xr.enabled = false;
+    panggung.position.copy(transformAwal.posisi);
+    panggung.scale.copy(transformAwal.skala);
+    controls.enabled = true;
+    renderer.setSize(lebar, tinggi);
+    camera.aspect = lebar / tinggi;
+    camera.updateProjectionMatrix();
+    mintaGambar();
+  }
+  async function mulaiAR(saatSelesai?: () => void) {
+    const xr = (navigator as Navigator & { xr?: XRSystem }).xr;
+    if (!xr || !(await dukungWebXR())) throw new Error("WebXR immersive-ar tidak didukung peramban ini.");
+    const sesi = await xr.requestSession("immersive-ar", {
+      optionalFeatures: ["dom-overlay", "local-floor"],
+      domOverlay: { root: wadah },
+    });
+    sesiXR = sesi;
+    renderer.xr.enabled = true;
+    renderer.xr.setReferenceSpaceType("local");
+    await renderer.xr.setSession(sesi);
+    controls.enabled = false;
+    controls.autoRotate = false;
+    panggung.position.set(0, -0.05, -1.2);
+    panggung.scale.setScalar(0.35);
+    sesi.addEventListener(
+      "end",
+      () => {
+        pulihkanSetelahXR();
+        saatSelesai?.();
+      },
+      { once: true },
+    );
+  }
+  async function hentikanAR() {
+    if (!sesiXR) return;
+    await sesiXR.end().catch(() => undefined);
+  }
 
   const pengamat = new ResizeObserver(() => {
     lebar = wadah.clientWidth || 1;
@@ -636,9 +701,12 @@ export async function buatPenampil(opsi: OpsiPenampil): Promise<Penampil> {
       geserTujuan.y = py;
       perluGambar = true;
     },
+    mulaiAR,
+    hentikanAR,
     bersihkan() {
       if (sudahDibersihkan) return;
       sudahDibersihkan = true;
+      void hentikanAR();
       renderer.setAnimationLoop(null);
       pengamat.disconnect();
       pengamatTampak.disconnect();

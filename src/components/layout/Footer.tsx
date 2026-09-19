@@ -11,7 +11,7 @@ export function Footer() {
         >
           HuBMAP Human Reference Atlas
         </a>
-        , CC BY 4.0 &middot; Mode AR disimulasikan tanpa kamera &middot; D3 Teknik Informatika
+        , CC BY 4.0 &middot; Mode AR: WebXR (ARCore/ARKit) atau kamera perangkat &middot; D3 Teknik Informatika
       </p>
     </footer>
   );

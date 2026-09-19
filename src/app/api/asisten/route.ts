@@ -1,10 +1,13 @@
 /* GET  /api/asisten — riwayat percakapan pengguna aktif
-   POST /api/asisten — kirim pertanyaan; `simulasiGagal` memaksa 503 (FR-08, TC-07) */
+   POST /api/asisten — kirim pertanyaan; `simulasiGagal` memaksa 503 (FR-08, TC-07).
+   Jawaban: LLM lewat BFF (lib/llm.ts) bila ANTHROPIC_API_KEY diatur, selain itu
+   penyusun jawaban lokal (lib/asisten.ts). Kunci API tidak pernah ke klien. */
 import { NextResponse } from "next/server";
 import { bacaBody, galat, wajibSesi } from "@/lib/api-util";
 import { susunJawaban } from "@/lib/asisten";
 import { bagianById } from "@/lib/data";
 import { jeda, percakapanUser, tambahPercakapan } from "@/lib/db";
+import { jawabDenganLlm } from "@/lib/llm";
 import { OpsiSimulasiSchema, PertanyaanFormSchema } from "@/lib/schemas";
 
 export async function GET() {
@@ -20,11 +23,15 @@ export async function POST(request: Request) {
   const body = await bacaBody(request, PertanyaanFormSchema.extend(OpsiSimulasiSchema.shape));
   if (!body.ok) return body.respons;
 
-  await jeda(900); // "asisten sedang mengetik"
-  if (body.data.simulasiGagal) return galat("simulasi kegagalan koneksi ke layanan asisten AI.", 503);
+  if (body.data.simulasiGagal) {
+    await jeda(900);
+    return galat("simulasi kegagalan koneksi ke layanan asisten AI.", 503);
+  }
 
   const bagian = bagianById(body.data.id_bagian);
-  const jawaban = susunJawaban(body.data.pertanyaan, bagian);
+  const dariLlm = await jawabDenganLlm(body.data.pertanyaan, bagian);
+  if (!dariLlm) await jeda(900); // "asisten sedang mengetik" untuk jawaban lokal
+  const jawaban = dariLlm ?? susunJawaban(body.data.pertanyaan, bagian);
   return NextResponse.json(
     tambahPercakapan(auth.sesi.id_user, bagian?.id_bagian ?? null, body.data.pertanyaan, jawaban),
     { status: 201 },

@@ -49,7 +49,7 @@ Route Handler mock dengan jeda buatan.
 | `npm run lint:biome` / `npm run format` | lint + format dengan Biome (Rust) |
 | `npm run lint` | ESLint (aturan Next + React Compiler) |
 | `npm run typecheck` | `tsc --noEmit` (strict) |
-| `npm test` / `npm run test:coverage` | Vitest (90 uji) + laporan coverage lcov untuk Sonar |
+| `npm test` / `npm run test:coverage` | Vitest (96 uji) + laporan coverage lcov untuk Sonar |
 | `npm run build` | build produksi Next.js (Turbopack) |
 
 ### Akun demo
@@ -70,8 +70,8 @@ Login yang gagal 5× untuk satu email+IP diblokir 10 menit (HTTP 429).
 | `/` | publik | landing |
 | `/login`, `/daftar` | tamu (sudah masuk → dialihkan) | masuk (FR-01), registrasi (FR-02) |
 | `/beranda` | masuk | dashboard belajar |
-| `/eksplorasi?organ=<id>` | masuk | penampil 3D; id tak dikenal → `not-found.tsx` (app) |
-| `/asisten` | masuk | asisten AI (FR-08) |
+| `/eksplorasi?organ=<id>` | masuk | penampil 3D + mode AR (WebXR `immersive-ar` → ARCore/ARKit; cadangan umpan kamera); id tak dikenal → `not-found.tsx` (app) |
+| `/asisten` | masuk | asisten AI (FR-08): LLM lewat BFF bila `ANTHROPIC_API_KEY` diatur, selain itu basis pengetahuan lokal |
 | `/riwayat` | masuk | riwayat belajar (FR-14) |
 | `/umpan-balik` | masuk | kuesioner SUS (FR-15) |
 | `/admin` | admin | konten label (FR-10), laporan (FR-11), pengguna: tambah/ubah/nonaktifkan/hapus (FR-13), aset model 3D: unggah/ganti/kembalikan (FR-12), umpan balik (FR-15) |
@@ -90,6 +90,7 @@ arnatomy-next/
 │   └── img/             render statis organ (webp transparan)
 ├── src/
 │   ├── proxy.ts         proteksi rute (cookie sesi HMAC -> redirect) + CSP ber-nonce — Next 16: pengganti middleware.ts
+│   ├── instrumentation.ts  register(): memuat snapshot persistensi saat server mulai
 │   ├── __tests__/       unit test Vitest (lib, store, hooks, route handler, proxy, sandi, pembatas)
 │   ├── test/            setup Vitest + stub server-only
 │   ├── app/
@@ -154,6 +155,8 @@ arnatomy-next/
 │   │   │                percakapan, laporan, umpan balik SUS, akun (seed di-hash + registrasi + CRUD admin),
 │   │   │                aset model 3D unggahan (byte di memori, berversi)
 │   │   ├── sandi.ts     hash & verifikasi kata sandi PBKDF2-SHA256 (Web Crypto, waktu konstan)
+│   │   ├── llm.ts       jembatan BFF ke Claude (kunci hanya di server; null -> cadangan lokal)
+│   │   ├── persist.ts   snapshot toko: Upstash/Vercel KV (REST) atau berkas JSON DATA_DIR; debounce
 │   │   ├── pembatas.ts  pembatas laju percobaan login (5 gagal / 10 menit per email+IP)
 │   │   ├── sus.ts       10 pernyataan SUS, skala Likert, predikat skor
 │   │   ├── mock-api.ts  fungsi fetch klien: timeout, galat terbaca, respons diparse Zod
@@ -221,8 +224,9 @@ mengirimnya lewat `<HydrationBoundary>`, jadi `useQuery` di klien langsung teris
   `frame-ancestors 'none'`) dipasang `src/proxy.ts` dan diteruskan ke Next lewat header `x-nonce`;
   header `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`,
   `HSTS` dari `next.config.ts`. XSS: React meng-escape semua teks; tidak ada `dangerouslySetInnerHTML`.
-- **Isolasi env**: `src/lib/env.ts` memvalidasi `SESSION_SECRET` (server, tanpa awalan
-  `NEXT_PUBLIC_`) dan `NEXT_PUBLIC_APP_NAME` (publik) dengan Zod; modul server memakai `server-only`.
+- **Isolasi env**: `src/lib/env.ts` memvalidasi `SESSION_SECRET`, `ANTHROPIC_API_KEY`, `KV_REST_API_*`,
+  `DATA_DIR` (server, tanpa awalan `NEXT_PUBLIC_`) dan `NEXT_PUBLIC_*` (publik) dengan Zod; modul server
+  memakai `server-only`. Panggilan LLM terjadi di Route Handler (`lib/llm.ts`), kunci tidak pernah ke klien.
 - `src/proxy.ts` (Next.js 16 mengganti nama `middleware.ts` menjadi `proxy.ts`; API sama:
   `NextRequest`, cookie, `matcher`, `NextResponse.redirect`) berjalan sebelum render:
   rute terproteksi tanpa cookie → `/login?auth_error=1&next=…`; non-admin ke `/admin` →
@@ -258,6 +262,20 @@ dengan `refine` konfirmasi sandi, `LaporanFormSchema`, `KontenFormSchema`, `Pert
   GitHub → langkah Sonar aktif otomatis pada push berikutnya.
 - **Deploy Vercel:** import repo di vercel.com → Production Branch `nextjs` → Environment Variable
   `SESSION_SECRET` (≥ 32 karakter acak) → Deploy. Tulis URL-nya di bagian atas README ini.
+
+## Persistensi & skalabilitas (NFR-04, NFR-05)
+
+Basis data mock hidup di memori proses, dan secara opsional di-snapshot setelah tiap mutasi
+(`lib/persist.ts`, debounce 400 ms) lalu dimuat ulang saat server mulai (`instrumentation.ts`):
+
+| Env | Adapter | Cocok untuk |
+|---|---|---|
+| `KV_REST_API_URL` + `KV_REST_API_TOKEN` | Upstash / Vercel KV lewat REST (byte model 3D tidak ikut) | Vercel/serverless |
+| `DATA_DIR=.data` | berkas `arnatomy-db.json` (termasuk model unggahan, base64) | self-host / VPS / dev |
+| kosong | memori saja | uji cepat |
+
+Kata sandi hanya tersimpan sebagai hash. Halaman publik statis/RSC di-cache edge Vercel; 40 pengguna
+bersamaan (NFR-05) hanya menyentuh Route Handler ringan + snapshot KV.
 
 ## Core Web Vitals
 
@@ -299,6 +317,11 @@ tercatat pada paint pertama; TanStack Query hanya dimuat di segmen `(app)`.
 - **Brute force**: 5× kata sandi salah → percobaan ke-6 dibalas 429 dengan pesan sisa waktu.
 - **Unggah model**: tab Aset 3D → pilih berkas non-.glb / >15 MB (ditolak di klien) atau .glb palsu tanpa
   magic bytes `glTF` (ditolak server 400); unggah yang sah langsung mengganti model di `/eksplorasi`.
+- **Mode AR**: tombol kamera di `/eksplorasi`. Android Chrome → sesi WebXR (model ±1,2 m di depan pengguna,
+  keluar lewat "Keluar AR"/gestur sistem); peramban lain → umpan kamera belakang di balik kanvas; izin
+  ditolak → pesan galat, model 3D tetap dipakai.
+- **LLM tak tersedia**: kunci salah / jaringan putus / batas waktu 12 s → jawaban lokal dipakai diam-diam
+  (`lib/llm.ts` mengembalikan null), pengguna tetap mendapat jawaban.
 
 ## Aksesibilitas (dipertahankan dari versi vanilla)
 
