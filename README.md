@@ -8,7 +8,7 @@
 [![CI](https://github.com/akyssssf/Arnatomy/actions/workflows/ci.yml/badge.svg?branch=nextjs)](https://github.com/akyssssf/Arnatomy/actions/workflows/ci.yml)
 [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=akyssssf_Arnatomy&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=akyssssf_Arnatomy)
 
-**Live (Vercel):** _tautan diisi setelah deploy_ · **Branch:** `nextjs` (versi vanilla Modul 1–4 ada di `main`)
+**Live (Vercel):** https://arnatomy.vercel.app · **Branch:** `nextjs` (versi vanilla Modul 1–4 ada di `main`)
 
 Migrasi penuh prototipe front-end **ARnatomy** (pembelajaran anatomi berbasis AR untuk siswa
 SMP–SMA, SKPL v1.0) dari versi vanilla HTML/JS ke arsitektur React modern. Organ tetap
