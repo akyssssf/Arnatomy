@@ -268,6 +268,14 @@ export function PenampilOrgan({
     aliranKamera.current = null;
     if (videoRef.current) videoRef.current.srcObject = null;
   }
+  /* Kamera dilepas saat komponen dibongkar (pindah organ/halaman); hanya ref yang disentuh */
+  useEffect(
+    () => () => {
+      for (const jalur of aliranKamera.current?.getTracks() ?? []) jalur.stop();
+      aliranKamera.current = null;
+    },
+    [],
+  );
   async function keluarAR() {
     if (modeAR === "xr") await penampil.current?.hentikanAR();
     hentikanKamera();
@@ -316,8 +324,6 @@ export function PenampilOrgan({
       );
     }
   }
-  /* Kamera dilepas saat komponen dibongkar (pindah organ/halaman) */
-  useEffect(() => hentikanKamera, []);
 
   /* ---------- FR-04: alat kamera ---------- */
   function jalankanAlat(aksi: (typeof ALAT)[number]["aksi"]) {

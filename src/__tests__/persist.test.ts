@@ -91,7 +91,7 @@ describe("persist (snapshot basis data mock)", () => {
     await persist.simpanSekarang();
     const [url, init] = fetchMock.mock.calls[0] ?? [];
     expect(url).toBe("https://kv.uji.io");
-    expect((init?.headers as Record<string, string>).Authorization).toBe("Bearer token-uji");
+    expect(((init?.headers ?? {}) as Record<string, string>).Authorization).toBe("Bearer token-uji");
     const [cmd, kunci, nilai] = JSON.parse(String(init?.body)) as [string, string, string];
     expect([cmd, kunci]).toEqual(["SET", "arnatomy:db"]);
     expect(JSON.parse(nilai).aset_model[0][1].bytes_b64).toBeNull();

@@ -34,7 +34,7 @@ describe("llm (jembatan BFF Asisten AI)", () => {
     expect(await jawabDenganLlm("apa fungsi aorta?", aorta)).toBe("Aorta mengalirkan darah.");
     const [url, init] = fetchMock.mock.calls[0] ?? [];
     expect(url).toBe("https://api.anthropic.com/v1/messages");
-    expect((init?.headers as Record<string, string>)["x-api-key"]).toBe("sk-uji");
+    expect(((init?.headers ?? {}) as Record<string, string>)["x-api-key"]).toBe("sk-uji");
     const body = JSON.parse(String(init?.body));
     expect(body.model).toBe("claude-haiku-4-5-20251001");
     expect(body.system).toContain("Aorta");
