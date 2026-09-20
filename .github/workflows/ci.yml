@@ -47,6 +47,9 @@ jobs:
       - name: Lint (ESLint + React Compiler rules)
         run: npm run lint
 
+      - name: Generate route types (PageProps/LayoutProps/RouteContext)
+        run: npx next typegen
+
       - name: Type-check (strict TypeScript)
         run: npm run typecheck
 
