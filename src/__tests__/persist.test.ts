@@ -73,7 +73,7 @@ describe("persist (snapshot basis data mock)", () => {
     expect(baru.id_riwayat).toBeGreaterThan(1002);
   });
 
-  it("adapter KV: SET lewat REST tanpa byte model; GET memulihkan; snapshot rusak diabaikan", async () => {
+  it("adapter KV: GET-gabung-SET lewat REST tanpa byte model; instance lain tidak tertimpa; snapshot rusak diabaikan", async () => {
     vi.stubEnv("DATA_DIR", "");
     vi.stubEnv("KV_REST_API_URL", "https://kv.uji.io");
     vi.stubEnv("KV_REST_API_TOKEN", "token-uji");
@@ -87,17 +87,61 @@ describe("persist (snapshot basis data mock)", () => {
       "paru.glb",
       new Uint8Array([0x67, 0x6c, 0x54, 0x46, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
     );
-    fetchMock.mockResolvedValueOnce(new Response('{"result":"OK"}'));
+    /* "instance A" sudah menulis snapshot berisi akun Alpin; instance ini (B) menambah Dimas */
+    const akunAlpin = {
+      id_user: 1001,
+      nama: "Alpin",
+      email: "alpin@r.id",
+      role: "siswa",
+      asal_sekolah: null,
+      aktif: true,
+      sandi_hash: "pbkdf2-sha256$1$a$b",
+    };
+    const snapshotA = JSON.stringify({
+      akun: [akunAlpin],
+      umpan_balik: [],
+      urutanId: 1001,
+      hapus_akun: [],
+      bersih_user: {},
+    });
+    await db.daftarkanAkun({
+      nama: "Dimas",
+      email: "dimas@r.id",
+      password: "rahasia123",
+      konfirmasi: "rahasia123",
+      role: "siswa",
+      asal_sekolah: "SV",
+    });
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ result: snapshotA }))); // GET sebelum tulis
+    fetchMock.mockResolvedValueOnce(new Response('{"result":"OK"}')); // SET
     await persist.simpanSekarang();
-    const [url, init] = fetchMock.mock.calls[0] ?? [];
+    expect(fetchMock.mock.calls[0]?.[0]).toBe("https://kv.uji.io/get/arnatomy:db");
+    const [url, init] = fetchMock.mock.calls[1] ?? [];
     expect(url).toBe("https://kv.uji.io");
     expect(((init?.headers ?? {}) as Record<string, string>).Authorization).toBe("Bearer token-uji");
     const [cmd, kunci, nilai] = JSON.parse(String(init?.body)) as [string, string, string];
     expect([cmd, kunci]).toEqual(["SET", "arnatomy:db"]);
-    expect(JSON.parse(nilai).aset_model[0][1].bytes_b64).toBeNull();
+    const ditulis = JSON.parse(nilai);
+    expect(ditulis.aset_model[0][1].bytes_b64).toBeNull();
+    expect(ditulis.akun.map((a: { nama: string }) => a.nama).sort()).toEqual([
+      "Admin Konten",
+      "Alpin",
+      "Bu Ratna, S.Pd.",
+      "Dimas",
+      "Nehan Raki Alfawzi",
+    ]);
+    expect(ditulis.urutanId).toBeGreaterThanOrEqual(1002);
+    expect(await db.akunById(UserIdSchema.parse(1001))).toMatchObject({ nama: "Alpin" });
 
-    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ result: nilai })));
-    expect(await persist.muatSnapshot()).toBe(true);
+    /* tombstone: akun yang dihapus di sini tidak hidup lagi dari snapshot remote */
+    await db.hapusAkun(UserIdSchema.parse(1001));
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ result: snapshotA })));
+    fetchMock.mockResolvedValueOnce(new Response('{"result":"OK"}'));
+    await persist.simpanSekarang();
+    const lagi = JSON.parse(JSON.parse(String(fetchMock.mock.calls[3]?.[1]?.body))[2]);
+    expect(lagi.hapus_akun).toEqual([1001]);
+    expect(lagi.akun.some((a: { id_user: number }) => a.id_user === 1001)).toBe(false);
+
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ result: "{bukan json" })));
     expect(await persist.muatSnapshot()).toBe(false);
     fetchMock.mockResolvedValueOnce(new Response("", { status: 500 }));

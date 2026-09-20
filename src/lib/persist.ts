@@ -82,11 +82,26 @@ export function jadwalkanSimpan(): void {
     void simpanSekarang();
   }, JEDA_SIMPAN_MS);
 }
-/** Menulis snapshot segera (dipakai uji dan saat proses akan berhenti). */
+/** Menulis snapshot segera (dipakai uji dan saat proses akan berhenti).
+    Untuk KV, snapshot remote digabung dulu agar instance lain tidak tertimpa. */
 export function simpanSekarang(): Promise<void> {
   if (adapterAktif() === "memori" || !sumber) return Promise.resolve();
-  const teks = JSON.stringify(sumber.serialisasi(adapterAktif() === "berkas"));
-  sedangMenulis = sedangMenulis.then(() => tulis(teks)).catch(() => undefined);
+  const s = sumber;
+  sedangMenulis = sedangMenulis
+    .then(async () => {
+      if (adapterAktif() === "kv") {
+        const remote = await baca();
+        if (remote) {
+          try {
+            s.pulihkan(JSON.parse(remote));
+          } catch {
+            /* snapshot remote rusak: abaikan, tulis milik sendiri */
+          }
+        }
+      }
+      await tulis(JSON.stringify(s.serialisasi(adapterAktif() === "berkas")));
+    })
+    .catch(() => undefined);
   return sedangMenulis;
 }
 /** Memuat snapshot ke toko; benar bila ada yang dipulihkan. */

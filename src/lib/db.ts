@@ -103,6 +103,10 @@ function berubah(): void {
 }
 
 /* ---------------- Serialisasi untuk lib/persist.ts ----------------
+   Beberapa instance serverless dapat menulis snapshot bergantian, maka
+   snapshot remote DIGABUNG (union per id) sebelum ditimpa, bukan diganti.
+   Penghapusan dicatat sebagai tombstone: hapus_akun (id) dan bersih_user
+   (id_user -> waktu ISO; riwayat/percakapan sebelum waktu itu dibuang).
    Uint8Array model unggahan menjadi base64 (hanya adapter berkas). */
 interface Snapshot {
   part_content: PartContent[];
@@ -113,7 +117,25 @@ interface Snapshot {
   akun: AkunTersimpan[] | null;
   aset_model: [number, { nama_berkas: string; versi: number; waktu: string; bytes_b64: string | null }][];
   urutanId: number;
+  hapus_akun: number[];
+  bersih_user: Record<string, string>;
 }
+const tombstone = { hapus_akun: new Set<number>(), bersih_user: new Map<number, string>() };
+
+function gabungPerId<T>(lokal: T[], remote: T[], kunci: (x: T) => number, pilih?: (a: T, b: T) => T): T[] {
+  const peta = new Map<number, T>();
+  for (const r of remote) peta.set(kunci(r), r);
+  for (const l of lokal) {
+    const r = peta.get(kunci(l));
+    peta.set(kunci(l), r && pilih ? pilih(l, r) : l);
+  }
+  return [...peta.values()];
+}
+function belumDibersihkan(idUser: number, waktu: string): boolean {
+  const batas = tombstone.bersih_user.get(idUser);
+  return !batas || waktu > batas;
+}
+
 daftarkanToko({
   serialisasi(denganBytes) {
     const t = toko();
@@ -134,36 +156,89 @@ daftarkanToko({
         },
       ]),
       urutanId: t.urutanId,
+      hapus_akun: [...tombstone.hapus_akun],
+      bersih_user: Object.fromEntries([...tombstone.bersih_user].map(([k, v]) => [String(k), v])),
     };
     return snap;
   },
   pulihkan(mentah) {
     const snap = mentah as Partial<Snapshot>;
     const t = toko();
-    if (Array.isArray(snap.part_content)) t.part_content = snap.part_content;
-    if (Array.isArray(snap.learning_history)) t.learning_history = snap.learning_history;
-    if (Array.isArray(snap.ai_conversations)) t.ai_conversations = snap.ai_conversations;
-    if (Array.isArray(snap.laporan_kesalahan)) t.laporan_kesalahan = snap.laporan_kesalahan;
-    if (Array.isArray(snap.umpan_balik)) t.umpan_balik = snap.umpan_balik;
+    for (const id of snap.hapus_akun ?? []) tombstone.hapus_akun.add(id);
+    for (const [k, v] of Object.entries(snap.bersih_user ?? {})) {
+      const lama = tombstone.bersih_user.get(Number(k));
+      if (!lama || v > lama) tombstone.bersih_user.set(Number(k), v);
+    }
+    if (Array.isArray(snap.part_content)) {
+      /* konten hanya diedit admin: versi remote dipakai bila lokal masih seed */
+      t.part_content = gabungPerId(
+        t.part_content,
+        snap.part_content,
+        (k) => k.id_konten,
+        (l, r) =>
+          part_content_awal.some(
+            (awal) =>
+              awal.id_konten === l.id_konten &&
+              awal.deskripsi === l.deskripsi &&
+              awal.judul_tampil === l.judul_tampil &&
+              awal.status_validasi === l.status_validasi,
+          )
+            ? r
+            : l,
+      );
+    }
+    if (Array.isArray(snap.learning_history)) {
+      t.learning_history = gabungPerId(t.learning_history, snap.learning_history, (r) => r.id_riwayat).filter((r) =>
+        belumDibersihkan(r.id_user, r.waktu_akses),
+      );
+    }
+    if (Array.isArray(snap.ai_conversations)) {
+      t.ai_conversations = gabungPerId(t.ai_conversations, snap.ai_conversations, (p) => p.id_percakapan).filter((p) =>
+        belumDibersihkan(p.id_user, p.waktu),
+      );
+    }
+    if (Array.isArray(snap.laporan_kesalahan)) {
+      t.laporan_kesalahan = gabungPerId(
+        t.laporan_kesalahan,
+        snap.laporan_kesalahan,
+        (l) => l.id_laporan,
+        (l, r) => (l.status_tindak_lanjut === "ditindaklanjuti" ? l : r),
+      );
+    }
+    if (Array.isArray(snap.umpan_balik)) {
+      t.umpan_balik = gabungPerId(
+        t.umpan_balik,
+        snap.umpan_balik,
+        (u) => u.id_user,
+        (l, r) => (l.waktu >= r.waktu ? l : r),
+      );
+    }
     if (Array.isArray(snap.akun)) {
-      t.akun = snap.akun;
-      t.akunSiap = Promise.resolve(snap.akun);
+      const gabungan = gabungPerId(t.akun ?? [], snap.akun, (a) => a.id_user).filter(
+        (a) => !tombstone.hapus_akun.has(a.id_user),
+      );
+      t.akun = gabungan;
+      t.akunSiap = Promise.resolve(gabungan);
     }
     if (Array.isArray(snap.aset_model)) {
-      t.aset_model = new Map(
-        snap.aset_model.flatMap(([id, a]) =>
-          a.bytes_b64 ? [[id, { ...a, bytes: new Uint8Array(Buffer.from(a.bytes_b64, "base64")) }] as const] : [],
-        ),
-      );
+      for (const [id, a] of snap.aset_model) {
+        const lokal = t.aset_model.get(id);
+        if (lokal && lokal.versi >= a.versi) continue;
+        if (a.bytes_b64) t.aset_model.set(id, { ...a, bytes: new Uint8Array(Buffer.from(a.bytes_b64, "base64")) });
+      }
     }
     if (typeof snap.urutanId === "number") t.urutanId = Math.max(t.urutanId, snap.urutanId);
   },
 });
 
-/** Id berikutnya, langsung "dimerek" lewat skema yang diminta. */
+/** Id berikutnya, langsung "dimerek" lewat skema yang diminta.
+    Berbasis waktu (ms × 1000 + acak) agar dua instance serverless yang
+    berjalan bersamaan tidak menghasilkan id yang sama saat snapshot digabung;
+    tetap monoton naik terhadap id yang pernah dipakai di proses ini. */
 function idBaru<T>(skema: { parse: (nilai: unknown) => T }): T {
   const t = toko();
-  t.urutanId += 1;
+  const kandidat = Date.now() * 1000 + Math.floor(Math.random() * 1000);
+  t.urutanId = Math.max(t.urutanId + 1, kandidat);
   return skema.parse(t.urutanId);
 }
 
@@ -450,6 +525,7 @@ export async function hapusAkun(idUser: UserId): Promise<boolean> {
   const indeks = semua.findIndex((a) => a.id_user === idUser);
   if (indeks < 0) return false;
   semua.splice(indeks, 1);
+  tombstone.hapus_akun.add(idUser);
   bersihkanDataUser(idUser);
   t.umpan_balik = t.umpan_balik.filter((u) => u.id_user !== idUser);
   berubah();
@@ -523,6 +599,7 @@ export function bytesAset(idOrgan: OrganId, versi: number): Uint8Array | null {
 /** Saat keluar, data belajar pribadi pengguna dibuang (seperti versi lama). */
 export function bersihkanDataUser(idUser: UserId): void {
   const t = toko();
+  tombstone.bersih_user.set(idUser, new Date().toISOString());
   t.learning_history = t.learning_history.filter((r) => r.id_user !== idUser);
   t.ai_conversations = t.ai_conversations.filter((p) => p.id_user !== idUser);
   berubah();
