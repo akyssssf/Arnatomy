@@ -289,7 +289,13 @@ Lighthouse 13 (Brave headless) pada build produksi lokal, halaman landing — la
 
 \* LCP *terobservasi* di mobile 0,08 s; angka 3,2 s adalah estimasi simulasi Lighthouse pada
 server lokal yang terlalu cepat (semua aset selesai sebelum LCP sehingga dianggap dependensi).
-Ukur ulang dengan PageSpeed Insights pada URL Vercel untuk angka lapangan.
+
+Pada **URL live** https://arnatomy.vercel.app (edge Vercel, `docs/lighthouse/live-*.report.html`):
+
+| Profil | Performance | A11y | Best Practices | SEO | LCP | TBT | CLS |
+|---|---|---|---|---|---|---|---|
+| Desktop | 99 | 100 | 96 | 100 | 0,8 s | 10 ms | 0 |
+| Mobile (simulasi slow 4G, CPU 4×) | 92 | 100 | 96 | 100 | 3,0 s | 170 ms | 0 |
 
 Teknik yang dipakai: gambar WebP dengan `priority`, `fetchPriority="high"`, `sizes`, dan dimensi
 eksplisit (CLS 0); fon lokal `next/font` dengan `size-adjust` fallback; Three.js diimpor dinamis
