@@ -257,11 +257,14 @@ dengan `refine` konfirmasi sandi, `LaporanFormSchema`, `KontenFormSchema`, `Pert
   dan dikecualikan dari perhitungan coverage (`sonar.coverage.exclusions`).
 - **Pipeline** `.github/workflows/ci.yml`: Biome → ESLint → `tsc` → Vitest + coverage → `next build`
   → SonarCloud scan + Quality Gate (0 vulnerability, 0 hotspot, coverage ≥ 80%, duplikasi ≤ 3%).
-- **SonarCloud:** buat proyek di sonarcloud.io (organization `akyssssf`, key `akyssssf_Arnatomy`,
-  sesuaikan `sonar-project.properties` bila berbeda), lalu tambahkan secret `SONAR_TOKEN` di
-  GitHub → langkah Sonar aktif otomatis pada push berikutnya.
-- **Deploy Vercel:** import repo di vercel.com → Production Branch `nextjs` → Environment Variable
-  `SESSION_SECRET` (≥ 32 karakter acak) → Deploy. Tulis URL-nya di bagian atas README ini.
+- **SonarCloud:** proyek [`akyssssf_Arnatomy`](https://sonarcloud.io/summary/overall?id=akyssssf_Arnatomy)
+  (main branch `nextjs`, Automatic Analysis dimatikan, analisis dari CI dengan lcov). Status terakhir:
+  **Quality Gate PASSED** — 0 vulnerability, 0 hotspot, 0 bug, coverage 91,1 %, duplikasi 0,6 %.
+  Secret `SONAR_TOKEN` di GitHub Actions; paket gratis hanya mengevaluasi main branch, karena itu
+  `nextjs` dijadikan main branch lewat `api/project_branches/rename`.
+- **Deploy Vercel:** https://arnatomy.vercel.app — Framework Preset Next.js, Production Branch `nextjs`
+  (Settings → Environments → Production → Branch Tracking), env `SESSION_SECRET` (≥ 32 karakter acak),
+  opsional `NEXT_PUBLIC_SITE_URL`, `ANTHROPIC_API_KEY`, `KV_REST_API_*`.
 
 ## Persistensi & skalabilitas (NFR-04, NFR-05)
 
