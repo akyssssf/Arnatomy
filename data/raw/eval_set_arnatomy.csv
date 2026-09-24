@@ -1,0 +1,36 @@
+id_q,pertanyaan,chunk_benar,sistem_organ
+Q01,Jantung itu gunanya buat apa?,C01,Sistem Peredaran Darah
+Q02,Berapa berat jantung manusia?,C02,Sistem Peredaran Darah
+Q03,Jantung punya berapa ruang?,C02,Sistem Peredaran Darah
+Q04,Darah kotor dari seluruh tubuh masuk ke ruang jantung yang mana?,C17 C37 C40 C05,Sistem Peredaran Darah
+Q05,Serambi kanan menerima darah dari mana?,C17 C37 C05,Sistem Peredaran Darah
+Q06,Apa itu nodus SA?,C18 C39,Sistem Peredaran Darah
+Q07,Di mana letak pemacu alami jantung?,C18 C39,Sistem Peredaran Darah
+Q08,Darah dari paru-paru masuk ke jantung lewat mana?,C19 C41 C06 C44,Sistem Peredaran Darah
+Q09,Ruang jantung mana yang posisinya paling belakang?,C42 C06,Sistem Peredaran Darah
+Q10,Kenapa dinding ventrikel kiri lebih tebal dari ventrikel kanan?,C23 C22,Sistem Peredaran Darah
+Q11,Ventrikel kanan memompa darah ke mana?,C21 C45 C07 C48,Sistem Peredaran Darah
+Q12,Apa akibat darah tinggi terhadap bilik kiri jantung?,C51,Sistem Peredaran Darah
+Q13,Pembuluh darah paling besar di tubuh namanya apa?,C24 C09,Sistem Peredaran Darah
+Q14,Kenapa darah tetap mengalir saat jantung tidak sedang memompa?,C25,Sistem Peredaran Darah
+Q15,Apa itu aneurisma?,C55,Sistem Peredaran Darah
+Q16,Apa fungsi katup mitral?,C57 C60,Sistem Peredaran Darah
+Q17,Apa yang terjadi kalau katup jantung bocor?,C59,Sistem Peredaran Darah
+Q18,Berapa panjang batang tenggorok?,C11 C27,Sistem Pernapasan
+Q19,Kenapa trakea tidak kempis waktu kita menarik napas?,C27 C64,Sistem Pernapasan
+Q20,Bagaimana trakea membersihkan debu yang ikut terhirup?,C28 C61,Sistem Pernapasan
+Q21,Radang trakea gejalanya apa saja?,C63,Sistem Pernapasan
+Q22,Apa itu karina?,C12 C29 C66,Sistem Pernapasan
+Q23,Bronkitis itu penyakit apa?,C67,Sistem Pernapasan
+Q24,Paru-paru kanan punya berapa lobus?,C13 C31 C04 C72,Sistem Pernapasan
+Q25,Kenapa paru-paru kiri lebih kecil dari yang kanan?,C33 C14 C76 C74,Sistem Pernapasan
+Q26,Apa fungsi selaput pleura?,C32,Sistem Pernapasan
+Q27,Apa itu pneumotoraks?,C32,Sistem Pernapasan
+Q28,Penyakit apa yang sering menyerang lobus bawah paru?,C71 C79,Sistem Pernapasan
+Q29,Di mana tempat pertukaran oksigen dan karbon dioksida terjadi?,C35 C81 C16 C03,Sistem Pernapasan
+Q30,Berapa luas permukaan alveolus?,C36 C84 C04,Sistem Pernapasan
+Q31,Apa itu emfisema?,C83,Sistem Pernapasan
+Q32,Berapa kali orang bernapas dalam satu menit?,C04,Sistem Pernapasan
+Q33,Gelembung paru-paru bentuknya seperti apa?,C35 C82,Sistem Pernapasan
+Q34,Apa itu efusi pleura?,C75,Sistem Pernapasan
+Q35,Diafragma letaknya di sebelah mana paru-paru?,C34 C78 C15,Sistem Pernapasan
