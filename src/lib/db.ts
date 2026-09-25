@@ -232,12 +232,16 @@ daftarkanToko({
 });
 
 /** Id berikutnya, langsung "dimerek" lewat skema yang diminta.
-    Berbasis waktu (ms × 1000 + acak) agar dua instance serverless yang
-    berjalan bersamaan tidak menghasilkan id yang sama saat snapshot digabung;
-    tetap monoton naik terhadap id yang pernah dipakai di proses ini. */
+    Berbasis waktu (ms × 1000) ditambah 3 digit acak dari CSPRNG agar dua
+    instance serverless yang berjalan bersamaan tidak menghasilkan id yang
+    sama saat snapshot digabung; tetap monoton naik terhadap id yang pernah
+    dipakai di proses ini. */
+function acak1000(): number {
+  return crypto.getRandomValues(new Uint16Array(1))[0] ?? 0;
+}
 function idBaru<T>(skema: { parse: (nilai: unknown) => T }): T {
   const t = toko();
-  const kandidat = Date.now() * 1000 + Math.floor(Math.random() * 1000);
+  const kandidat = Date.now() * 1000 + (acak1000() % 1000);
   t.urutanId = Math.max(t.urutanId + 1, kandidat);
   return skema.parse(t.urutanId);
 }
