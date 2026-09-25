@@ -49,7 +49,7 @@ Route Handler mock dengan jeda buatan.
 | `npm run lint:biome` / `npm run format` | lint + format dengan Biome (Rust) |
 | `npm run lint` | ESLint (aturan Next + React Compiler) |
 | `npm run typecheck` | `tsc --noEmit` (strict) |
-| `npm test` / `npm run test:coverage` | Vitest (96 uji) + laporan coverage lcov untuk Sonar |
+| `npm test` / `npm run test:coverage` | Vitest (97 uji) + laporan coverage lcov untuk Sonar |
 | `npm run build` | build produksi Next.js (Turbopack) |
 
 ### Akun demo
@@ -252,14 +252,15 @@ dengan `refine` konfirmasi sandi, `LaporanFormSchema`, `KontenFormSchema`, `Pert
   basis data mock, penyusun jawaban, format, varian CVA, `mock-api` (fetch + timeout + validasi),
   Zustand store, empat hook TanStack Query (query + mutasi + invalidasi), seluruh Route Handler
   (termasuk registrasi, CRUD akun, unggah/sajikan/hapus model .glb multipart, SUS, 429, catch-all 404),
-  hash sandi, pembatas laju, dan `proxy.ts` (redirect + CSP). Coverage pada kode yang diuji ≈ 93% statements / 95% lines
+  hash sandi, pembatas laju, persistensi snapshot (gabung KV + tombstone), dan `proxy.ts` (redirect + CSP).
+  Coverage pada kode yang diuji ≈ 93% statements / 96% lines
   (`npm run test:coverage`). Komponen presentasional dan penampil WebGL diverifikasi di browser
   dan dikecualikan dari perhitungan coverage (`sonar.coverage.exclusions`).
 - **Pipeline** `.github/workflows/ci.yml`: Biome → ESLint → `tsc` → Vitest + coverage → `next build`
   → SonarCloud scan + Quality Gate (0 vulnerability, 0 hotspot, coverage ≥ 80%, duplikasi ≤ 3%).
 - **SonarCloud:** proyek [`akyssssf_Arnatomy`](https://sonarcloud.io/summary/overall?id=akyssssf_Arnatomy)
   (main branch `nextjs`, Automatic Analysis dimatikan, analisis dari CI dengan lcov). Status terakhir:
-  **Quality Gate PASSED** — 0 vulnerability, 0 hotspot, 0 bug, coverage 91,1 %, duplikasi 0,6 %.
+  **Quality Gate PASSED** — 0 vulnerability, 0 hotspot, 0 bug, coverage 90,8 %, duplikasi 0,6 %.
   Secret `SONAR_TOKEN` di GitHub Actions; paket gratis hanya mengevaluasi main branch, karena itu
   `nextjs` dijadikan main branch lewat `api/project_branches/rename`.
 - **Deploy Vercel:** https://arnatomy.vercel.app — Framework Preset Next.js, Production Branch `nextjs`
