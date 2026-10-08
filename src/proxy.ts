@@ -16,6 +16,7 @@ import { dekodeSesi, NAMA_COOKIE } from "@/lib/sesi-codec";
 const RUTE_TERPROTEKSI = [
   "/beranda",
   "/eksplorasi",
+  "/tugas",
   "/asisten",
   "/riwayat",
   "/umpan-balik",

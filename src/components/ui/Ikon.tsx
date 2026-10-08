@@ -1,5 +1,11 @@
 /* Server Component: ikon garis inline SVG, mewarisi warna lewat currentColor */
 const JALUR = {
+  tugas: (
+    <>
+      <rect x="4.5" y="3.5" width="15" height="17" rx="2.5" />
+      <path d="m8.5 9 1.6 1.6L13 7.8M8.5 15.5h7" />
+    </>
+  ),
   jantung: <path d="M12 20.3S3.8 15.4 3.8 9.9A4.1 4.1 0 0 1 12 8.2a4.1 4.1 0 0 1 8.2 1.7c0 5.5-8.2 10.4-8.2 10.4Z" />,
   lapisan: (
     <>

@@ -42,6 +42,7 @@ import {
   UmpanBalikSchema,
   type UserId,
 } from "./schemas";
+import { type HasilPercobaan, HasilPercobaanSchema } from "./tugas";
 
 const BATAS_WAKTU_MS = 8000;
 
@@ -178,6 +179,11 @@ export function ambilKonten(): Promise<PartContent[]> {
 }
 export function perbaruiKonten(idKonten: KontenId, input: KontenForm): Promise<PartContent> {
   return ambilJson(PartContentSchema, `/api/konten/${idKonten}`, kirim("PATCH", input));
+}
+
+/* ---------------- Tugas belajar: kuis dan simulasi ---------------- */
+export function kirimPercobaan(idTugas: number, jawaban: number[]): Promise<HasilPercobaan> {
+  return ambilJson(HasilPercobaanSchema, `/api/tugas/${idTugas}/percobaan`, kirim("POST", { jawaban }));
 }
 
 /* ---------------- Riwayat belajar (FR-14) ---------------- */

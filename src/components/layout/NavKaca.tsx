@@ -12,10 +12,11 @@ import { keluar } from "@/lib/mock-api";
 import type { SesiUser } from "@/lib/schemas";
 import { useUIStore } from "@/store/useUIStore";
 
-type Rute = "/beranda" | "/eksplorasi" | "/asisten" | "/riwayat" | "/admin";
+type Rute = "/beranda" | "/eksplorasi" | "/tugas" | "/asisten" | "/riwayat" | "/admin";
 const MENU: { rute: Rute; label: string; ikon: NamaIkon; hanyaAdmin?: boolean }[] = [
   { rute: "/beranda", label: "Beranda", ikon: "rumah" },
   { rute: "/eksplorasi", label: "Eksplorasi", ikon: "jantung" },
+  { rute: "/tugas", label: "Tugas", ikon: "tugas" },
   { rute: "/asisten", label: "Asisten", ikon: "chat" },
   { rute: "/riwayat", label: "Riwayat", ikon: "riwayat" },
   { rute: "/admin", label: "Admin", ikon: "perisai", hanyaAdmin: true },

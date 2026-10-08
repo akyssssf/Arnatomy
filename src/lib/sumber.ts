@@ -114,3 +114,24 @@ export async function asetOrgan(idOrgan: OrganId): Promise<AsetModel | null> {
   const o = await ambil<{ model: ModelBackend }>(`/v1/organ/${idOrgan}`);
   return ubahModel(idOrgan, o.model);
 }
+
+/* ---------------- Tugas belajar (hanya tersedia dengan backend) ---------------- */
+import type { IsiTugas, ProgresTugas, TugasRingkas } from "./tugas";
+
+/** null = mode tiruan (tanpa backend): halaman menampilkan keterangan, bukan galat. */
+export async function daftarTugas(): Promise<TugasRingkas[] | null> {
+  if (!backendAktif()) return null;
+  return ambil<TugasRingkas[]>("/v1/tugas");
+}
+export async function progresTugas(): Promise<ProgresTugas | null> {
+  if (!backendAktif()) return null;
+  return ambil<ProgresTugas>("/v1/tugas/progres");
+}
+export async function isiTugas(id: number): Promise<IsiTugas | null> {
+  if (!backendAktif()) return null;
+  const { panggil } = await import("./backend");
+  const h = await panggil<IsiTugas>(`/v1/tugas/${id}`);
+  if (h.status === 404 || h.status === 400) return null;
+  if (h.status !== 200) throw new Error(`backend /v1/tugas/${id}: ${h.status}`);
+  return h.data;
+}
