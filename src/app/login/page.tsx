@@ -6,9 +6,7 @@ import Link from "next/link";
 import { KepalaTamu } from "@/components/layout/KepalaTamu";
 import { FormLogin } from "@/components/login/FormLogin";
 import { HeroLogin } from "@/components/login/HeroLogin";
-import { Muncul } from "@/components/motion/Muncul";
 import { MunculSegera } from "@/components/motion/MunculSegera";
-import { Marquee } from "@/components/ui/Marquee";
 import { body_parts, organs, part_content_awal } from "@/lib/data";
 import { envPublic } from "@/lib/env";
 import { kartu } from "@/lib/variants";
@@ -35,7 +33,7 @@ export default async function HalamanLogin(props: PageProps<"/login">) {
       <section aria-labelledby="judul-login" className="pb-6">
         <KepalaTamu tautan={{ href: "/daftar", label: "Belum punya akun? Daftar" }} />
 
-        <div className="mt-2 grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+        <div className="mt-1 grid gap-4 lg:grid-cols-[1.2fr_1fr]">
           <div className="order-2 lg:order-1">
             <HeroLogin
               organ={organ}
@@ -44,15 +42,21 @@ export default async function HalamanLogin(props: PageProps<"/login">) {
               jumlahLabel={part_content_awal.length}
             />
           </div>
-          <MunculSegera jeda={150} kelas={`${kartu({ padding: "lg" })} order-1 lg:order-2`}>
+          <MunculSegera
+            jeda={150}
+            kelas={`${kartu({ padding: "lg" })} order-1 flex flex-col justify-center lg:order-2 lg:h-[min(640px,calc(100vh-150px))] lg:px-12`}
+          >
             <p className="mikro">Masuk</p>
-            <h2 className="titik-biru mb-5 mt-2 text-3xl font-semibold">Gunakan akun terdaftar</h2>
+            <h2 className="titik-biru mt-3 text-4xl font-semibold leading-tight">Selamat datang</h2>
+            <p className="mb-8 mt-3 max-w-sm text-sm leading-relaxed text-neutral-500">
+              Masuk dengan akun Google untuk melanjutkan belajar, atau daftar otomatis saat pertama kali masuk.
+            </p>
             <FormLogin
               pesanAwal={pesanAwal}
               tujuanAwal={tujuan}
               googleClientId={envPublic.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? null}
             />
-            <p className="mt-4 text-xs text-neutral-500">
+            <p className="mt-8 border-t border-black/5 pt-5 text-xs text-neutral-500">
               Belum punya akun?{" "}
               <Link href="/daftar" className="font-semibold text-neutral-900 underline underline-offset-2">
                 Daftar sebagai siswa atau guru
@@ -60,13 +64,6 @@ export default async function HalamanLogin(props: PageProps<"/login">) {
             </p>
           </MunculSegera>
         </div>
-
-        <Muncul kelas="mt-8">
-          <Marquee
-            daftar={["Sistem Peredaran Darah", "Model Organ 3D", "Label Interaktif", "Asisten AI", "Riwayat Belajar"]}
-            label="Fitur"
-          />
-        </Muncul>
       </section>
     </main>
   );
