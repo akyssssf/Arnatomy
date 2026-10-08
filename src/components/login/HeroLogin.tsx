@@ -20,7 +20,7 @@ export function HeroLogin({
   return (
     <MunculSegera
       jeda={100}
-      kelas="relative h-[420px] overflow-hidden rounded-3xl bg-abu lg:h-[min(640px,calc(100vh-150px))]"
+      kelas="relative h-[440px] overflow-hidden rounded-3xl bg-abu lg:h-[min(640px,calc(100vh-150px))]"
     >
       <span className="piringan-organ" aria-hidden="true" />
       <Hero3D urlModel={organ.file_model_3d} jarak={2.7} kecepatanPutar={0.8} />
@@ -32,7 +32,7 @@ export function HeroLogin({
         priority
         fetchPriority="high"
         sizes="(max-width: 640px) 90vw, 560px"
-        className="hero-gambar melayang pointer-events-none absolute bottom-[4%] left-1/2 h-[56%] w-auto -translate-x-1/2 object-contain"
+        className="hero-gambar melayang pointer-events-none absolute bottom-[4%] left-1/2 h-[42%] w-auto sm:h-[56%] -translate-x-1/2 object-contain"
       />
       <div className="pointer-events-none absolute left-6 top-6 z-10 sm:left-8 sm:top-8">
         <h1

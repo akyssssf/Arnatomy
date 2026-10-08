@@ -135,7 +135,10 @@ export async function mulaiSimulasi3D(opsi: {
   scene.add(cahaya);
 
   const camera = new THREE.PerspectiveCamera(40, lebar / tinggi, 0.01, 50);
-  camera.position.set(0.3, 0.15, 3.0);
+  const JARAK_DASAR = 3.0;
+  camera.position.set(0.3, 0.15, JARAK_DASAR);
+  const sesuaikanJarak = () => camera.position.setLength(JARAK_DASAR * Math.max(1, 1.2 / (lebar / tinggi)));
+  sesuaikanJarak();
   const kontrol = new OrbitControls(camera, renderer.domElement);
   kontrol.enableDamping = true;
   kontrol.dampingFactor = 0.08;
@@ -375,6 +378,7 @@ export async function mulaiSimulasi3D(opsi: {
     renderer.setSize(lebar, tinggi);
     camera.aspect = lebar / tinggi;
     camera.updateProjectionMatrix();
+    sesuaikanJarak();
   });
   pengamatUkuran.observe(wadah);
 

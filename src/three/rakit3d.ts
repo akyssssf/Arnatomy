@@ -109,7 +109,11 @@ export async function mulaiRakit(opsi: OpsiRakit): Promise<MesinRakit> {
   scene.add(cahaya);
 
   const camera = new THREE.PerspectiveCamera(40, lebar / tinggi, 0.01, 50);
-  camera.position.set(0.2, 0.5, 4.6);
+  const JARAK_DASAR = 4.6;
+  camera.position.set(0.2, 0.5, JARAK_DASAR);
+  /* Wadah sempit (HP): kamera mundur supaya semua bagian yang tersebar tetap terlihat */
+  const sesuaikanJarak = () => camera.position.setLength(JARAK_DASAR * Math.max(1, 1.33 / (lebar / tinggi)));
+  sesuaikanJarak();
   const kontrol = new OrbitControls(camera, renderer.domElement);
   kontrol.enableDamping = true;
   kontrol.dampingFactor = 0.08;
@@ -344,6 +348,7 @@ export async function mulaiRakit(opsi: OpsiRakit): Promise<MesinRakit> {
     renderer.setSize(lebar, tinggi);
     camera.aspect = lebar / tinggi;
     camera.updateProjectionMatrix();
+    sesuaikanJarak();
   });
   pengamatUkuran.observe(wadah);
   let tampil = true;

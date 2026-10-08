@@ -131,7 +131,7 @@ export function PemainRakit({ tugas, bagian }: { tugas: TugasRingkas; bagian: La
         <div className="relative">
           <div
             ref={wadah}
-            className="aspect-[4/3] w-full overflow-hidden rounded-2xl bg-abu"
+            className="aspect-square w-full overflow-hidden rounded-2xl bg-abu sm:aspect-[4/3]"
             role="application"
             aria-label="Area merakit organ 3D: seret bagian ke posisinya"
           />

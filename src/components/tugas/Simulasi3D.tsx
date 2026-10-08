@@ -67,7 +67,7 @@ export function Simulasi3D({
     <div className="relative">
       <div
         ref={wadah}
-        className="aspect-[4/3] w-full overflow-hidden rounded-2xl bg-abu"
+        className="aspect-square w-full overflow-hidden rounded-2xl bg-abu sm:aspect-[4/3]"
         role="img"
         aria-label={jenis === "darah" ? "Model 3D jantung dengan alur darah" : "Model 3D paru-paru dengan aliran udara"}
       />
