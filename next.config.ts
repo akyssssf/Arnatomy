@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  /* Self-host (Docker): NEXT_OUTPUT=standalone menghasilkan server Node mandiri. Di Vercel dibiarkan kosong. */
+  ...(process.env.NEXT_OUTPUT === "standalone" ? { output: "standalone" as const } : {}),
   /* React Compiler (React 19): memoization otomatis, tanpa useMemo/useCallback manual */
   reactCompiler: true,
   /* Tautan bertipe: href pada <Link> dan router.push() dicek TypeScript */
