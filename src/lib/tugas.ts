@@ -73,6 +73,12 @@ export const RincianSimulasiSchema = z.object({
   benar: z.boolean(),
   judul_benar: z.string(),
 });
+export const RincianRakitSchema = z.object({
+  id_langkah: z.number().int(),
+  judul: z.string(),
+  terpasang: z.boolean(),
+  percobaan: z.number().int(),
+});
 export const HasilPercobaanSchema = z.object({
   id_percobaan: z.number().int().optional(),
   skor: z.number().int(),
@@ -80,7 +86,7 @@ export const HasilPercobaanSchema = z.object({
   total: z.number().int(),
   ambang: z.number().int(),
   selesai: z.boolean(),
-  rincian: z.array(z.union([RincianKuisSchema, RincianSimulasiSchema])),
+  rincian: z.array(z.union([RincianKuisSchema, RincianSimulasiSchema, RincianRakitSchema])),
 });
 export type HasilPercobaan = z.infer<typeof HasilPercobaanSchema>;
 export type RincianKuis = z.infer<typeof RincianKuisSchema>;

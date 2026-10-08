@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PemainKuis } from "@/components/tugas/PemainKuis";
+import { PemainRakit } from "@/components/tugas/PemainRakit";
 import { PemainSimulasi } from "@/components/tugas/PemainSimulasi";
 import { JudulHalaman } from "@/components/ui/JudulHalaman";
 import { KondisiKosong } from "@/components/ui/KondisiKosong";
@@ -38,10 +39,11 @@ export default async function HalamanSatuTugas(props: PageProps<"/tugas/[id]">) 
         judul={tugas.judul}
         deskripsi={tugas.deskripsi}
         id="judul-tugas"
-        kicker={tugas.jenis === "kuis" ? "Kuis" : "Simulasi"}
+        kicker={tugas.jenis === "kuis" ? "Kuis" : tugas.jenis === "rakit" ? "Rakit organ" : "Simulasi"}
       />
       {tugas.jenis === "kuis" && tugas.soal ? <PemainKuis tugas={tugas} soal={tugas.soal} /> : null}
       {tugas.jenis === "simulasi" && tugas.langkah ? <PemainSimulasi tugas={tugas} langkah={tugas.langkah} /> : null}
+      {tugas.jenis === "rakit" && tugas.langkah ? <PemainRakit tugas={tugas} bagian={tugas.langkah} /> : null}
     </section>
   );
 }

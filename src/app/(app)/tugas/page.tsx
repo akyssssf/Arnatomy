@@ -50,9 +50,7 @@ export default async function HalamanTugas() {
         {daftar.map((t) => (
           <li key={t.id_tugas} className={`${kartu({ padding: "lg" })} flex flex-col`}>
             <div className="flex items-center justify-between gap-2">
-              <span className={badge({ status: t.jenis === "simulasi" ? "dimmed" : "dasar" })}>
-                {LABEL_JENIS[t.jenis]}
-              </span>
+              <span className={badge({ status: t.jenis === "kuis" ? "dasar" : "dimmed" })}>{LABEL_JENIS[t.jenis]}</span>
               {t.selesai ? (
                 <span className={badge({ status: "tervalidasi" })}>Selesai</span>
               ) : t.percobaan > 0 ? (
@@ -64,11 +62,17 @@ export default async function HalamanTugas() {
             <h2 className="mt-4 text-xl font-semibold">{t.judul}</h2>
             <p className="mt-2 flex-1 text-sm leading-relaxed text-neutral-500">{t.deskripsi}</p>
             <p className="mt-4 text-xs text-neutral-400">
-              {t.jumlah_item} {t.jenis === "kuis" ? "soal" : "langkah"} · lulus ≥ {t.ambang} · dicoba {t.percobaan}×
-              {t.skor_terbaik !== null && ` · skor terbaik ${t.skor_terbaik}`}
+              {t.jumlah_item} {t.jenis === "kuis" ? "soal" : t.jenis === "rakit" ? "bagian" : "langkah"} · lulus ≥{" "}
+              {t.ambang} · dicoba {t.percobaan}×{t.skor_terbaik !== null && ` · skor terbaik ${t.skor_terbaik}`}
             </p>
             <Link href={`/tugas/${t.id_tugas}`} className={`${tombol({ ukuran: "md" })} mt-4 self-start`}>
-              {t.percobaan > 0 ? "Coba lagi" : t.jenis === "kuis" ? "Mulai kuis" : "Mulai simulasi"}
+              {t.percobaan > 0
+                ? "Coba lagi"
+                : t.jenis === "kuis"
+                  ? "Mulai kuis"
+                  : t.jenis === "rakit"
+                    ? "Mulai merakit"
+                    : "Mulai simulasi"}
             </Link>
           </li>
         ))}
