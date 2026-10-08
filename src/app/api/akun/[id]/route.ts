@@ -4,7 +4,9 @@
    agar sistem tidak kehilangan administrator. */
 import { NextResponse } from "next/server";
 import { bacaBody, galat, idDariParam, wajibSesi } from "@/lib/api-util";
+import { backendAktif } from "@/lib/backend";
 import { hapusAkun, jeda, perbaruiAkun } from "@/lib/db";
+import { terus } from "@/lib/rute-backend";
 import { AkunPatchSchema, UserIdSchema } from "@/lib/schemas";
 
 export async function PATCH(request: Request, ctx: RouteContext<"/api/akun/[id]">) {
@@ -16,6 +18,7 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/akun/[id]"
   const body = await bacaBody(request, AkunPatchSchema);
   if (!body.ok) return body.respons;
 
+  if (backendAktif()) return terus(`/v1/admin/akun/${idUser}`, { method: "PATCH", json: body.data });
   await jeda(300);
   const hasil = await perbaruiAkun(idUser, body.data);
   if (hasil.status === "tidak-ada") return galat("akun tidak ditemukan.", 404);
@@ -30,6 +33,7 @@ export async function DELETE(_request: Request, ctx: RouteContext<"/api/akun/[id
   if (idUser === null) return galat("id akun tidak valid.", 400);
   if (idUser === auth.sesi.id_user) return galat("Akun sendiri tidak dapat dihapus.", 400);
 
+  if (backendAktif()) return terus(`/v1/admin/akun/${idUser}`, { method: "DELETE" });
   await jeda(300);
   if (!(await hapusAkun(idUser))) return galat("akun tidak ditemukan.", 404);
   return NextResponse.json({ ok: true });

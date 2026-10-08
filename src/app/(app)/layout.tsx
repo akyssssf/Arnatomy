@@ -19,6 +19,8 @@ export default async function LayoutAplikasi({ children }: LayoutProps<"/">) {
      (Server Component tidak bisa menulis cookie), lalu ke /login dengan pesan */
   if (hasil.status === "nonaktif") redirect("/api/logout?alasan=nonaktif");
   const { sesi } = hasil;
+  /* Akun Google baru: lengkapi peran + sekolah dulu (FR-02) */
+  if (sesi.profil_lengkap === false) redirect("/lengkapi-profil");
 
   /* QueryProvider hanya di segmen ini: halaman publik (landing/login) tidak
      memuat TanStack Query sama sekali (bundle klien lebih kecil). Keluar dari

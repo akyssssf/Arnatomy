@@ -5,14 +5,18 @@
 import { NextResponse } from "next/server";
 import { bacaBody, galat, wajibSesi } from "@/lib/api-util";
 import { susunJawaban } from "@/lib/asisten";
+import { backendAktif } from "@/lib/backend";
 import { bagianById } from "@/lib/data";
 import { jeda, percakapanUser, tambahPercakapan } from "@/lib/db";
 import { jawabDenganLlm } from "@/lib/llm";
+import { terus } from "@/lib/rute-backend";
 import { OpsiSimulasiSchema, PertanyaanFormSchema } from "@/lib/schemas";
+import { percakapanUser as percakapanSumber } from "@/lib/sumber";
 
 export async function GET() {
   const auth = await wajibSesi();
   if (!auth.ok) return auth.respons;
+  if (backendAktif()) return NextResponse.json(await percakapanSumber(auth.sesi.id_user));
   await jeda(400);
   return NextResponse.json(percakapanUser(auth.sesi.id_user));
 }
@@ -28,6 +32,10 @@ export async function POST(request: Request) {
     return galat("simulasi kegagalan koneksi ke layanan asisten AI.", 503);
   }
 
+  if (backendAktif()) {
+    const { simulasiGagal: _s, ...kirim } = body.data;
+    return terus("/v1/asisten/tanya", { json: kirim }, undefined, 201);
+  }
   const bagian = bagianById(body.data.id_bagian);
   const dariLlm = await jawabDenganLlm(body.data.pertanyaan, bagian);
   if (!dariLlm) await jeda(900); // "asisten sedang mengetik" untuk jawaban lokal

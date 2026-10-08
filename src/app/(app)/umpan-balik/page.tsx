@@ -8,7 +8,7 @@ import { FormSus } from "@/components/umpan-balik/FormSus";
 import { DaftarPernyataanSus } from "@/components/umpan-balik/PernyataanSus";
 import { RingkasanSus } from "@/components/umpan-balik/RingkasanSus";
 import { ambilSesi } from "@/lib/auth";
-import { umpanBalikUser } from "@/lib/db";
+import { umpanBalikUser } from "@/lib/sumber";
 
 export const metadata: Metadata = {
   title: "Umpan Balik",
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 export default async function HalamanUmpanBalik() {
   const sesi = await ambilSesi();
   if (!sesi) return null;
-  const sebelumnya = umpanBalikUser(sesi.id_user);
+  const sebelumnya = await umpanBalikUser(sesi.id_user);
 
   return (
     <section aria-labelledby="judul-umpan-balik" className="halaman-masuk">

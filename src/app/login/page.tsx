@@ -9,6 +9,7 @@ import { HeroLogin } from "@/components/login/HeroLogin";
 import { Muncul } from "@/components/motion/Muncul";
 import { Marquee } from "@/components/ui/Marquee";
 import { body_parts, organs, part_content_awal } from "@/lib/data";
+import { envPublic } from "@/lib/env";
 import { kartu } from "@/lib/variants";
 
 export const metadata: Metadata = {
@@ -67,7 +68,11 @@ export default async function HalamanLogin(props: PageProps<"/login">) {
             </div>
           </Muncul>
           <Muncul kelas={kartu({ padding: "lg" })}>
-            <FormLogin pesanAwal={pesanAwal} tujuanAwal={tujuan} />
+            <FormLogin
+              pesanAwal={pesanAwal}
+              tujuanAwal={tujuan}
+              googleClientId={envPublic.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? null}
+            />
           </Muncul>
         </div>
       </section>

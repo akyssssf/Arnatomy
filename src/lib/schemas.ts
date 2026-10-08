@@ -47,7 +47,10 @@ export type User = z.infer<typeof UserSchema>;
 
 /** Data sesi yang disimpan di cookie: tanpa password dan tanpa bendera aktif
     (status aktif diperiksa ulang ke basis data pada tiap permintaan). */
-export const SesiUserSchema = UserSchema.omit({ password: true, aktif: true });
+export const SesiUserSchema = UserSchema.omit({ password: true, aktif: true }).extend({
+  /* Hanya diisi backend nyata: akun Google baru wajib melengkapi peran + sekolah dulu */
+  profil_lengkap: z.boolean().optional(),
+});
 export type SesiUser = z.infer<typeof SesiUserSchema>;
 
 /** Baris akun untuk dashboard admin (FR-13): tanpa password. */

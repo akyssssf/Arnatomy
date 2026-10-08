@@ -13,7 +13,15 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { dekodeSesi, NAMA_COOKIE } from "@/lib/sesi-codec";
 
-const RUTE_TERPROTEKSI = ["/beranda", "/eksplorasi", "/asisten", "/riwayat", "/umpan-balik", "/admin"];
+const RUTE_TERPROTEKSI = [
+  "/beranda",
+  "/eksplorasi",
+  "/asisten",
+  "/riwayat",
+  "/umpan-balik",
+  "/admin",
+  "/lengkapi-profil",
+];
 const RUTE_TAMU = ["/login", "/daftar"];
 
 function buatCsp(nonce: string): string {
@@ -25,10 +33,11 @@ function buatCsp(nonce: string): string {
     /* 'unsafe-inline' https: http: hanya cadangan untuk peramban lama; peramban
        yang paham nonce + 'strict-dynamic' mengabaikannya */
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'wasm-unsafe-eval'${dev ? " 'unsafe-eval'" : ""} 'unsafe-inline' https: http:`,
-    "style-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style",
     "img-src 'self' data: blob:",
     "font-src 'self'",
-    `connect-src 'self'${dev ? " ws: wss:" : ""}`,
+    `connect-src 'self' https://accounts.google.com${dev ? " ws: wss:" : ""}`,
+    "frame-src https://accounts.google.com",
     "worker-src 'self' blob:",
     "object-src 'none'",
     "base-uri 'self'",

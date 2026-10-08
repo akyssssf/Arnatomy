@@ -12,6 +12,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { GalatApi, masuk } from "@/lib/mock-api";
 import { LoginFormSchema } from "@/lib/schemas";
 import { alert, input, tombol } from "@/lib/variants";
+import { TombolGoogle } from "./TombolGoogle";
 
 const AKUN_DEMO = [
   { email: "siswa@arnatomy.id", password: "siswa123", peran: "Siswa" },
@@ -21,7 +22,15 @@ const AKUN_DEMO = [
 
 type GalatField = { email?: string; password?: string };
 
-export function FormLogin({ pesanAwal, tujuanAwal }: { pesanAwal: string | null; tujuanAwal: string | null }) {
+export function FormLogin({
+  pesanAwal,
+  tujuanAwal,
+  googleClientId = null,
+}: {
+  pesanAwal: string | null;
+  tujuanAwal: string | null;
+  googleClientId?: string | null;
+}) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -94,6 +103,13 @@ export function FormLogin({ pesanAwal, tujuanAwal }: { pesanAwal: string | null;
         <div role="alert" aria-live="assertive" className={alert({ tipe: "error" })}>
           {galatUmum}
         </div>
+      )}
+
+      {googleClientId && (
+        <>
+          <TombolGoogle clientId={googleClientId} tujuanAwal={tujuanAwal} onGalat={setGalatUmum} />
+          <p className="text-center text-[11px] uppercase tracking-[0.08em] text-neutral-400">atau dengan email</p>
+        </>
       )}
 
       <form onSubmit={saatSubmit} noValidate className="space-y-4">

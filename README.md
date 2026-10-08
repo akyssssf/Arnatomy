@@ -363,3 +363,13 @@ Kolom `mesh_3d` pada `body_parts` memetakan bagian tubuh ke nama node itu, sehin
   tidak ditemukan, dan `posisi_2d` dipakai gambar cadangan dua dimensi.
 
 Fon Inter/Inter Tight (OFL) di-host sendiri lewat `next/font/local` (`src/app/fonts/`).
+
+## Mode backend nyata (cabang `integrasi-backend`)
+
+Bila `BACKEND_URL` diatur di `.env.local` (mis. `http://localhost:4000`), seluruh `/api/*` diteruskan ke backend
+[arnatomy-backend](../arnatomy-backend) (API `/v1`: login JWT, PostgreSQL, asisten RAG, unggah model 3D) lewat BFF di
+`src/lib/backend.ts`, `src/lib/rute-backend.ts`, dan `src/lib/sumber.ts`. Token disimpan di cookie httpOnly, jadi backend
+tidak perlu CORS untuk klien web. Tanpa `BACKEND_URL`, aplikasi memakai basis data tiruan di memori seperti semula.
+`NEXT_PUBLIC_GOOGLE_CLIENT_ID` menampilkan tombol "Masuk dengan Google" (domain/port klien harus terdaftar di
+*Authorized JavaScript origins* Google Cloud). Unggahan model 3D lewat BFF dibatasi ukuran body platform hosting
+(Vercel ±4,5 MB); pada self-host (Docker/Node) batasnya 15 MB seperti di backend.

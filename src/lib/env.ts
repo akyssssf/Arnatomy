@@ -29,6 +29,8 @@ const EnvPublicSchema = z.object({
   NEXT_PUBLIC_APP_NAME: z.string().min(1).default("ARnatomy"),
   /* Asal situs untuk metadataBase, sitemap, robots, dan gambar Open Graph */
   NEXT_PUBLIC_SITE_URL: z.url().default("http://localhost:3000"),
+  /* Client ID Google (Web). Kosong = tombol "Masuk dengan Google" disembunyikan. Bukan rahasia. */
+  NEXT_PUBLIC_GOOGLE_CLIENT_ID: z.string().min(10).optional(),
 });
 
 /* Nilai NEXT_PUBLIC_* harus dirujuk secara literal supaya diganti saat build.
@@ -36,6 +38,7 @@ const EnvPublicSchema = z.object({
 export const envPublic = EnvPublicSchema.parse({
   NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME || undefined,
   NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || undefined,
+  NEXT_PUBLIC_GOOGLE_CLIENT_ID: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || undefined,
 });
 
 let cacheServer: z.infer<typeof EnvServerSchema> | null = null;

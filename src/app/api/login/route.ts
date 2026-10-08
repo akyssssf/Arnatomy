@@ -1,14 +1,25 @@
 /* POST /api/login — verifikasi kredensial terhadap hash PBKDF2, batasi
    percobaan gagal per email+IP (429), lalu set cookie sesi httpOnly (FR-01). */
 import { bacaBody, galat } from "@/lib/api-util";
+import { backendAktif, panggil } from "@/lib/backend";
 import { jeda, verifikasiLogin } from "@/lib/db";
 import { catatGagal, hapusCatatan, kunciLogin, sisaBlokir } from "@/lib/pembatas";
+import { ipDariPermintaan, responsSesi } from "@/lib/rute-backend";
 import { LoginFormSchema } from "@/lib/schemas";
 import { responsMasuk } from "@/lib/sesi-respons";
 
 export async function POST(request: Request) {
   const body = await bacaBody(request, LoginFormSchema);
   if (!body.ok) return body.respons;
+
+  if (backendAktif()) {
+    const h = await panggil("/v1/auth/login", {
+      json: body.data,
+      ipKlien: ipDariPermintaan(request),
+      tanpaToken: true,
+    });
+    return responsSesi(h);
+  }
 
   const kunci = kunciLogin(body.data.email, request);
   const sisa = sisaBlokir(kunci);

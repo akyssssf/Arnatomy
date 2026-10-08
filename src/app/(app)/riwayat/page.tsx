@@ -9,7 +9,8 @@ import { KartuStatistik } from "@/components/ui/KartuStatistik";
 import { KondisiKosong } from "@/components/ui/KondisiKosong";
 import { ambilSesi } from "@/lib/auth";
 import { body_parts } from "@/lib/data";
-import { jeda, ringkasanRiwayat, semuaKonten } from "@/lib/db";
+import { jeda } from "@/lib/db";
+import { ringkasanRiwayat, semuaKonten } from "@/lib/sumber";
 import { tombol } from "@/lib/variants";
 
 export const metadata: Metadata = {
@@ -21,7 +22,7 @@ export default async function HalamanRiwayat() {
   const sesi = await ambilSesi();
   if (!sesi) return null;
   await jeda(600); // latensi buatan supaya loading.tsx terlihat
-  const rekap = ringkasanRiwayat(sesi.id_user);
+  const rekap = await ringkasanRiwayat(sesi.id_user);
 
   const tombolMulai = (
     <Link href="/eksplorasi" className={tombol({ ukuran: "sm" })}>
@@ -64,7 +65,7 @@ export default async function HalamanRiwayat() {
         kicker="Rekam jejak"
       />
       <KartuStatistik daftar={statistik} />
-      <TabelRiwayat rekap={rekap} konten={semuaKonten()} />
+      <TabelRiwayat rekap={rekap} konten={await semuaKonten()} />
       <p className="mt-3 px-1 text-xs text-neutral-400">
         Riwayat disimpan di memori server selama sesi berjalan dan dibuang saat kamu keluar.
       </p>

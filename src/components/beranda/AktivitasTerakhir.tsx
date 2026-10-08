@@ -1,15 +1,16 @@
 import Link from "next/link";
 import { Ikon } from "@/components/ui/Ikon";
 import { bagianById, organById } from "@/lib/data";
-import { jeda, riwayatUser } from "@/lib/db";
+import { jeda } from "@/lib/db";
 import { formatWaktu } from "@/lib/format";
 import type { UserId } from "@/lib/schemas";
+import { riwayatUser } from "@/lib/sumber";
 
 /* Async Server Component: lima aktivitas terakhir, di-stream lewat <Suspense>
    dari beranda/page.tsx (jeda kecil meniru latensi kueri). */
 export async function AktivitasTerakhir({ idUser }: { idUser: UserId }) {
   await jeda(350);
-  const aktivitas = riwayatUser(idUser).slice(-5).reverse();
+  const aktivitas = (await riwayatUser(idUser)).slice(-5).reverse();
 
   return (
     <section aria-labelledby="judul-aktivitas" className="rounded-3xl bg-white p-6">

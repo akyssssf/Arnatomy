@@ -4,6 +4,7 @@
    ========================================================================== */
 import "server-only";
 import { cookies } from "next/headers";
+import { backendAktif, panggil } from "./backend";
 import { akunById } from "./db";
 import type { SesiUser } from "./schemas";
 import { dekodeSesi, NAMA_COOKIE } from "./sesi-codec";
@@ -21,6 +22,12 @@ export type StatusSesi = { status: "ok"; sesi: SesiUser } | { status: "tanpa-ses
 export async function periksaSesi(): Promise<StatusSesi> {
   const sesi = await ambilSesi();
   if (!sesi) return { status: "tanpa-sesi" };
+  if (backendAktif()) {
+    /* Backend mencabut token akun yang dinonaktifkan/dihapus/diubah perannya */
+    const h = await panggil<{ user: SesiUser }>("/v1/auth/me");
+    if (h.status === 200) return { status: "ok", sesi: { ...sesi, ...h.data.user } };
+    return { status: h.status === 503 ? "ok" : "nonaktif" } as StatusSesi;
+  }
   const akun = await akunById(sesi.id_user);
   if (!akun?.aktif) return { status: "nonaktif" };
   return { status: "ok", sesi };

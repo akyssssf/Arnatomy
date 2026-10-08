@@ -4,10 +4,12 @@
    tengah sesi; cookie dibuang lalu dialihkan ke /login dengan pesan. */
 import { NextResponse } from "next/server";
 import { ambilSesi } from "@/lib/auth";
+import { backendAktif } from "@/lib/backend";
 import { bersihkanDataUser } from "@/lib/db";
-import { NAMA_COOKIE } from "@/lib/sesi-codec";
+import { hapusCookieSesi, keluarBackend } from "@/lib/rute-backend";
 
 async function bersihkan(): Promise<void> {
+  if (backendAktif()) return keluarBackend();
   const sesi = await ambilSesi();
   if (sesi) bersihkanDataUser(sesi.id_user);
 }
@@ -15,8 +17,7 @@ async function bersihkan(): Promise<void> {
 export async function POST() {
   await bersihkan();
   const respons = NextResponse.json({ ok: true });
-  respons.cookies.delete(NAMA_COOKIE);
-  return respons;
+  return hapusCookieSesi(respons);
 }
 
 export async function GET(request: Request) {
@@ -25,6 +26,5 @@ export async function GET(request: Request) {
   const tujuan = new URL("/login", request.url);
   tujuan.searchParams.set("auth_error", alasan);
   const respons = NextResponse.redirect(tujuan, 303);
-  respons.cookies.delete(NAMA_COOKIE);
-  return respons;
+  return hapusCookieSesi(respons);
 }

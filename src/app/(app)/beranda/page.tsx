@@ -13,7 +13,7 @@ import { Muncul } from "@/components/motion/Muncul";
 import { Alert } from "@/components/ui/Alert";
 import { ambilSesi } from "@/lib/auth";
 import { bagianById, bagianOrgan, body_parts, organById, organs } from "@/lib/data";
-import { percakapanUser, riwayatUser } from "@/lib/db";
+import { percakapanUser, riwayatUser } from "@/lib/sumber";
 
 export const metadata: Metadata = {
   title: "Beranda",
@@ -31,7 +31,7 @@ export default async function HalamanBeranda(props: PageProps<"/beranda">) {
   if (!sesi) return null; // dijaga proxy + layout
   const pesanKhusus = query.pesan === "khusus-admin";
 
-  const riwayat = riwayatUser(sesi.id_user);
+  const riwayat = await riwayatUser(sesi.id_user);
   const idDibuka = new Set(riwayat.map((r) => r.id_bagian));
   const persenTotal = body_parts.length ? Math.round((idDibuka.size / body_parts.length) * 100) : 0;
   const bagianTerakhir = bagianById(riwayat.at(-1)?.id_bagian);
@@ -61,7 +61,7 @@ export default async function HalamanBeranda(props: PageProps<"/beranda">) {
             dibuka={idDibuka.size}
             total={body_parts.length}
             dimmed={riwayat.filter((r) => r.jenis_konten === "dimmed").length}
-            tanya={percakapanUser(sesi.id_user).length}
+            tanya={(await percakapanUser(sesi.id_user)).length}
           />
         </Muncul>
       </div>

@@ -5,7 +5,8 @@
 import "server-only";
 import { NextResponse } from "next/server";
 import type { z } from "zod";
-import { periksaSesi } from "./auth";
+import { ambilSesi, periksaSesi } from "./auth";
+import { backendAktif } from "./backend";
 import type { Peran, SesiUser } from "./schemas";
 
 export function galat(pesan: string, status: number) {
@@ -35,6 +36,15 @@ export async function bacaBody<T>(
 export async function wajibSesi(
   peran?: Peran[],
 ): Promise<{ ok: true; sesi: SesiUser } | { ok: false; respons: NextResponse }> {
+  if (backendAktif()) {
+    /* Backend memeriksa token sendiri (401/403); di sini cukup cookie sesi untuk peran */
+    const sesi = await ambilSesi();
+    if (!sesi) return { ok: false, respons: galat("sesi tidak ditemukan, silakan masuk kembali.", 401) };
+    if (peran && !peran.includes(sesi.role)) {
+      return { ok: false, respons: galat(`aksi ini hanya untuk peran ${peran.join("/")}.`, 403) };
+    }
+    return { ok: true, sesi };
+  }
   const hasil = await periksaSesi();
   if (hasil.status === "tanpa-sesi") {
     return { ok: false, respons: galat("sesi tidak ditemukan, silakan masuk kembali.", 401) };

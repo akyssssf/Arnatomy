@@ -13,7 +13,8 @@ import { TabAdmin } from "@/components/admin/TabAdmin";
 import { JudulHalaman } from "@/components/ui/JudulHalaman";
 import { KUNCI } from "@/hooks/kunci-query";
 import { ambilSesi } from "@/lib/auth";
-import { jeda, semuaAkun, semuaAset, semuaKonten, semuaLaporan, semuaUmpanBalik } from "@/lib/db";
+import { jeda } from "@/lib/db";
+import { semuaAkun, semuaAset, semuaKonten, semuaLaporan, semuaUmpanBalik } from "@/lib/sumber";
 
 export const metadata: Metadata = {
   title: "Dashboard Admin",
@@ -44,8 +45,8 @@ export default async function HalamanAdmin() {
       <HydrationBoundary state={dehydrate(queryClient)}>
         <TabAdmin
           idAdmin={sesi.id_user}
-          panelAset={<DaftarAset daftar={semuaAset()} />}
-          panelUmpanBalik={<RingkasanSusAdmin daftar={semuaUmpanBalik()} akun={akun} />}
+          panelAset={<DaftarAset daftar={await semuaAset()} />}
+          panelUmpanBalik={<RingkasanSusAdmin daftar={await semuaUmpanBalik()} akun={akun} />}
         />
       </HydrationBoundary>
     </section>

@@ -15,7 +15,7 @@ import { PenampilOrgan } from "@/components/eksplorasi/PenampilOrgan";
 import { KUNCI } from "@/hooks/kunci-query";
 import { ambilSesi } from "@/lib/auth";
 import { bagianOrgan, layerOrgan, organById, organs } from "@/lib/data";
-import { asetOrgan, riwayatUser, semuaKonten } from "@/lib/db";
+import { asetOrgan, riwayatUser, semuaKonten } from "@/lib/sumber";
 
 /* Tanpa ?organ= -> organ pertama; ?organ= yang tidak terdaftar -> null (404) */
 function organDariQuery(nilai: string | string[] | undefined) {
@@ -39,14 +39,14 @@ export default async function HalamanEksplorasi(props: PageProps<"/eksplorasi">)
   const organDasar = organDariQuery(query.organ);
   if (!organDasar) notFound();
   /* FR-12: model unggahan admin (bila ada) menggantikan berkas bawaan */
-  const aset = asetOrgan(organDasar.id_organ);
+  const aset = await asetOrgan(organDasar.id_organ);
   const organ = { ...organDasar, file_model_3d: aset?.url ?? organDasar.file_model_3d };
 
   const bagian = bagianOrgan(organ.id_organ);
   /* Organ dalam selalu tampil, jadi hanya selubung luar yang jadi toggle */
   const layers = layerOrgan(organ.id_organ).filter((l) => l.nama_layer !== "organ_dalam");
   const idBagian = new Set(bagian.map((b) => b.id_bagian));
-  const konten = semuaKonten().filter((k) => idBagian.has(k.id_bagian));
+  const konten = (await semuaKonten()).filter((k) => idBagian.has(k.id_bagian));
 
   const queryClient = new QueryClient();
   await queryClient.prefetchQuery({ queryKey: KUNCI.riwayat, queryFn: () => riwayatUser(sesi.id_user) });

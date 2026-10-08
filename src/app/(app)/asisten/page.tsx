@@ -10,7 +10,7 @@ import { JudulHalaman } from "@/components/ui/JudulHalaman";
 import { KUNCI } from "@/hooks/kunci-query";
 import { ambilSesi } from "@/lib/auth";
 import { bagianById, body_parts, organs } from "@/lib/data";
-import { percakapanUser } from "@/lib/db";
+import { percakapanUser } from "@/lib/sumber";
 
 export const metadata: Metadata = {
   title: "Asisten AI",

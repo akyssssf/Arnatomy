@@ -99,6 +99,16 @@ export async function masuk(input: LoginForm): Promise<SesiUser> {
   const { user } = await ambilJson(RespLoginSchema, "/api/login", kirim("POST", input));
   return user;
 }
+/** Login Google: ID token dari Google Identity Services dikirim ke BFF, yang meneruskannya ke backend. */
+export async function masukGoogle(idToken: string): Promise<SesiUser> {
+  const { user } = await ambilJson(RespLoginSchema, "/api/google", kirim("POST", { id_token: idToken }));
+  return user;
+}
+/** Melengkapi peran + sekolah akun Google (FR-02). */
+export async function lengkapiProfil(input: { role: "siswa" | "guru"; asal_sekolah: string }): Promise<SesiUser> {
+  const { user } = await ambilJson(RespLoginSchema, "/api/profil", kirim("PATCH", input));
+  return user;
+}
 export async function keluar(): Promise<void> {
   await ambilJson(RespOkSchema, "/api/logout", { method: "POST" });
 }
