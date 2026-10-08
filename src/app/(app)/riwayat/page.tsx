@@ -10,7 +10,7 @@ import { KondisiKosong } from "@/components/ui/KondisiKosong";
 import { ambilSesi } from "@/lib/auth";
 import { body_parts } from "@/lib/data";
 import { jeda } from "@/lib/db";
-import { ringkasanRiwayat, semuaKonten } from "@/lib/sumber";
+import { progresTugas, ringkasanRiwayat, semuaKonten } from "@/lib/sumber";
 import { tombol } from "@/lib/variants";
 
 export const metadata: Metadata = {
@@ -22,12 +22,33 @@ export default async function HalamanRiwayat() {
   const sesi = await ambilSesi();
   if (!sesi) return null;
   await jeda(600); // latensi buatan supaya loading.tsx terlihat
-  const rekap = await ringkasanRiwayat(sesi.id_user);
+  const [rekap, tugas] = await Promise.all([ringkasanRiwayat(sesi.id_user), progresTugas().catch(() => null)]);
 
   const tombolMulai = (
     <Link href="/eksplorasi" className={tombol({ ukuran: "sm" })}>
       Buka halaman Eksplorasi
     </Link>
+  );
+
+  const bagianTugas = tugas && tugas.percobaan_terbaru.length > 0 && (
+    <div className="mt-6 rounded-2xl bg-white p-6">
+      <h2 className="text-base font-semibold">Riwayat tugas belajar</h2>
+      <p className="mt-1 text-xs text-neutral-500">
+        {tugas.tugas_selesai} dari {tugas.tugas_total} tugas selesai · rata-rata skor terbaik{" "}
+        {tugas.rata_skor_terbaik ?? "-"}
+      </p>
+      <ul className="mt-3 divide-y divide-black/5 text-sm">
+        {tugas.percobaan_terbaru.map((p) => (
+          <li key={p.id_percobaan} className="flex items-center justify-between gap-3 py-2">
+            <span>{p.judul}</span>
+            <span className="text-neutral-500">
+              {p.benar}/{p.total} · skor <strong className="text-neutral-900">{p.skor}</strong> ·{" "}
+              {new Date(p.waktu).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 
   if (!rekap.length) {
@@ -44,6 +65,7 @@ export default async function HalamanRiwayat() {
           deskripsi="Riwayat terisi otomatis setiap kali label dibuka pada halaman Eksplorasi."
           aksi={tombolMulai}
         />
+        {bagianTugas}
       </section>
     );
   }
@@ -66,6 +88,7 @@ export default async function HalamanRiwayat() {
       />
       <KartuStatistik daftar={statistik} />
       <TabelRiwayat rekap={rekap} konten={await semuaKonten()} />
+      {bagianTugas}
       <p className="mt-3 px-1 text-xs text-neutral-400">
         Riwayat disimpan di memori server selama sesi berjalan dan dibuang saat kamu keluar.
       </p>

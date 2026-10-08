@@ -7,6 +7,7 @@ import { AktivitasTerakhir, AktivitasTerakhirSkeleton } from "@/components/beran
 import { GridSistemOrgan } from "@/components/beranda/GridSistemOrgan";
 import { KartuLanjutkan } from "@/components/beranda/KartuLanjutkan";
 import { KartuRingkasan } from "@/components/beranda/KartuRingkasan";
+import { KartuTugas } from "@/components/beranda/KartuTugas";
 import { Pintasan } from "@/components/beranda/Pintasan";
 import { SapaanBeranda } from "@/components/beranda/SapaanBeranda";
 import { Muncul } from "@/components/motion/Muncul";
@@ -67,6 +68,10 @@ export default async function HalamanBeranda(props: PageProps<"/beranda">) {
       </div>
 
       <GridSistemOrgan persenOrgan={(idOrgan) => progresOrgan(idOrgan, idDibuka).persen} />
+
+      <Suspense fallback={null}>
+        <KartuTugas />
+      </Suspense>
 
       <div className="mt-12 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
         <Suspense fallback={<AktivitasTerakhirSkeleton />}>
