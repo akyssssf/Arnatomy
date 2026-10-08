@@ -18,6 +18,7 @@ const TAB: { id: JenisTab; label: string }[] = [
   { id: "akun", label: "Pengguna" },
   { id: "aset", label: "Aset 3D" },
   { id: "umpan-balik", label: "Umpan Balik" },
+  { id: "tugas", label: "Tugas Belajar" },
 ];
 
 function adalahTab(nilai: string): nilai is JenisTab {
@@ -29,10 +30,12 @@ export function TabAdmin({
   idAdmin,
   panelAset,
   panelUmpanBalik,
+  panelTugas,
 }: {
   idAdmin: UserId;
   panelAset: React.ReactNode;
   panelUmpanBalik: React.ReactNode;
+  panelTugas: React.ReactNode;
 }) {
   const tabAktif = useUIStore((s) => s.tabAdminAktif);
   const setTabAdmin = useUIStore((s) => s.setTabAdmin);
@@ -68,6 +71,9 @@ export function TabAdmin({
       </TabsContent>
       <TabsContent value="umpan-balik" id="panel-umpan-balik">
         {panelUmpanBalik}
+      </TabsContent>
+      <TabsContent value="tugas" id="panel-tugas">
+        {panelTugas}
       </TabsContent>
     </Tabs>
   );

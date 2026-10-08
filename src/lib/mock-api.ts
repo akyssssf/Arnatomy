@@ -42,7 +42,7 @@ import {
   UmpanBalikSchema,
   type UserId,
 } from "./schemas";
-import { type HasilPercobaan, HasilPercobaanSchema } from "./tugas";
+import { type HasilPercobaan, HasilPercobaanSchema, type SoalForm } from "./tugas";
 
 const BATAS_WAKTU_MS = 8000;
 
@@ -209,6 +209,17 @@ export function perbaruiKonten(idKonten: KontenId, input: KontenForm): Promise<P
 /* ---------------- Tugas belajar: kuis dan simulasi ---------------- */
 export function kirimPercobaan(idTugas: number, jawaban: number[]): Promise<HasilPercobaan> {
   return ambilJson(HasilPercobaanSchema, `/api/tugas/${idTugas}/percobaan`, kirim("POST", { jawaban }));
+}
+
+const SoalTersimpanSchema = z.object({ id_soal: z.number().int() });
+export function tambahSoal(idTugas: number, input: SoalForm) {
+  return ambilJson(SoalTersimpanSchema, `/api/tugas-admin/${idTugas}/soal`, kirim("POST", input));
+}
+export function ubahSoal(idSoal: number, input: SoalForm) {
+  return ambilJson(SoalTersimpanSchema, `/api/soal/${idSoal}`, kirim("PATCH", input));
+}
+export async function hapusSoal(idSoal: number): Promise<void> {
+  await ambilJson(RespOkSchema, `/api/soal/${idSoal}`, { method: "DELETE" });
 }
 
 /* ---------------- Riwayat belajar (FR-14) ---------------- */

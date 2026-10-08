@@ -8,6 +8,7 @@ import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { DaftarAset } from "@/components/admin/DaftarAset";
+import { PanelTugasAdmin } from "@/components/admin/PanelTugasAdmin";
 import { RingkasanSusAdmin } from "@/components/admin/RingkasanSusAdmin";
 import { TabAdmin } from "@/components/admin/TabAdmin";
 import { JudulHalaman } from "@/components/ui/JudulHalaman";
@@ -46,6 +47,7 @@ export default async function HalamanAdmin() {
         <TabAdmin
           idAdmin={sesi.id_user}
           panelAset={<DaftarAset daftar={await semuaAset()} />}
+          panelTugas={<PanelTugasAdmin />}
           panelUmpanBalik={<RingkasanSusAdmin daftar={await semuaUmpanBalik()} akun={akun} />}
         />
       </HydrationBoundary>

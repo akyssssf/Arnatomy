@@ -42,6 +42,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+const hdr = (i: number) => (panggilan[i]?.init.headers ?? {}) as Record<string, string>;
 const TOKEN = JSON.stringify({ a: "akses-lama", r: "segar-lama" });
 const pengguna = SesiUserSchema.parse({
   id_user: 7,
@@ -87,7 +88,7 @@ describe("lib/backend: klien server-ke-server", () => {
     penjawab = () => json({ pesan: "Ditolak", kode: "DILARANG" }, 403);
     const h = await panggil("/v1/admin/x");
     expect(h).toMatchObject({ status: 403, pesan: "Ditolak", kode: "DILARANG" });
-    expect((panggilan[0]?.init.headers as Record<string, string>).authorization).toBe("Bearer akses-lama");
+    expect(hdr(0).authorization).toBe("Bearer akses-lama");
     penjawab = () => new Response("bukan json", { status: 500 });
     expect((await panggil("/v1/x")).pesan).toContain("500");
   });
@@ -318,7 +319,7 @@ describe("Route Handler dalam mode backend", () => {
     const r = await login.POST(post("/api/login", { email: "uji@contoh.test", password: "x" }));
     expect(r.status).toBe(200);
     expect(r.headers.getSetCookie().join(";")).toContain("arnatomy_token");
-    expect((panggilan[0]?.init.headers as Record<string, string>)["x-forwarded-for"]).toBe("8.8.8.8");
+    expect(hdr(0)["x-forwarded-for"]).toBe("8.8.8.8");
     const g = await google.POST(post("/api/google", { id_token: "x".repeat(30) }));
     expect(g.status).toBe(201);
     expect((await g.json()).user.profil_lengkap).toBe(false);
@@ -470,5 +471,53 @@ describe("Route Handler dalam mode backend", () => {
     expect(new Uint8Array(await ok.arrayBuffer())).toEqual(new Uint8Array([1, 2, 3]));
     expect((await model.GET(new Request("http://web/x"), ctx("1", "v9.glb"))).status).toBe(404);
     expect((await model.GET(new Request("http://web/x"), ctx("1", "salah"))).status).toBe(404);
+  });
+
+  it("kelola soal: hanya admin, validasi sebelum diteruskan, dan 503 tanpa backend", async () => {
+    const tambah = await import("@/app/api/tugas-admin/[id]/soal/route");
+    const soal = await import("@/app/api/soal/[id]/route");
+    const sumber = await import("@/lib/sumber");
+    const id = (n: string) => ({ params: Promise.resolve({ id: n }) }) as never;
+    const sah = {
+      pertanyaan: "Pembuluh apa yang paling besar di tubuh?",
+      pilihan: ["Aorta", "Vena kava", "Kapiler"],
+      jawaban_benar: 0,
+      penjelasan: "Aorta adalah arteri terbesar dari ventrikel kiri.",
+    };
+    const j = (m: string, isi?: unknown) =>
+      new Request("http://web/x", {
+        method: m,
+        headers: { "content-type": "application/json" },
+        body: isi === undefined ? undefined : JSON.stringify(isi),
+      });
+    const dilihat: string[] = [];
+    penjawab = (url, init) => {
+      dilihat.push(`${init.method ?? "GET"} ${url.replace("http://api.test", "")}`);
+      return json(
+        url.endsWith("/v1/admin/tugas") ? [{ id_tugas: 1 }] : { id_soal: 5, ok: true },
+        init.method === "POST" ? 201 : 200,
+      );
+    };
+    await masukSebagai(pengguna);
+    expect((await tambah.POST(j("POST", sah), id("1"))).status).toBe(403);
+    await masukSebagai(admin);
+    expect((await tambah.POST(j("POST", sah), id("1"))).status).toBe(201);
+    expect((await tambah.POST(j("POST", { ...sah, jawaban_benar: 9 }), id("1"))).status).toBe(400);
+    expect((await tambah.POST(j("POST", sah), id("nol"))).status).toBe(400);
+    expect((await soal.PATCH(j("PATCH", sah), id("5"))).status).toBe(200);
+    expect((await soal.PATCH(j("PATCH", { pertanyaan: "x" }), id("5"))).status).toBe(400);
+    expect((await soal.DELETE(j("DELETE"), id("5"))).status).toBe(200);
+    expect(await sumber.tugasAdmin()).toHaveLength(1);
+    expect(dilihat).toEqual(
+      expect.arrayContaining([
+        "POST /v1/admin/tugas/1/soal",
+        "PATCH /v1/admin/soal/5",
+        "DELETE /v1/admin/soal/5",
+        "GET /v1/admin/tugas",
+      ]),
+    );
+    vi.stubEnv("BACKEND_URL", "");
+    expect((await soal.DELETE(j("DELETE"), id("5"))).status).toBe(503);
+    expect(await sumber.tugasAdmin()).toBeNull();
   });
 });

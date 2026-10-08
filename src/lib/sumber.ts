@@ -152,3 +152,8 @@ export async function profilSaya(): Promise<ProfilPengguna | null> {
   const d = await ambil<{ user: ProfilPengguna }>("/v1/auth/me");
   return d.user;
 }
+
+export async function tugasAdmin(): Promise<import("./tugas").TugasAdmin[] | null> {
+  if (!backendAktif()) return null;
+  return ambil<import("./tugas").TugasAdmin[]>("/v1/admin/tugas");
+}

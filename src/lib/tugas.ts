@@ -91,3 +91,36 @@ export const HasilPercobaanSchema = z.object({
 export type HasilPercobaan = z.infer<typeof HasilPercobaanSchema>;
 export type RincianKuis = z.infer<typeof RincianKuisSchema>;
 export type RincianSimulasi = z.infer<typeof RincianSimulasiSchema>;
+
+/* Admin: formulir soal kuis (sama dengan aturan backend) dan bentuk tugas dengan kunci */
+export const SoalFormSchema = z
+  .object({
+    pertanyaan: z
+      .string()
+      .trim()
+      .min(10, "Pertanyaan minimal 10 karakter.")
+      .max(300, "Pertanyaan maksimal 300 karakter."),
+    pilihan: z
+      .array(z.string().trim().min(1, "Pilihan tidak boleh kosong.").max(200))
+      .min(2, "Minimal 2 pilihan.")
+      .max(6, "Maksimal 6 pilihan."),
+    jawaban_benar: z.number().int().min(0),
+    penjelasan: z.string().trim().min(10, "Penjelasan minimal 10 karakter."),
+  })
+  .refine((d) => d.jawaban_benar < d.pilihan.length, { path: ["jawaban_benar"], message: "Pilih jawaban yang benar." });
+export type SoalForm = z.infer<typeof SoalFormSchema>;
+
+export interface SoalAdmin extends SoalForm {
+  id_soal: number;
+  id_tugas: number;
+  urutan: number;
+}
+export interface TugasAdmin {
+  id_tugas: number;
+  jenis: JenisTugas;
+  judul: string;
+  deskripsi: string;
+  ambang: number;
+  soal: SoalAdmin[];
+  langkah: { id_langkah: number; judul: string }[];
+}
