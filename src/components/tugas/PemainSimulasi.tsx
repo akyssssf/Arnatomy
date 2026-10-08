@@ -12,6 +12,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { GalatApi, kirimPercobaan } from "@/lib/mock-api";
 import type { HasilPercobaan, Langkah, RincianSimulasi, TugasRingkas } from "@/lib/tugas";
 import { alert, kartu, tombol } from "@/lib/variants";
+import { Simulasi3D } from "./Simulasi3D";
 
 const BIRU = "#1566f4";
 const MERAH = "#e5484d";
@@ -189,6 +190,7 @@ export function PemainSimulasi({ tugas, langkah }: { tugas: TugasRingkas; langka
   const [hasil, setHasil] = useState<HasilPercobaan | null>(null);
   const [galat, setGalat] = useState<string | null>(null);
   const [kirim, setKirim] = useState(false);
+  const [gagal3d, setGagal3d] = useState(false);
 
   useEffect(() => {
     if (!main) return;
@@ -375,7 +377,14 @@ export function PemainSimulasi({ tugas, langkah }: { tugas: TugasRingkas; langka
   return (
     <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
       <div className={kartu({ padding: "md" })}>
-        {diagram ? (
+        {diagram && !gagal3d ? (
+          <Simulasi3D
+            jenis={diagram === SIRKULASI ? "darah" : "napas"}
+            kode={sekarang?.kode ?? ""}
+            cepat={cepat}
+            onGagal={() => setGagal3d(true)}
+          />
+        ) : diagram ? (
           <Gambar diagram={diagram} langkah={langkah} indeks={indeks} />
         ) : (
           <p className="p-6 text-sm text-neutral-500">
