@@ -7,6 +7,7 @@ import { KepalaTamu } from "@/components/layout/KepalaTamu";
 import { FormLogin } from "@/components/login/FormLogin";
 import { HeroLogin } from "@/components/login/HeroLogin";
 import { Muncul } from "@/components/motion/Muncul";
+import { MunculSegera } from "@/components/motion/MunculSegera";
 import { Marquee } from "@/components/ui/Marquee";
 import { body_parts, organs, part_content_awal } from "@/lib/data";
 import { envPublic } from "@/lib/env";
@@ -34,47 +35,38 @@ export default async function HalamanLogin(props: PageProps<"/login">) {
       <section aria-labelledby="judul-login" className="pb-6">
         <KepalaTamu tautan={{ href: "/daftar", label: "Belum punya akun? Daftar" }} />
 
-        <HeroLogin
-          organ={organ}
-          jumlahOrgan={organs.length}
-          jumlahBagian={body_parts.length}
-          jumlahLabel={part_content_awal.length}
-        />
-
-        <Muncul kelas="mt-10">
-          <Marquee
-            daftar={["Sistem Peredaran Darah", "Model Organ 3D", "Label Interaktif", "Asisten AI", "Riwayat Belajar"]}
-            label="Fitur"
-          />
-        </Muncul>
-
-        <div id="form-login" className="mt-8 grid scroll-mt-24 gap-4 lg:grid-cols-[1fr_1.15fr]">
-          <Muncul kelas={`${kartu({ nada: "aksen", padding: "lg" })} flex flex-col justify-between`}>
-            <div>
-              <p className="mikro">Masuk</p>
-              <h2 className="titik-biru mt-3 text-3xl font-semibold">Gunakan akun terdaftar</h2>
-            </div>
-            <div className="mt-8 space-y-3">
-              <p className="text-xs leading-relaxed text-neutral-500">
-                Tekan Siswa, Guru, atau Administrator untuk mengisi form otomatis. Sesi disimpan di cookie httpOnly;
-                data belajar hidup di memori server selama sesi dan dibuang saat keluar.
-              </p>
-              <p className="text-xs text-neutral-500">
-                Belum punya akun?{" "}
-                <Link href="/daftar" className="font-semibold text-neutral-900 underline underline-offset-2">
-                  Daftar sebagai siswa atau guru
-                </Link>
-              </p>
-            </div>
-          </Muncul>
-          <Muncul kelas={kartu({ padding: "lg" })}>
+        <div className="mt-2 grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+          <div className="order-2 lg:order-1">
+            <HeroLogin
+              organ={organ}
+              jumlahOrgan={organs.length}
+              jumlahBagian={body_parts.length}
+              jumlahLabel={part_content_awal.length}
+            />
+          </div>
+          <MunculSegera jeda={150} kelas={`${kartu({ padding: "lg" })} order-1 lg:order-2`}>
+            <p className="mikro">Masuk</p>
+            <h2 className="titik-biru mb-5 mt-2 text-3xl font-semibold">Gunakan akun terdaftar</h2>
             <FormLogin
               pesanAwal={pesanAwal}
               tujuanAwal={tujuan}
               googleClientId={envPublic.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? null}
             />
-          </Muncul>
+            <p className="mt-4 text-xs text-neutral-500">
+              Belum punya akun?{" "}
+              <Link href="/daftar" className="font-semibold text-neutral-900 underline underline-offset-2">
+                Daftar sebagai siswa atau guru
+              </Link>
+            </p>
+          </MunculSegera>
         </div>
+
+        <Muncul kelas="mt-8">
+          <Marquee
+            daftar={["Sistem Peredaran Darah", "Model Organ 3D", "Label Interaktif", "Asisten AI", "Riwayat Belajar"]}
+            label="Fitur"
+          />
+        </Muncul>
       </section>
     </main>
   );
