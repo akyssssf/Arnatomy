@@ -17,9 +17,9 @@ export function PanduanDaftar() {
       <div className="mt-6">
         <DaftarFakta
           fakta={[
-            { label: "Kata sandi", nilai: "Disimpan sebagai hash PBKDF2, bukan teks asli" },
-            { label: "Sesi", nilai: "Cookie httpOnly bertanda tangan, 8 jam" },
-            { label: "Data belajar", nilai: "Hidup di memori server selama sesi" },
+            { label: "Masuk", nilai: "Satu klik dengan akun Google, tanpa kata sandi baru" },
+            { label: "Profil", nilai: "Pilih siswa/guru lalu sekolahmu dari daftar sekolah resmi" },
+            { label: "Sesi", nilai: "Cookie httpOnly; data belajar tersimpan di server" },
           ]}
         />
       </div>

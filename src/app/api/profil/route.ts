@@ -7,7 +7,17 @@ import { PeranDaftarSchema } from "@/lib/schemas";
 
 const Skema = z.object({
   role: PeranDaftarSchema,
-  asal_sekolah: z.string().trim().min(3, "Nama sekolah minimal 3 karakter.").max(120, "Nama sekolah terlalu panjang."),
+  asal_sekolah: z
+    .string()
+    .trim()
+    .min(3, "Nama sekolah minimal 3 karakter.")
+    .max(120, "Nama sekolah terlalu panjang.")
+    .optional(),
+  npsn: z
+    .string()
+    .trim()
+    .regex(/^\d{6,12}$/, "NPSN tidak valid.")
+    .optional(),
 });
 
 export async function PATCH(request: Request) {

@@ -38,10 +38,12 @@ export function TombolGoogle({
   clientId,
   tujuanAwal,
   onGalat,
+  teks = "signin_with",
 }: {
   clientId: string;
   tujuanAwal: string | null;
   onGalat: (pesan: string | null) => void;
+  teks?: "signin_with" | "signup_with" | "continue_with";
 }) {
   const router = useRouter();
   const wadah = useRef<HTMLDivElement>(null);
@@ -74,7 +76,7 @@ export function TombolGoogle({
         google.accounts.id.renderButton(wadah.current, {
           theme: "outline",
           size: "large",
-          text: "signin_with",
+          text: teks,
           shape: "pill",
           width: 320,
         });
@@ -83,7 +85,7 @@ export function TombolGoogle({
     return () => {
       batal = true;
     };
-  }, [clientId, tujuanAwal, router, onGalat]);
+  }, [clientId, tujuanAwal, router, onGalat, teks]);
 
   return <div ref={wadah} className="flex min-h-11 justify-center" />;
 }

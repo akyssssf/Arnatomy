@@ -1,5 +1,11 @@
 /* Server Component: ikon garis inline SVG, mewarisi warna lewat currentColor */
 const JALUR = {
+  profil: (
+    <>
+      <circle cx="12" cy="8.5" r="3.6" />
+      <path d="M4.8 20c.9-3.6 3.8-5.4 7.2-5.4s6.3 1.8 7.2 5.4" />
+    </>
+  ),
   tugas: (
     <>
       <rect x="4.5" y="3.5" width="15" height="17" rx="2.5" />

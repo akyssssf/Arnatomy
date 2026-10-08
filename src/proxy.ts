@@ -17,6 +17,7 @@ const RUTE_TERPROTEKSI = [
   "/beranda",
   "/eksplorasi",
   "/tugas",
+  "/profil",
   "/asisten",
   "/riwayat",
   "/umpan-balik",

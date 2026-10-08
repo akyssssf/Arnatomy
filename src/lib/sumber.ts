@@ -135,3 +135,20 @@ export async function isiTugas(id: number): Promise<IsiTugas | null> {
   if (h.status !== 200) throw new Error(`backend /v1/tugas/${id}: ${h.status}`);
   return h.data;
 }
+
+/* ---------------- Profil ---------------- */
+export interface ProfilPengguna {
+  id_user: number;
+  nama: string;
+  email: string;
+  role: "siswa" | "guru" | "admin";
+  asal_sekolah: string | null;
+  npsn_sekolah: string | null;
+}
+export async function profilSaya(): Promise<ProfilPengguna | null> {
+  const sesi = await ambilSesi();
+  if (!sesi) return null;
+  if (!backendAktif()) return { ...sesi, npsn_sekolah: null };
+  const d = await ambil<{ user: ProfilPengguna }>("/v1/auth/me");
+  return d.user;
+}

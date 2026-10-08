@@ -2,11 +2,13 @@
    panduan, dan pilihan peran dirender di server; FormDaftar (klien) hanya
    memegang galat + submit. Sudah masuk -> proxy.ts mengalihkan ke beranda. */
 import type { Metadata } from "next";
+import { DaftarGoogle } from "@/components/daftar/DaftarGoogle";
 import { FormDaftar } from "@/components/daftar/FormDaftar";
 import { PanduanDaftar } from "@/components/daftar/PanduanDaftar";
 import { PilihanPeran } from "@/components/daftar/PilihanPeran";
 import { KepalaTamu } from "@/components/layout/KepalaTamu";
 import { MunculSegera } from "@/components/motion/MunculSegera";
+import { envPublic } from "@/lib/env";
 import { kartu } from "@/lib/variants";
 
 export const metadata: Metadata = {
@@ -24,7 +26,11 @@ export default function HalamanDaftar() {
             <PanduanDaftar />
           </MunculSegera>
           <MunculSegera jeda={120} kelas={kartu({ padding: "lg" })}>
-            <FormDaftar pilihanPeran={<PilihanPeran />} />
+            {envPublic.NEXT_PUBLIC_GOOGLE_CLIENT_ID ? (
+              <DaftarGoogle clientId={envPublic.NEXT_PUBLIC_GOOGLE_CLIENT_ID} />
+            ) : (
+              <FormDaftar pilihanPeran={<PilihanPeran />} />
+            )}
           </MunculSegera>
         </div>
       </section>

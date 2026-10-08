@@ -12,13 +12,14 @@ import { keluar } from "@/lib/mock-api";
 import type { SesiUser } from "@/lib/schemas";
 import { useUIStore } from "@/store/useUIStore";
 
-type Rute = "/beranda" | "/eksplorasi" | "/tugas" | "/asisten" | "/riwayat" | "/admin";
+type Rute = "/beranda" | "/eksplorasi" | "/tugas" | "/asisten" | "/riwayat" | "/profil" | "/admin";
 const MENU: { rute: Rute; label: string; ikon: NamaIkon; hanyaAdmin?: boolean }[] = [
   { rute: "/beranda", label: "Beranda", ikon: "rumah" },
   { rute: "/eksplorasi", label: "Eksplorasi", ikon: "jantung" },
   { rute: "/tugas", label: "Tugas", ikon: "tugas" },
   { rute: "/asisten", label: "Asisten", ikon: "chat" },
   { rute: "/riwayat", label: "Riwayat", ikon: "riwayat" },
+  { rute: "/profil", label: "Profil", ikon: "profil" },
   { rute: "/admin", label: "Admin", ikon: "perisai", hanyaAdmin: true },
 ];
 const MENU_PUBLIK: { gulir: string; label: string; ikon: NamaIkon }[] = [

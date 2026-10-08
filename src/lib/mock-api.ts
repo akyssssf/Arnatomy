@@ -105,8 +105,33 @@ export async function masukGoogle(idToken: string): Promise<SesiUser> {
   const { user } = await ambilJson(RespLoginSchema, "/api/google", kirim("POST", { id_token: idToken }));
   return user;
 }
+export interface SekolahHasil {
+  npsn: string;
+  nama: string;
+  bentuk: string;
+  status: string;
+  kabupaten_kota: string;
+  provinsi: string;
+  kecamatan: string;
+}
+const SekolahSchema = z.object({
+  npsn: z.string(),
+  nama: z.string(),
+  bentuk: z.string(),
+  status: z.string(),
+  kabupaten_kota: z.string(),
+  provinsi: z.string(),
+  kecamatan: z.string(),
+});
+export function cariSekolah(q: string): Promise<SekolahHasil[]> {
+  return ambilJson(z.array(SekolahSchema), `/api/sekolah?q=${encodeURIComponent(q)}`);
+}
 /** Melengkapi peran + sekolah akun Google (FR-02). */
-export async function lengkapiProfil(input: { role: "siswa" | "guru"; asal_sekolah: string }): Promise<SesiUser> {
+export async function lengkapiProfil(input: {
+  role: "siswa" | "guru";
+  asal_sekolah?: string;
+  npsn?: string;
+}): Promise<SesiUser> {
   const { user } = await ambilJson(RespLoginSchema, "/api/profil", kirim("PATCH", input));
   return user;
 }
