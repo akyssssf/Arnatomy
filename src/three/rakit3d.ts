@@ -47,6 +47,8 @@ export interface MesinRakit {
   petunjuk: () => string | null;
   /** Tonjolkan bayangan posisi asli sebuah bagian (mis. saat disorot di daftar) */
   tonjolkan: (kode: string | null) => void;
+  /** Hanya untuk pengujian: memasang semua bagian yang tersisa seolah dipasang benar pada percobaan pertama */
+  pasangSemuaUntukUji: () => void;
   bersihkan: () => void;
 }
 
@@ -406,6 +408,9 @@ export async function mulaiRakit(opsi: OpsiRakit): Promise<MesinRakit> {
     },
     tonjolkan: (kode) => {
       tonjolan = kode;
+    },
+    pasangSemuaUntukUji: () => {
+      for (const p of potongan) if (!p.terpasang) pasang(p);
     },
     bersihkan: () => {
       cancelAnimationFrame(rafId);

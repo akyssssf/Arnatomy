@@ -72,6 +72,8 @@ export function PemainRakit({ tugas, bagian }: { tugas: TugasRingkas; bagian: La
           return;
         }
         mesin.current = m;
+        /* Pintu uji untuk verifikasi otomatis; tidak ada di build produksi */
+        if (process.env.NODE_ENV === "development") (window as unknown as { __rakit?: MesinRakit }).__rakit = m;
         mulaiWaktu.current = Date.now();
         setSiap(true);
       } catch {
