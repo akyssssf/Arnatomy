@@ -61,6 +61,14 @@ export default async function HalamanLogin(props: PageProps<"/login">) {
               <Link href="/daftar" className="font-semibold text-neutral-900 underline underline-offset-2">
                 Daftar sebagai siswa atau guru
               </Link>
+              {" · "}
+              <Link href="/kebijakan-privasi" className="underline underline-offset-2">
+                Privasi
+              </Link>
+              {" · "}
+              <Link href="/syarat" className="underline underline-offset-2">
+                Syarat
+              </Link>
             </p>
           </MunculSegera>
         </div>

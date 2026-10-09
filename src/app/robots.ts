@@ -7,7 +7,7 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
-      allow: ["/", "/login", "/daftar"],
+      allow: ["/", "/login", "/daftar", "/kebijakan-privasi", "/syarat"],
       disallow: ["/api/", "/beranda", "/eksplorasi", "/asisten", "/riwayat", "/umpan-balik", "/admin"],
     },
     sitemap: `${envPublic.NEXT_PUBLIC_SITE_URL}/sitemap.xml`,

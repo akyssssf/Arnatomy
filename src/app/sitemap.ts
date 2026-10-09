@@ -9,5 +9,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${asal}/`, lastModified: kini, changeFrequency: "monthly", priority: 1 },
     { url: `${asal}/login`, lastModified: kini, changeFrequency: "yearly", priority: 0.5 },
     { url: `${asal}/daftar`, lastModified: kini, changeFrequency: "yearly", priority: 0.5 },
+    { url: `${asal}/kebijakan-privasi`, lastModified: kini, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${asal}/syarat`, lastModified: kini, changeFrequency: "yearly", priority: 0.3 },
   ];
 }

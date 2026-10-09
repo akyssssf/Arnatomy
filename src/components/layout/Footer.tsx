@@ -1,4 +1,6 @@
 /* Server Component: footer sederhana */
+import Link from "next/link";
+
 export function Footer() {
   return (
     <footer className="mx-auto flex w-full max-w-6xl flex-col gap-2 px-4 pb-10 pt-6 text-[11px] text-neutral-500 sm:flex-row sm:items-center sm:justify-between sm:px-6">
@@ -11,7 +13,17 @@ export function Footer() {
         >
           HuBMAP Human Reference Atlas
         </a>
-        , CC BY 4.0 &middot; Mode AR: WebXR (ARCore/ARKit) atau kamera perangkat &middot; D3 Teknik Informatika
+        , CC BY 4.0 &middot; Mode AR: WebXR (ARCore/ARKit) atau kamera perangkat &middot; D3 Teknik Informatika &middot;{" "}
+        <Link
+          href="/kebijakan-privasi"
+          className="underline decoration-neutral-300 underline-offset-2 hover:text-neutral-900"
+        >
+          Privasi
+        </Link>{" "}
+        &middot;{" "}
+        <Link href="/syarat" className="underline decoration-neutral-300 underline-offset-2 hover:text-neutral-900">
+          Syarat
+        </Link>
       </p>
     </footer>
   );
